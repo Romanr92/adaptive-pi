@@ -6,7 +6,13 @@ It is a portfolio and learning project that explores modern C++/Linux, service-o
 
 ## Current status
 
-Release 0 is in progress: repository, host-native build, unit tests, formatting, static analysis, and CI.
+- **Release 0 — Project foundation:** Complete. Added the CMake/Ninja C++ project structure, Clang-based host builds, GoogleTest, clang-format, clang-tidy, GitHub Actions host CI, architecture documentation, and initial ADRs. ✅
+
+- **Phase 0.5 — VS Code workflow:** Complete. Added two focused CMake Debug presets: one for building the application and one for building and running unit tests. Configured the VS Code CMake Tools status bar and launch workflow for the Remote–SSH Arch Linux environment. ✅
+
+- **Release 1 — Yocto and QEMU AArch64 environment:** Planned. Create a reproducible Yocto-based Linux image, boot it in QEMU, and establish a target-side development and validation workflow. 
+
+- **Later release automation:** Planned. GitHub Actions will create versioned Raspberry Pi deployment artifacts after the Yocto target image and deployment workflow exist.
 
 The current executable is:
 
@@ -47,7 +53,7 @@ ctest --preset debug-unit-tests
 Run the service:
 
 ```bash
-./build/debug/apps/platform-test-service/platform-test-service
+./build/debug-app/apps/platform-test-service/platform-test-service
 ```
 
 GoogleTest is automatically downloaded as a pinned dependency into `tools/gtest` during the first test-enabled CMake configuration. It is intentionally not committed to this repository.
