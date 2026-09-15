@@ -1,0 +1,10 @@
+# AdaptivePi Release 1: generic 64-bit ARM QEMU target.
+MACHINE = "qemuarm64"
+
+# Keep downloaded sources and reusable build cache outside the generated build directory.
+DL_DIR = "${TOPDIR}/../downloads"
+SSTATE_DIR = "${TOPDIR}/../sstate-cache"
+
+# This host has limited RAM: do not exceed two BitBake tasks or compiler jobs.
+BB_NUMBER_THREADS = "2"
+PARALLEL_MAKE = "-j 2"
