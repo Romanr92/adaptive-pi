@@ -18,3 +18,9 @@ Thumbs.db
 
 # Tools download
 /tools/gtest/
+
+# Yocto build environment: downloaded upstream sources and generated data
+yocto/poky/
+yocto/build/
+yocto/downloads/
+yocto/sstate-cache/
