@@ -24,10 +24,24 @@ Prerequisites:
 
 Configure, build, and test:
 
+### Debug application
+
 ```bash
-cmake --preset debug
-cmake --build --preset debug
-ctest --preset debug
+cmake --preset debug-app
+cmake --build build/debug-app --parallel
+```
+
+### Debug unit tests
+
+```bash
+cmake --preset debug-unit-tests
+cmake --build build/debug-unit-tests --parallel
+```
+
+The Unit Tests build runs CTest/GoogleTest automatically. To rerun tests without building, use:
+
+```bash
+ctest --preset debug-unit-tests
 ```
 
 Run the service:
@@ -58,21 +72,26 @@ Host-native tests → QEMU AArch64 integration → Raspberry Pi hardware validat
 
 ## Roadmap
 
-- **Release 0:** Repository, CMake/Ninja, GoogleTest, formatting, static analysis, and CI
+- **Release 0:** Repository, CMake/Ninja, GoogleTest, formatting, static analysis, and host CI
+- **Phase 0.5:** VS Code CMake Tools workflow for Debug application builds and unit-test execution
 - **Release 1:** Yocto image for QEMU AArch64, then Raspberry Pi 3
 - **Release 2:** Cross-build, deployment over SSH, and remote GDB
 - **Release 3:** Manifest-driven execution management
 - **Release 4:** Focused custom `ara::core`, `ara::log`, `ara::exec`, and `ara::diag`
 - **Later releases:** Service communication, diagnostics, camera pipeline, sign detection, and HMI
+- **Later release automation:** GitHub Actions will create versioned Raspberry Pi deployment artifacts after the Yocto target image and deployment workflow exist
 
 ## Quality gates
 
 Every change should pass:
 
 ```bash
-cmake --preset debug
-cmake --build --preset debug
-ctest --preset debug
+cmake --preset debug-app
+cmake --build build/debug-app --parallel
+
+cmake --preset debug-unit-tests
+cmake --build build/debug-unit-tests --parallel
+
 find apps tests -type f \( -name '*.cpp' -o -name '*.hpp' \) -print0 | xargs -0 clang-format --dry-run --Werror
 ```
 

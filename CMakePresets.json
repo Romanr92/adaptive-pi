@@ -1,53 +1,45 @@
 {
-    "version": 6,
-    "cmakeMinimumRequired": {
-        "major": 3,
-        "minor": 25,
-        "patch": 0
+  "version": 6,
+  "cmakeMinimumRequired": {
+    "major": 3,
+    "minor": 25,
+    "patch": 0
+  },
+  "configurePresets": [
+    {
+      "name": "debug-app",
+      "displayName": "Debug: Application",
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/build/debug-app",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug",
+        "CMAKE_CXX_COMPILER": "clang++",
+        "BUILD_TESTING": "OFF",
+        "ADAPTIVE_PI_ENABLE_CLANG_TIDY": "ON",
+        "ADAPTIVE_PI_WARNINGS_AS_ERRORS": "ON"
+      }
     },
-    "configurePresets": [
-        {
-            "name": "debug",
-            "displayName": "Debug (Clang)",
-            "generator": "Ninja",
-            "binaryDir": "${sourceDir}/build/debug",
-            "cacheVariables": {
-                "CMAKE_BUILD_TYPE": "Debug",
-                "CMAKE_CXX_COMPILER": "clang++",
-                "ADAPTIVE_PI_ENABLE_CLANG_TIDY": "ON",
-                "ADAPTIVE_PI_WARNINGS_AS_ERRORS": "ON"
-            }
-        },
-        {
-            "name": "release",
-            "displayName": "Release (Clang)",
-            "generator": "Ninja",
-            "binaryDir": "${sourceDir}/build/release",
-            "cacheVariables": {
-                "CMAKE_BUILD_TYPE": "Release",
-                "CMAKE_CXX_COMPILER": "clang++",
-                "ADAPTIVE_PI_ENABLE_CLANG_TIDY": "ON",
-                "ADAPTIVE_PI_WARNINGS_AS_ERRORS": "ON"
-            }
-        }
-    ],
-    "buildPresets": [
-        {
-            "name": "debug",
-            "configurePreset": "debug"
-        },
-        {
-            "name": "release",
-            "configurePreset": "release"
-        }
-    ],
-    "testPresets": [
-        {
-            "name": "debug",
-            "configurePreset": "debug",
-            "output": {
-                "outputOnFailure": true
-            }
-        }
-    ]
+    {
+      "name": "debug-unit-tests",
+      "displayName": "Debug: Unit Tests",
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/build/debug-unit-tests",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug",
+        "CMAKE_CXX_COMPILER": "clang++",
+        "BUILD_TESTING": "ON",
+        "ADAPTIVE_PI_ENABLE_CLANG_TIDY": "ON",
+        "ADAPTIVE_PI_WARNINGS_AS_ERRORS": "ON"
+      }
+    }
+  ],
+  "testPresets": [
+    {
+      "name": "debug-unit-tests",
+      "configurePreset": "debug-unit-tests",
+      "output": {
+        "outputOnFailure": true
+      }
+    }
+  ]
 }

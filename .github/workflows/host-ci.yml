@@ -39,11 +39,14 @@ jobs:
           sudo apt-get update
           sudo apt-get install --yes clang clang-tidy ninja-build
 
-      - name: Configure
-        run: cmake --preset debug
+      - name: Configure Debug Application
+        run: cmake --preset debug-app
 
-      - name: Build
-        run: cmake --build --preset debug --parallel
+      - name: Build Debug Application
+        run: cmake --build build/debug-app --parallel
 
-      - name: Run unit tests
-        run: ctest --preset debug
+      - name: Configure Debug Unit Tests
+        run: cmake --preset debug-unit-tests
+
+      - name: Build and run unit tests
+        run: cmake --build build/debug-unit-tests --parallel

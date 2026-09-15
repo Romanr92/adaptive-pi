@@ -1,14 +1,66 @@
 {
   "cmake.useCMakePresets": "always",
-  "cmake.configurePreset": "debug",
-  "cmake.buildPreset": "debug",
-  "cmake.testPreset": "debug",
-  "C_Cpp.default.compileCommands": "${workspaceFolder}/build/debug/compile_commands.json",
+  "cmake.configurePreset": "debug-app",
+  "cmake.buildBeforeRun": true,
+
   "C_Cpp.clang_format_path": "/usr/bin/clang-format",
   "C_Cpp.clang_format_style": "file",
   "C_Cpp.formatting": "clangFormat",
+
   "[cpp]": {
     "editor.defaultFormatter": "xaver.clang-format",
     "editor.formatOnSave": true
+  },
+
+  "cmake.options.statusBarVisibility": "visible",
+  "cmake.options.advanced": {
+    "folder": {
+    "statusBarVisibility": "hidden"
+    },
+    "configurePreset": {
+      "statusBarVisibility": "visible"
+    },
+    "build": {
+      "statusBarVisibility": "visible"
+    },
+    "buildPreset": {
+      "statusBarVisibility": "hidden"
+    },
+    "buildTarget": {
+      "statusBarVisibility": "hidden"
+    },
+    "debug": {
+      "statusBarVisibility": "hidden"
+    },
+    "launchTarget": {
+      "statusBarVisibility": "visible"
+    },
+    "launch": {
+      "statusBarVisibility": "visible"
+    },
+    "testPreset": {
+      "statusBarVisibility": "hidden"
+    },
+    "test": {
+      "statusBarVisibility": "hidden"
+    },
+    "packagePreset": {
+      "statusBarVisibility": "hidden"
+    },
+    "package": {
+      "statusBarVisibility": "hidden"
+    },
+    "cpackPreset": {
+      "statusBarVisibility": "hidden"
+    },
+    "cpack": {
+      "statusBarVisibility": "hidden"
+    },
+    "workflowPreset": {
+      "statusBarVisibility": "hidden"
+    },
+    "workflow": {
+      "statusBarVisibility": "hidden"
+    }
   }
 }
