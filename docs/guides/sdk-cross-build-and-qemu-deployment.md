@@ -189,6 +189,76 @@ scripts/qemu/stop-development-image.sh --force
 
 `--force` terminates the tmux/QEMU session only after clean shutdown cannot complete.
 
+## 8. VS Code remote debugging
+
+AdaptivePi supports source-level debugging of an AArch64 process in the QEMU PREEMPT_RT guest directly from VS Code.
+
+The configuration is defined by:
+
+```text
+.vscode/launch.json
+.vscode/tasks.json
+```
+
+The launch configuration uses the Yocto SDK cross-GDB executable and target sysroot. VS Code tasks build, deploy, and prepare the SSH-backed remote debug connection automatically.
+
+### Start a debug session
+
+Start QEMU first:
+
+```bash
+scripts/qemu/start-development-image.sh
+```
+
+In VS Code:
+
+1. Open `apps/hello-adaptive/src/main.cpp`.
+2. Set a source breakpoint.
+3. Open **Run and Debug**.
+4. Select `Debug: QEMU Hello Adaptive`.
+5. Press `F5`.
+
+VS Code automatically performs:
+
+```text
+build ARM64 binary
+→ deploy binary into QEMU
+→ enable guest gdbserver
+→ create host SSH tunnel
+→ attach Yocto cross-GDB
+```
+
+The debugger first pauses in the Linux dynamic loader. This is normal: it allows VS Code to register source breakpoints before the application begins.
+
+Press Continue to reach the application breakpoint.
+
+### Stop a debug session
+
+Stopping VS Code debugging automatically runs:
+
+```bash
+scripts/qemu/disable-debug-session.sh
+```
+
+This removes the host SSH tunnel and stops guest `gdbserver`.
+
+Stop QEMU when development is complete:
+
+```bash
+scripts/qemu/stop-development-image.sh
+```
+
+The debug-session scripts are also available for manual use:
+
+```bash
+scripts/qemu/enable-debug-session.sh \
+  build/debug-qemu-app/apps/hello-adaptive/hello-adaptive
+
+scripts/qemu/disable-debug-session.sh
+```
+
+The enable script prevents duplicate debug sessions and reports if host port `2345` is already in use.
+
 ## Daily development loop
 
 For normal application changes:

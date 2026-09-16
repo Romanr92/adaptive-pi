@@ -1,0 +1,44 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Build QEMU Hello Adaptive",
+      "type": "shell",
+      "command": "cmake",
+      "args": [
+        "--build",
+        "--preset",
+        "debug-qemu-app"
+      ],
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "Enable QEMU Hello Debug",
+      "type": "shell",
+      "command": "${workspaceFolder}/scripts/qemu/enable-debug-session.sh",
+      "args": [
+        "${workspaceFolder}/build/debug-qemu-app/apps/hello-adaptive/hello-adaptive"
+      ],
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "dependsOn": [
+        "Build QEMU Hello Adaptive"
+      ],
+      "dependsOrder": "sequence",
+      "problemMatcher": []
+    },
+    {
+      "label": "Disable QEMU Debug Session",
+      "type": "shell",
+      "command": "${workspaceFolder}/scripts/qemu/disable-debug-session.sh",
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "problemMatcher": []
+    }
+  ]
+}

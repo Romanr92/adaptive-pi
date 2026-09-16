@@ -1,0 +1,28 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Debug: QEMU Hello Adaptive",
+      "type": "cppdbg",
+      "request": "launch",
+      "program": "${workspaceFolder}/build/debug-qemu-app/apps/hello-adaptive/hello-adaptive",
+      "cwd": "${workspaceFolder}",
+      "preLaunchTask": "Enable QEMU Hello Debug",
+      "postDebugTask": "Disable QEMU Debug Session",
+      "MIMode": "gdb",
+      "targetArchitecture": "arm64",
+      "miDebuggerPath": "${workspaceFolder}/yocto/sdk/sysroots/x86_64-pokysdk-linux/usr/bin/aarch64-poky-linux/aarch64-poky-linux-gdb",
+      "stopAtEntry": true,
+      "externalConsole": false,
+      "setupCommands": [
+        {
+          "description": "Use the Yocto target sysroot",
+          "text": "set sysroot ${workspaceFolder}/yocto/sdk/sysroots/cortexa57-poky-linux",
+          "ignoreFailures": false
+        }
+      ],      
+      "miDebuggerServerAddress": "localhost:2345",
+      "launchCompleteCommand": "None"
+    }
+  ]
+}
