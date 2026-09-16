@@ -23,7 +23,7 @@ function(adaptive_pi_configure_target target_name)
             ${target_name}
             PROPERTIES
                 CXX_CLANG_TIDY
-                    "${ADAPTIVE_PI_CLANG_TIDY_EXECUTABLE};--config-file=${PROJECT_SOURCE_DIR}/.clang-tidy"
+                    "${ADAPTIVE_PI_CLANG_TIDY_EXECUTABLE};--config-file=${CMAKE_SOURCE_DIR}/.clang-tidy"
         )
     endif()
 endfunction()

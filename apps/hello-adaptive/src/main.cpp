@@ -2,6 +2,6 @@
 
 int main()
 {
-  std::cout << "Hello from AdaptivePi on Embedded Linux." << std::endl;
+  std::cout << "Hello from AdaptivePi on Embedded Linux." << '\n';
   return 0;
 }
