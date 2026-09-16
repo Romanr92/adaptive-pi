@@ -243,7 +243,7 @@ Hello from AdaptivePi on Embedded Linux.
 
 This CMake configure step also gives VS Code IntelliSense the compile information it needs. The next Yocto step will package this same executable and its systemd unit into `adaptive-pi-image`.
 
-## 9. Validation after the image finishes
+## 9. QEMU development environment
 
 Use the project scripts to start and stop the AdaptivePi QEMU development target.
 
