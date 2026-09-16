@@ -20,6 +20,31 @@
       }
     },
     {
+      "name": "debug-qemu-app",
+      "displayName": "Debug: QEMU App",
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/build/debug-qemu-app",
+      "environment": {
+        "OECORE_NATIVE_SYSROOT": "${sourceDir}/yocto/sdk/sysroots/x86_64-pokysdk-linux",
+        "SDKTARGETSYSROOT": "${sourceDir}/yocto/sdk/sysroots/cortexa57-poky-linux",
+        "PATH": "${sourceDir}/yocto/sdk/sysroots/x86_64-pokysdk-linux/usr/bin:${sourceDir}/yocto/sdk/sysroots/x86_64-pokysdk-linux/usr/bin/aarch64-poky-linux:$penv{PATH}",
+        "CC": "aarch64-poky-linux-gcc -mcpu=cortex-a57+crc -mbranch-protection=standard -fstack-protector-strong -O2 -D_FORTIFY_SOURCE=2 -Wformat -Wformat-security -Werror=format-security --sysroot=${sourceDir}/yocto/sdk/sysroots/cortexa57-poky-linux",
+        "CXX": "aarch64-poky-linux-g++ -mcpu=cortex-a57+crc -mbranch-protection=standard -fstack-protector-strong -O2 -D_FORTIFY_SOURCE=2 -Wformat -Wformat-security -Werror=format-security --sysroot=${sourceDir}/yocto/sdk/sysroots/cortexa57-poky-linux",
+        "CFLAGS": "-O2 -pipe -g -feliminate-unused-debug-types",
+        "CXXFLAGS": "-O2 -pipe -g -feliminate-unused-debug-types",
+        "LDFLAGS": "-Wl,-O1 -Wl,--hash-style=gnu -Wl,--as-needed -Wl,-z,relro,-z,now",
+        "PKG_CONFIG_SYSROOT_DIR": "${sourceDir}/yocto/sdk/sysroots/cortexa57-poky-linux",
+        "PKG_CONFIG_PATH": "${sourceDir}/yocto/sdk/sysroots/cortexa57-poky-linux/usr/lib/pkgconfig:${sourceDir}/yocto/sdk/sysroots/cortexa57-poky-linux/usr/share/pkgconfig"
+      },
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug",
+        "CMAKE_TOOLCHAIN_FILE": "${sourceDir}/yocto/sdk/sysroots/x86_64-pokysdk-linux/usr/share/cmake/OEToolchainConfig.cmake",
+        "BUILD_TESTING": "OFF",
+        "ADAPTIVE_PI_ENABLE_CLANG_TIDY": "OFF",
+        "ADAPTIVE_PI_WARNINGS_AS_ERRORS": "ON"
+      }
+    },
+    {
       "name": "debug-unit-tests",
       "displayName": "Debug: Unit Tests",
       "generator": "Ninja",
@@ -31,6 +56,17 @@
         "ADAPTIVE_PI_ENABLE_CLANG_TIDY": "ON",
         "ADAPTIVE_PI_WARNINGS_AS_ERRORS": "ON"
       }
+    }
+  ],
+  "buildPresets": [
+    {
+      "name": "debug-qemu-app",
+      "displayName": "Build: Debug QEMU App",
+      "configurePreset": "debug-qemu-app",
+      "targets": [
+        "hello-adaptive"
+      ],
+      "jobs": 1
     }
   ],
   "testPresets": [
