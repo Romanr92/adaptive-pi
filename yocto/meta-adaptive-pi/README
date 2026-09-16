@@ -1,0 +1,19 @@
+# meta-adaptive-pi
+
+AdaptivePi’s Yocto metadata layer.
+
+## Supported development target
+
+- Generic AArch64 QEMU machine: `qemuarm64`
+- Init system: systemd
+- Kernel provider: `linux-yocto-rt` (PREEMPT_RT)
+
+QEMU validates boot and software integration. It does not provide faithful Raspberry Pi hardware emulation or valid real-time latency measurements.
+
+## Provided image
+
+- `adaptive-pi-image` — minimal development image based on `core-image-minimal`, with OpenSSH, the C++ runtime, and `gdbserver`.
+
+## Dependency
+
+This layer currently depends on the Poky `scarthgap` baseline documented in `yocto/README.md`.

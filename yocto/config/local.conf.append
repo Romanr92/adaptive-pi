@@ -8,3 +8,7 @@ SSTATE_DIR = "${TOPDIR}/../sstate-cache"
 # This host has limited RAM: do not exceed two BitBake tasks or compiler jobs.
 BB_NUMBER_THREADS = "2"
 PARALLEL_MAKE = "-j 2"
+
+# Use systemd and the Yocto PREEMPT_RT kernel provider.
+INIT_MANAGER = "systemd"
+PREFERRED_PROVIDER_virtual/kernel = "linux-yocto-rt"
