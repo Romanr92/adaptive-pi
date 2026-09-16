@@ -78,7 +78,7 @@ fi
 echo "Starting AdaptivePi guest gdbserver..."
 
 ssh "${ssh_options[@]}" root@localhost \
-    "nohup gdbserver :${gdb_port} '${guest_binary}' \
+    "nohup gdbserver 127.0.0.1:${gdb_port} '${guest_binary}' \
     > '${guest_log_file}' 2>&1 < /dev/null & \
     echo \$! > '${guest_pid_file}'"
 

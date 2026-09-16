@@ -90,10 +90,15 @@ scripts/qemu/deploy-binary.sh \
 
 ## 3. Cross-build an application
 
-Build the target application with limited parallelism:
+The QEMU preset builds the application into:
+
+```text
+build/debug-qemu-app/apps/hello-adaptive/hello-adaptive
+
+Build the target application:
 
 ```bash
-cmake --build build/sdk-aarch64 --target hello-adaptive -j 1
+cmake --build build/debug-qemu-app --target hello-adaptive 
 ```
 
 Verify that the output is an ARM64 executable:
@@ -137,7 +142,7 @@ Deploy a cross-built binary to the running guest:
 
 ```bash
 scripts/qemu/deploy-binary.sh \
-  build/sdk-aarch64/apps/hello-adaptive/hello-adaptive
+  build/debug-qemu-app/apps/hello-adaptive/hello-adaptive
 ```
 
 The deployment script:
