@@ -1,6 +1,6 @@
 add_executable(
     platform_test_core_test
-    platform_test/build_info_test.cpp
+    build_info_test.cpp
 )
 
 target_link_libraries(
@@ -16,10 +16,9 @@ include(GoogleTest)
 
 gtest_discover_tests(platform_test_core_test)
 
-add_custom_target(
-  run-unit-tests ALL
-  COMMAND ${CMAKE_CTEST_COMMAND} --output-on-failure
-  DEPENDS platform_test_core_test
-  WORKING_DIRECTORY "${CMAKE_BINARY_DIR}"
-  USES_TERMINAL
+set_property(
+    GLOBAL
+    APPEND
+    PROPERTY ADAPTIVE_PI_UNIT_TEST_TARGETS
+    platform_test_core_test
 )

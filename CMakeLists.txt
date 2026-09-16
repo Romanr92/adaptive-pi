@@ -27,5 +27,20 @@ add_subdirectory(apps/platform-test-service)
 add_subdirectory(apps/hello-adaptive)
 
 if(BUILD_TESTING)
-    add_subdirectory(tests)
+    get_property(
+        adaptive_pi_unit_test_targets
+        GLOBAL
+        PROPERTY ADAPTIVE_PI_UNIT_TEST_TARGETS
+    )
+
+    if(adaptive_pi_unit_test_targets)
+        add_custom_target(
+            run-unit-tests
+            ALL
+            COMMAND ${CMAKE_CTEST_COMMAND} --output-on-failure
+            DEPENDS ${adaptive_pi_unit_test_targets}
+            WORKING_DIRECTORY "${CMAKE_BINARY_DIR}"
+            USES_TERMINAL
+        )
+    endif()
 endif()

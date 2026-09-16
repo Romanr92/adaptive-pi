@@ -25,3 +25,7 @@ target_link_libraries(
 )
 
 adaptive_pi_configure_target(platform-test-service)
+
+if(BUILD_TESTING)
+    add_subdirectory(tests)
+endif()
