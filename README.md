@@ -119,6 +119,22 @@ yocto/meta-adaptive-pi/
 - PREEMPT_RT improves scheduling determinism but does not make Linux a guaranteed hard real-time system.
 - Real hardware deployment and latency measurements will be performed later on a Raspberry Pi.
 
+## Quality gates roadmap
+
+Quality is part of every release. Each gate adds evidence appropriate to the
+maturity of the platform rather than treating quality as a final activity.
+
+| Stage | Required evidence |
+|---|---|
+| Current host workflow | Formatting, clang-tidy, native unit tests, and Host CI |
+| Before Release 3 | A required CI job that cross-builds the QEMU application with the matching Yocto SDK, verifies it is AArch64, and executes it with QEMU user-mode emulation |
+| Release 4 | ESBMC bounded model-checking harnesses for selected pure logic such as Result/ErrorCode invariants and Execution Management lifecycle transitions |
+| Release 7 | Cross-process integration tests, fault injection, restart/recovery checks, and an expanded CI gate |
+
+ESBMC will not be used as a blanket check for the whole project. It will verify
+selected bounded safety properties where model checking is useful and practical.
+Before it becomes a required check, its harnesses and bounds must be stable.
+
 ## Next releases
 
 ### Release 3 — `ara::core` and `ara::log`
