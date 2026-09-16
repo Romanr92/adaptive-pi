@@ -13,7 +13,7 @@ namespace adaptive_pi::platform_test
 
     TEST(BuildInfoTest, ReturnsExpectedVersion)
     {
-      EXPECT_EQ(Version(), "0.1.0");
+      EXPECT_EQ(Version(), "0.2.0");
     }
   } // namespace
 } // namespace adaptive_pi::platform_test
