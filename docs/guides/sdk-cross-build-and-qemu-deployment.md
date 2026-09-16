@@ -94,6 +94,7 @@ The QEMU preset builds the application into:
 
 ```text
 build/debug-qemu-app/apps/hello-adaptive/hello-adaptive
+```
 
 Build the target application:
 
@@ -104,7 +105,7 @@ cmake --build build/debug-qemu-app --target hello-adaptive
 Verify that the output is an ARM64 executable:
 
 ```bash
-file build/sdk-aarch64/apps/hello-adaptive/hello-adaptive
+file build/debug-qemu-app/apps/hello-adaptive/hello-adaptive
 ```
 
 Expected result:

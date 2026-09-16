@@ -1,105 +1,169 @@
 # AdaptivePi
 
-AdaptivePi is a clean-room, Adaptive AUTOSAR-inspired automotive platform demonstrator for Raspberry Pi.
+AdaptivePi is an **Adaptive AUTOSAR-inspired embedded Linux platform demonstrator**.
 
-It is a portfolio and learning project that explores modern C++/Linux, service-oriented automotive software, diagnostics, deployment, and target debugging. It is **not** an AUTOSAR implementation and does not claim Adaptive AUTOSAR compliance.
+It is a learning and portfolio project that recreates selected Adaptive Platform concepts in modern C++ while using a realistic embedded-Linux workflow: Yocto, a PREEMPT_RT kernel, ARM64 cross-compilation, QEMU deployment, SSH, and remote debugging.
+
+The project deliberately does **not** use proprietary AUTOSAR implementation code. It provides a focused, educational implementation of selected concepts and interfaces.
 
 ## Current status
 
-- **Release 0 — Project foundation:** Complete. Added the CMake/Ninja C++ project structure, Clang-based host builds, GoogleTest, clang-format, clang-tidy, GitHub Actions host CI, architecture documentation, and initial ADRs. ✅
+**Release 2 complete â€” SDK cross-build, QEMU deployment, and remote debugging** ✅
 
-- **Phase 0.5 — VS Code workflow:** Complete. Added two focused CMake Debug presets: one for building the application and one for building and running unit tests. Configured the VS Code CMake Tools status bar and launch workflow for the Remote–SSH Arch Linux environment. ✅
-
-- **Release 1 — Yocto and QEMU AArch64 environment:** Planned. Create a reproducible Yocto-based Linux image, boot it in QEMU, and establish a target-side development and validation workflow. 
-
-- **Later release automation:** Planned. GitHub Actions will create versioned Raspberry Pi deployment artifacts after the Yocto target image and deployment workflow exist.
-
-The current executable is:
-
-- `platform-test-service`
-
-## Host build and test
-
-Prerequisites:
-
-- CMake
-- Ninja
-- Clang
-- clang-format
-- clang-tidy
-
-Configure, build, and test:
-
-### Debug application
-
-```bash
-cmake --preset debug-app
-cmake --build build/debug-app --parallel
-```
-
-### Debug unit tests
-
-```bash
-cmake --preset debug-unit-tests
-cmake --build build/debug-unit-tests --parallel
-```
-
-The Unit Tests build runs CTest/GoogleTest automatically. To rerun tests without building, use:
-
-```bash
-ctest --preset debug-unit-tests
-```
-
-Run the service:
-
-```bash
-./build/debug-app/apps/platform-test-service/platform-test-service
-```
-
-GoogleTest is automatically downloaded as a pinned dependency into `tools/gtest` during the first test-enabled CMake configuration. It is intentionally not committed to this repository.
-
-## Architecture direction
-
-AdaptivePi will evolve into a small process-based platform with custom, focused `ara::`-inspired APIs and manifest-driven application lifecycle management.
-
-Target runtime services:
-
-- `platform-test-service`
-- `diagnostic-manager`
-- `camera-service`
-- `traffic-sign-detection-service`
-- `sign-hmi-service`
-
-The early development path is:
+The project has a verified development platform for ARM64 target software:
 
 ```text
-Host-native tests → QEMU AArch64 integration → Raspberry Pi hardware validation
+Windows 11 + VS Code
+        â†“ Remote SSH
+Arch Linux development host
+        â†“ Yocto SDK cross-build
+AArch64 AdaptivePi application
+        â†“ SSH / SCP
+QEMU ARM64 PREEMPT_RT target
+        â†“ gdbserver + SSH tunnel
+VS Code source-level debugging
 ```
 
-## Roadmap
+## Completed work
 
-- **Release 0:** Repository, CMake/Ninja, GoogleTest, formatting, static analysis, and host CI
-- **Phase 0.5:** VS Code CMake Tools workflow for Debug application builds and unit-test execution
-- **Release 1:** Yocto image for QEMU AArch64, then Raspberry Pi 3
-- **Release 2:** Cross-build, deployment over SSH, and remote GDB
-- **Release 3:** Manifest-driven execution management
-- **Release 4:** Focused custom `ara::core`, `ara::log`, `ara::exec`, and `ara::diag`
-- **Later releases:** Service communication, diagnostics, camera pipeline, sign detection, and HMI
-- **Later release automation:** GitHub Actions will create versioned Raspberry Pi deployment artifacts after the Yocto target image and deployment workflow exist
+### Release 1 â€” QEMU PREEMPT_RT development platform ✅
 
-## Quality gates
+- Built Poky Scarthgap `5.0.20` for the generic `qemuarm64` machine.
+- Created the project-owned `meta-adaptive-pi` Yocto layer.
+- Built `adaptive-pi-image` based on `core-image-minimal`.
+- Selected the `linux-yocto-rt` kernel provider.
+- Verified that the target runs the PREEMPT_RT kernel:
+  - `uname -a` reports `6.6.151-rt31-yocto-preempt-rt`;
+  - `/sys/kernel/realtime` reports `1`.
+- Selected `systemd` as the target init system.
+- Added OpenSSH, `gdbserver`, and the C++ runtime to the target image.
+- Created managed QEMU lifecycle scripts with duplicate-start protection and safe shutdown behavior.
 
-Every change should pass:
+### Release 2 â€” SDK cross-build and remote debugging ✅
+
+- Generated and installed a Yocto SDK for the AdaptivePi image.
+- Added the `debug-qemu-app` CMake preset for AArch64 cross-compilation.
+- Verified that `hello-adaptive` builds as an ARM64 executable.
+- Added deployment through SSH/SCP into the running QEMU guest.
+- Added VS Code remote debugging with:
+  - Yocto cross-GDB;
+  - guest-side `gdbserver`;
+  - an SSH debug tunnel;
+  - automatic build, deployment, connection, and cleanup through `F5`.
+- Added per-application unit-test structure and CMake presets for native application and test builds.
+- Documented the Yocto build, SDK, deployment, and debugging workflows.
+
+## Quick development workflow
+
+Start the QEMU development image:
 
 ```bash
-cmake --preset debug-app
-cmake --build build/debug-app --parallel
-
-cmake --preset debug-unit-tests
-cmake --build build/debug-unit-tests --parallel
-
-find apps tests -type f \( -name '*.cpp' -o -name '*.hpp' \) -print0 | xargs -0 clang-format --dry-run --Werror
+scripts/qemu/start-development-image.sh
 ```
+
+Build the ARM64 application:
+
+```bash
+cmake --preset debug-qemu-app
+cmake --build --preset debug-qemu-app
+```
+
+Deploy and run it:
+
+```bash
+scripts/qemu/deploy-binary.sh \
+  build/debug-qemu-app/apps/hello-adaptive/hello-adaptive
+
+ssh -p 2222 root@localhost /usr/local/bin/hello-adaptive
+```
+
+For source-level debugging:
+
+1. Start the QEMU development image.
+2. Open `apps/hello-adaptive/src/main.cpp`.
+3. Set a breakpoint.
+4. Select `Debug: QEMU Hello Adaptive` in VS Code.
+5. Press `F5`.
+
+Stop QEMU cleanly after development:
+
+```bash
+scripts/qemu/stop-development-image.sh
+```
+
+## Build presets
+
+| Preset | Purpose |
+|---|---|
+| `debug-app` | Native Arch/Linux application build |
+| `debug-unit-tests` | Native unit-test build and execution |
+| `debug-qemu-app` | Yocto SDK cross-build for the ARM64 QEMU guest |
+
+## Project structure
+
+```text
+apps/                 Executable applications and their unit tests
+cmake/                Shared CMake modules
+docs/adr/             Architecture Decision Records
+docs/guides/          Reproducible development and Yocto guides
+scripts/qemu/         QEMU lifecycle, deployment, and debug scripts
+yocto/meta-adaptive-pi/
+                      Project-owned Yocto layer and image definition
+```
+
+## Important scope and limitations
+
+- `qemuarm64` is a generic ARM64 virtual machine, not Raspberry Pi hardware emulation.
+- QEMU validates boot, software integration, deployment, and remote debugging.
+- QEMU cannot validate Raspberry Pi peripherals or real-time latency behavior.
+- PREEMPT_RT improves scheduling determinism but does not make Linux a guaranteed hard real-time system.
+- Real hardware deployment and latency measurements will be performed later on a Raspberry Pi.
+
+## Next releases
+
+### Release 3 â€” `ara::core` and `ara::log`
+
+- Implement a focused `ara::core` foundation.
+- Implement error handling and result/value types.
+- Implement structured application logging.
+- Add unit tests and documented API requirements.
+
+### Release 4 â€” Execution Management
+
+- Implement a simplified `ara::exec` lifecycle model.
+- Define application states and deterministic startup/shutdown behavior.
+- Introduce process manifests or equivalent project-owned configuration.
+
+### Release 5 â€” Communication Management
+
+- Implement a focused `ara::com`-inspired publish/subscribe interface.
+- Add service discovery concepts suitable for the demonstrator.
+- Validate communication between separate Linux processes.
+
+### Release 6 â€” Diagnostics over Ethernet
+
+- Implement a simplified DoIP/UDS diagnostic manager.
+- Use the Raspberry Pi Ethernet interface as a development bench connection.
+- Document the differences between standard Raspberry Pi Ethernet and production Automotive Ethernet technologies such as 100BASE-T1.
+
+### Release 7 â€” Integration and quality
+
+- Add integration tests across applications and processes.
+- Add fault handling and lifecycle recovery behavior.
+- Extend CI with formatting, static analysis, unit tests, and integration checks where practical.
+
+### Release 8 â€” Raspberry Pi deployment
+
+- Add Raspberry Pi Yocto support.
+- Build and deploy the AdaptivePi image to real hardware.
+- Validate Ethernet communication, services, deployment workflow, and measured timing behavior.
+
+## Documentation
+
+- [Yocto and PREEMPT_RT image build](docs/guides/yocto-qemu-preempt-rt-build-guide.md)
+- [SDK cross-build, deployment, and QEMU debugging](docs/guides/sdk-cross-build-and-qemu-deployment.md)
+- [Architecture Decision Records](docs/adr/)
+- [Per-application unit tests](docs/guides/per-application-unit-tests.md)
 
 ## License
 
