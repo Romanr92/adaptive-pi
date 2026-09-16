@@ -8,25 +8,25 @@ The project deliberately does **not** use proprietary AUTOSAR implementation cod
 
 ## Current status
 
-**Release 2 complete â€” SDK cross-build, QEMU deployment, and remote debugging** ✅
+**Release 2 complete — SDK cross-build, QEMU deployment, and remote debugging** ✅
 
 The project has a verified development platform for ARM64 target software:
 
 ```text
 Windows 11 + VS Code
-        â†“ Remote SSH
+        ↓ Remote SSH
 Arch Linux development host
-        â†“ Yocto SDK cross-build
+        ↓ Yocto SDK cross-build
 AArch64 AdaptivePi application
-        â†“ SSH / SCP
+        ↓ SSH / SCP
 QEMU ARM64 PREEMPT_RT target
-        â†“ gdbserver + SSH tunnel
+        ↓ gdbserver + SSH tunnel
 VS Code source-level debugging
 ```
 
 ## Completed work
 
-### Release 1 â€” QEMU PREEMPT_RT development platform ✅
+### Release 1 — QEMU PREEMPT_RT development platform ✅
 
 - Built Poky Scarthgap `5.0.20` for the generic `qemuarm64` machine.
 - Created the project-owned `meta-adaptive-pi` Yocto layer.
@@ -39,7 +39,7 @@ VS Code source-level debugging
 - Added OpenSSH, `gdbserver`, and the C++ runtime to the target image.
 - Created managed QEMU lifecycle scripts with duplicate-start protection and safe shutdown behavior.
 
-### Release 2 â€” SDK cross-build and remote debugging ✅
+### Release 2 — SDK cross-build and remote debugging ✅
 
 - Generated and installed a Yocto SDK for the AdaptivePi image.
 - Added the `debug-qemu-app` CMake preset for AArch64 cross-compilation.
@@ -121,38 +121,38 @@ yocto/meta-adaptive-pi/
 
 ## Next releases
 
-### Release 3 â€” `ara::core` and `ara::log`
+### Release 3 — `ara::core` and `ara::log`
 
 - Implement a focused `ara::core` foundation.
 - Implement error handling and result/value types.
 - Implement structured application logging.
 - Add unit tests and documented API requirements.
 
-### Release 4 â€” Execution Management
+### Release 4 — Execution Management
 
 - Implement a simplified `ara::exec` lifecycle model.
 - Define application states and deterministic startup/shutdown behavior.
 - Introduce process manifests or equivalent project-owned configuration.
 
-### Release 5 â€” Communication Management
+### Release 5 — Communication Management
 
 - Implement a focused `ara::com`-inspired publish/subscribe interface.
 - Add service discovery concepts suitable for the demonstrator.
 - Validate communication between separate Linux processes.
 
-### Release 6 â€” Diagnostics over Ethernet
+### Release 6 — Diagnostics over Ethernet
 
 - Implement a simplified DoIP/UDS diagnostic manager.
 - Use the Raspberry Pi Ethernet interface as a development bench connection.
 - Document the differences between standard Raspberry Pi Ethernet and production Automotive Ethernet technologies such as 100BASE-T1.
 
-### Release 7 â€” Integration and quality
+### Release 7 — Integration and quality
 
 - Add integration tests across applications and processes.
 - Add fault handling and lifecycle recovery behavior.
 - Extend CI with formatting, static analysis, unit tests, and integration checks where practical.
 
-### Release 8 â€” Raspberry Pi deployment
+### Release 8 — Raspberry Pi deployment
 
 - Add Raspberry Pi Yocto support.
 - Build and deploy the AdaptivePi image to real hardware.
