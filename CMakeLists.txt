@@ -24,6 +24,7 @@ if(BUILD_TESTING)
 endif()
 
 add_subdirectory(apps/platform-test-service)
+add_subdirectory(apps/hello-adaptive)
 
 if(BUILD_TESTING)
     add_subdirectory(tests)
