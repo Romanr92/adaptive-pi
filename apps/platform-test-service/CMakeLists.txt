@@ -10,7 +10,7 @@ target_include_directories(
         "${CMAKE_CURRENT_SOURCE_DIR}/include"
 )
 
-target_compile_features(adaptive_pi_platform_test_core PUBLIC cxx_std_20)
+target_compile_features(adaptive_pi_platform_test_core PUBLIC cxx_std_17)
 adaptive_pi_configure_target(adaptive_pi_platform_test_core)
 
 add_executable(
