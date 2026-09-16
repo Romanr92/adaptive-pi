@@ -245,25 +245,63 @@ This CMake configure step also gives VS Code IntelliSense the compile informatio
 
 ## 9. Validation after the image finishes
 
-Boot the image:
+Use the project scripts to start and stop the AdaptivePi QEMU development target.
+
+Start the target:
 
 ```bash
-runqemu qemuarm64 nographic
+scripts/qemu/start-development-image.sh
 ```
 
-Inside the guest, validate the architecture and init system:
+The script:
+
+- prevents a duplicate QEMU instance;
+- starts QEMU in the detached tmux session `adaptive-pi-qemu`;
+- uses the current AdaptivePi image with `nographic` and `slirp` networking;
+- waits until SSH is reachable;
+- returns control to the invoking Bash shell only after the guest is ready.
+
+Expected output:
+
+```text
+AdaptivePi QEMU is starting up; please wait for SSH readiness...
+AdaptivePi QEMU is running and ready for SSH.
+Attach with: tmux attach -t adaptive-pi-qemu
+SSH with: ssh -p 2222 root@localhost
+```
+
+Connect to the running guest:
 
 ```bash
-uname -a
-ps -p 1 -o comm=
+ssh -p 2222 root@localhost
 ```
 
-Expected result:
+Attach to the QEMU serial console when needed:
 
-- `uname` reports `aarch64`;
-- PID 1 reports `systemd`.
+```bash
+tmux attach -t adaptive-pi-qemu
+```
 
-Then package `hello-adaptive`, install it at `/usr/bin/hello-adaptive`, install `hello-adaptive.service`, enable it for `multi-user.target`, and confirm its boot-time result through the system journal.
+Stop the target cleanly:
+
+```bash
+scripts/qemu/stop-development-image.sh
+```
+
+The script requests `systemctl poweroff` through SSH, waits for QEMU to exit, and removes the tmux session.
+
+Expected output:
+
+```text
+AdaptivePi QEMU is stopping; please wait...
+AdaptivePi QEMU guest and tmux session stopped.
+```
+
+If QEMU is already running, the start script reports that instead of launching a duplicate instance. If no instance is running, the stop script safely reports:
+
+```text
+AdaptivePi QEMU is not running.
+```
 
 ## 10. Next milestones
 
