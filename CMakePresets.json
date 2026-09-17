@@ -40,6 +40,7 @@
         "CMAKE_BUILD_TYPE": "Debug",
         "CMAKE_TOOLCHAIN_FILE": "${sourceDir}/yocto/sdk/sysroots/x86_64-pokysdk-linux/usr/share/cmake/OEToolchainConfig.cmake",
         "BUILD_TESTING": "OFF",
+        "ADAPTIVE_PI_TARGET_BUILD": "ON",
         "ADAPTIVE_PI_ENABLE_CLANG_TIDY": "OFF",
         "ADAPTIVE_PI_WARNINGS_AS_ERRORS": "ON"
       }
@@ -63,9 +64,6 @@
       "name": "debug-qemu-app",
       "displayName": "Build: Debug QEMU App",
       "configurePreset": "debug-qemu-app",
-      "targets": [
-        "hello-adaptive"
-      ],
       "jobs": 1
     }
   ],

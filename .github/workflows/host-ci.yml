@@ -29,6 +29,7 @@ jobs:
   build-and-test:
     name: Build and unit test
     runs-on: ubuntu-24.04
+    if: github.event_name == 'pull_request'
 
     steps:
       - name: Check out source
@@ -50,3 +51,58 @@ jobs:
 
       - name: Build and run unit tests
         run: cmake --build build/debug-unit-tests --parallel
+
+  cross-build-qemu-target:
+    name: Cross-build QEMU target
+    runs-on: ubuntu-24.04
+    if: github.event_name == 'pull_request'
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Download the versioned Yocto SDK
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p sdk-download
+
+          gh release download v0.2.0 \
+            --repo "${{ github.repository }}" \
+            --pattern "poky-glibc-x86_64-adaptive-pi-image-cortexa57-qemuarm64-toolchain-5.0.20.sh*" \
+            --dir sdk-download
+
+      - name: Verify SDK checksum
+        run: |
+          cd sdk-download
+
+          sha256sum -c \
+            poky-glibc-x86_64-adaptive-pi-image-cortexa57-qemuarm64-toolchain-5.0.20.sh.sha256
+
+      - name: Install Yocto SDK
+        run: |
+          printf 'Y\n' | sh \
+            sdk-download/poky-glibc-x86_64-adaptive-pi-image-cortexa57-qemuarm64-toolchain-5.0.20.sh \
+            -d "${GITHUB_WORKSPACE}/yocto/sdk"
+
+      - name: Configure AArch64 application build
+        run: cmake --preset debug-qemu-app
+
+      - name: Build AArch64 applications
+        run: cmake --build --preset debug-qemu-app
+
+      - name: Verify target executable architectures
+        run: |
+          mapfile -d '' target_binaries < <(
+            find build/debug-qemu-app/apps -type f -executable -print0
+          )
+
+          if [[ "${#target_binaries[@]}" -eq 0 ]]; then
+            echo "No target application executables were built." >&2
+            exit 1
+          fi
+
+          for target_binary in "${target_binaries[@]}"; do
+            file "${target_binary}"
+            readelf -h "${target_binary}" | grep -q "Machine:.*AArch64"
+          done

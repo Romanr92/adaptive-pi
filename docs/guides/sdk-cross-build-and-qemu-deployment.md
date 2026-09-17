@@ -265,6 +265,21 @@ scripts/qemu/disable-debug-session.sh
 
 The enable script prevents duplicate debug sessions and reports if host port `2345` is already in use.
 
+## Application target compatibility
+
+Every application declared in the root `CMakeLists.txt` explicitly states whether it is compatible with the AdaptivePi AArch64 target.
+
+```cmake
+adaptive_pi_add_application("apps/example-app" TRUE)
+```
+
+- `TRUE`: the application is included by `debug-qemu-app` and the pull-request AArch64 cross-build gate.
+- `FALSE`: the application remains part of the host build and host unit-test workflow, but is excluded from target cross-builds.
+
+`platform-test-service` is currently host-only. `hello-adaptive` is target-compatible.
+
+When a host-only application is intentionally ported to the Yocto target, change its declaration to `TRUE`. The QEMU build preset and CI then include it automatically.
+
 ## Daily development loop
 
 For normal application changes:
