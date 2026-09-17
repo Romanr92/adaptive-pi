@@ -22,13 +22,14 @@ tests.
 
 - Status: Draft
 - Requirement: A logger context shall have a context ID, context description,
-  and default log-level threshold. Context IDs shall be unique within one
-  application process.
+  and default log-level threshold. The caller is responsible for using context IDs
+  that are unique within one application process.
 - AUTOSAR source:
   [Specification of Log and Trace, R23-11, §7.2.4-7.2.5, pp. 20-21;
   §7.2.6, p. 22, SWS_LOG_00006](https://www.autosar.org/fileadmin/standards/R23-11/AP/AUTOSAR_AP_SWS_LogAndTrace.pdf).
 - Verification: Unit test
-  `AP_R3_LOG_002_LoggerRetainsContextProperties`.
+  `AP_R3_LOG_002_LoggerRetainsContextProperties`, using a valid unique context
+  ID.
 - Deviation: Application IDs, manifests, and cross-process registration are out
   of scope.
 
@@ -106,8 +107,10 @@ tests.
 - AUTOSAR source:
   [Specification of Log and Trace, R23-11, §7.2.6, p. 22,
   SWS_LOG_00002](https://www.autosar.org/fileadmin/standards/R23-11/AP/AUTOSAR_AP_SWS_LogAndTrace.pdf).
-- Verification: Unit test `AP_R3_LOG_008_SinkFailureDoesNotThrow`.
-- Deviation: Release 3 uses a test sink to verify this behaviour. Production
+- Verification: Component unit test
+  `AP_R3_LOG_008_SinkFailureDoesNotThrow`, using an implementation-private test
+  sink that fails on write.
+- Deviation: The failing sink exists only to verify this requirement. Production
   recovery, persistence, and diagnostics are out of scope.
 
 ## AP-R3-LOG-009 - Sequential ordering

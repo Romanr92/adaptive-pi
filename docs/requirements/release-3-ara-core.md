@@ -77,15 +77,16 @@ AUTOSAR Adaptive Platform interfaces.
 ## AP-R3-CORE-006 - Result creation
 
 - Status: Draft
-- Requirement: `Result` shall provide explicit creation of a value state and
-  explicit creation of an error state.
+- Requirement: `Result<T, E>` shall provide the static factory functions
+  `FromValue(...)` and `FromError(...)`. `FromValue(...)` shall create a value
+  result and `FromError(...)` shall create an error result.
 - AUTOSAR source:
   [Specification of Adaptive Platform Core, R23-11, §8.1.4, pp. 62-64,
   SWS_CORE_00731 to SWS_CORE_00736](https://www.autosar.org/fileadmin/standards/R23-11/AP/AUTOSAR_AP_SWS_Core.pdf).
   [Guidelines for using Adaptive Platform interfaces, R23-11, §3.1.2.1, p. 9](https://www.autosar.org/fileadmin/standards/R23-11/AP/AUTOSAR_AP_EXP_InterfacesGuidelines.pdf).
 - Verification: Unit test `AP_R3_CORE_006_ResultCreation`.
-- Deviation: The minimal Release 3 creation API will be selected during
-  implementation. Emplacement overloads are out of scope.
+- Deviation: Release 3 does not require implicit conversion constructors,
+  emplacement overloads, or direct construction from a value or error.
 
 ## AP-R3-CORE-007 - Result state query
 
