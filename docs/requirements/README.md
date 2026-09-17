@@ -66,11 +66,23 @@ Release 3 excludes:
 - full AUTOSAR API compatibility;
 - generated AUTOSAR model and configuration artifacts;
 - DLT and remote log transport;
-- persistence, trace collection, and filtering configuration;
+- DLT transport, persistence, runtime trace configuration, external trace-tool
+  integration, and filtering configuration;
 - `ara::com`, Execution Management, manifests, diagnostics, and hardware
   support;
 - `Future`, `Promise`, `Optional`, and other `ara::core` utilities not listed
   in the Release 3 requirements.
+
+## Release 3 modelled messages and tracing
+
+Release 3 implements manually authored C++ definitions for modelled log messages
+and compile-time trace routing. It does not generate message definitions,
+trace-routing configuration, manifests, or trace-tool specializations from
+ARXML.
+
+The Release 3 trace artifact interface is an educational clean-room boundary.
+It supports unit-test verification of logger, trace-artifact, combined, and
+discard routing. It does not integrate with a production trace tool.
 
 ## Source coverage
 
