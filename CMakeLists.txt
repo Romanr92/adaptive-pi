@@ -38,6 +38,9 @@ if(BUILD_TESTING)
     include(cmake/Dependencies.cmake)
 endif()
 
+add_subdirectory(platform/ara-core)
+add_subdirectory(platform/ara-log)
+
 adaptive_pi_add_application("apps/platform-test-service" FALSE)
 adaptive_pi_add_application("apps/hello-adaptive" TRUE)
 

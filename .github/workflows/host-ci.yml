@@ -27,7 +27,7 @@ jobs:
 
       - name: Verify C++ formatting
         run: |
-          find apps -type f \( -name '*.cpp' -o -name '*.hpp' \) -print0 |
+          find apps platform -type f \( -name '*.cpp' -o -name '*.h' -o -name '*.hpp' \) -print0 |
             xargs -0 clang-format --dry-run --Werror
 
   build-and-test:
