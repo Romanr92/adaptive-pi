@@ -29,6 +29,7 @@ jobs:
   build-and-test:
     name: Build and unit test
     runs-on: ubuntu-24.04
+    if: github.event_name == 'pull_request'
 
     steps:
       - name: Check out source
@@ -54,6 +55,7 @@ jobs:
   cross-build-qemu-target:
     name: Cross-build QEMU target
     runs-on: ubuntu-24.04
+    if: github.event_name == 'pull_request'
 
     steps:
       - name: Check out repository
