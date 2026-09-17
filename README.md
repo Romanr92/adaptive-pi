@@ -127,7 +127,7 @@ maturity of the platform rather than treating quality as a final activity.
 | Stage | Required evidence |
 |---|---|
 | Current host workflow | Formatting, clang-tidy, native unit tests, and Host CI |
-| Before Release 3 | A required CI job that cross-builds the QEMU application with the matching Yocto SDK, verifies it is AArch64, and executes it with QEMU user-mode emulation |
+| Pre-Release 3 (complete) | A pull-request CI job cross-builds every target-compatible application with the matching Yocto SDK and verifies each output is an AArch64 ELF binary. QEMU runtime execution is deferred. |
 | Release 4 | ESBMC bounded model-checking harnesses for selected pure logic such as Result/ErrorCode invariants and Execution Management lifecycle transitions |
 | Release 7 | Cross-process integration tests, fault injection, restart/recovery checks, and an expanded CI gate |
 
@@ -180,6 +180,7 @@ Before it becomes a required check, its harnesses and bounds must be stable.
 - [SDK cross-build, deployment, and QEMU debugging](docs/guides/sdk-cross-build-and-qemu-deployment.md)
 - [Architecture Decision Records](docs/adr/)
 - [Per-application unit tests](docs/guides/per-application-unit-tests.md)
+- [Publishing a versioned Yocto SDK](docs/guides/publish-yocto-sdk.md)
 
 ## License
 

@@ -49,7 +49,7 @@ This creates a neighboring checksum file:
 
 The checksum contains only the installer filename. This makes it valid after CI downloads both files into its own temporary directory.
 
-# Verify the checksum locally
+## Verify the checksum locally
 
 ```Bash
 cd yocto/build/tmp/deploy/sdk
@@ -63,7 +63,7 @@ OK
 ```
 Do not publish the installer if verification fails.
 
-# Upload the release assets
+## Upload the release assets
 
 For the GitHub release corresponding to this platform version:
 
@@ -73,6 +73,20 @@ For the GitHub release corresponding to this platform version:
 4. Save the release.
 
 Keep both files attached to the same release tag.
+
+## Update the CI SDK reference
+
+After publishing a new SDK release, update these two values in `.github/workflows/host-ci.yml` in the same pull request:
+
+```yaml
+env:
+  ADAPTIVE_PI_YOCTO_SDK_RELEASE: v<release-version>
+  ADAPTIVE_PI_YOCTO_SDK_INSTALLER: <sdk-installer>.sh
+```
+
+The release tag, installer, and checksum must describe the same Yocto SDK.
+
+The pull-request CI gate downloads the selected release assets, verifies the checksum, and then cross-builds the target-compatible applications.
 
 ## CI usage
 

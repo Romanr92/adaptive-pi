@@ -62,59 +62,49 @@ Expected facts:
 - the sysroot path ends with `cortexa57-poky-linux`;
 - the compiler identifies as `aarch64-poky-linux-g++`.
 
-## 2. Configure and build the AArch64 application
+## 2. Configure the AArch64 target build
 
 The `debug-qemu-app` CMake preset contains the Yocto SDK toolchain path and required cross-compilation environment.
 
-Configure and build:
+Configure the target build:
 
 ```bash
 cmake --preset debug-qemu-app
-cmake --build --preset debug-qemu-app
 ```
 
-The resulting binaries are written below:
+The generated build files are written below:
 
-```bash
+```text
 build/debug-qemu-app/
 ```
 
 The preset disables clang-tidy only for the cross-build because the host-installed analysis tool cannot interpret Yocto ARM64 compiler flags and sysroot headers. Native application and unit-test presets continue to use clang-tidy.
 
-Update the deploy example to:
+## 3. Build target-compatible applications
+
+Build every application declared target-compatible in the root `CMakeLists.txt`:
 
 ```bash
-scripts/qemu/deploy-binary.sh \
-  build/debug-qemu-app/apps/hello-adaptive/hello-adaptive
+cmake --build --preset debug-qemu-app
 ```
 
-## 3. Cross-build an application
+Applications declared with `TRUE` are built for the ARM64 QEMU target. Applications declared with `FALSE`, such as `platform-test-service` today, remain host-only and are skipped.
 
-The QEMU preset builds the application into:
+The resulting target executables are written below:
 
 ```text
-build/debug-qemu-app/apps/hello-adaptive/hello-adaptive
+build/debug-qemu-app/apps/
 ```
 
-Build the target application:
+Verify each produced executable is ARM64:
 
 ```bash
-cmake --build build/debug-qemu-app --target hello-adaptive 
+find build/debug-qemu-app/apps -type f -executable -exec file {} \;
 ```
 
-Verify that the output is an ARM64 executable:
+Each result must identify an `ARM aarch64` ELF executable.
 
-```bash
-file build/debug-qemu-app/apps/hello-adaptive/hello-adaptive
-```
-
-Expected result:
-
-```text
-ELF 64-bit ... ARM aarch64 ...
-```
-
-The host cannot run this executable directly because it is built for the ARM64 Poky target.
+The host cannot run these executables directly because they are built for the ARM64 Poky target.
 
 ## 4. Start the QEMU target
 
