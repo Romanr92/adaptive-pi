@@ -7,6 +7,10 @@ on:
 permissions:
   contents: read
 
+env:
+  ADAPTIVE_PI_YOCTO_SDK_RELEASE: v0.2.0
+  ADAPTIVE_PI_YOCTO_SDK_INSTALLER: poky-glibc-x86_64-adaptive-pi-image-cortexa57-qemuarm64-toolchain-5.0.20.sh
+
 jobs:
   format:
     name: Formatting
@@ -67,9 +71,9 @@ jobs:
         run: |
           mkdir -p sdk-download
 
-          gh release download v0.2.0 \
+          gh release download "${ADAPTIVE_PI_YOCTO_SDK_RELEASE}" \
             --repo "${{ github.repository }}" \
-            --pattern "poky-glibc-x86_64-adaptive-pi-image-cortexa57-qemuarm64-toolchain-5.0.20.sh*" \
+            --pattern "${ADAPTIVE_PI_YOCTO_SDK_INSTALLER}*" \
             --dir sdk-download
 
       - name: Verify SDK checksum
@@ -77,12 +81,12 @@ jobs:
           cd sdk-download
 
           sha256sum -c \
-            poky-glibc-x86_64-adaptive-pi-image-cortexa57-qemuarm64-toolchain-5.0.20.sh.sha256
+            "${ADAPTIVE_PI_YOCTO_SDK_INSTALLER}.sha256"
 
       - name: Install Yocto SDK
         run: |
           printf 'Y\n' | sh \
-            sdk-download/poky-glibc-x86_64-adaptive-pi-image-cortexa57-qemuarm64-toolchain-5.0.20.sh \
+            sdk-download/${ADAPTIVE_PI_YOCTO_SDK_INSTALLER} \
             -d "${GITHUB_WORKSPACE}/yocto/sdk"
 
       - name: Configure AArch64 application build
