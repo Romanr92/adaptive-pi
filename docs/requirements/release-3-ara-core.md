@@ -11,7 +11,7 @@ AUTOSAR Adaptive Platform interfaces.
 
 ## AP-R3-CORE-001 - ErrorDomain
 
-- Status: Draft
+- Status: Approved
 - Requirement: The component shall provide an `ErrorDomain` type that defines
   the context for a set of related error conditions.
 - AUTOSAR source:
@@ -24,7 +24,7 @@ AUTOSAR Adaptive Platform interfaces.
 
 ## AP-R3-CORE-002 - ErrorDomain identity
 
-- Status: Draft
+- Status: Approved
 - Requirement: Every `ErrorDomain` shall have a stable, unique
   `std::uint64_t` identifier and a non-empty name. Two error domains shall
   compare equal if and only if their identifiers are equal.
@@ -38,7 +38,7 @@ AUTOSAR Adaptive Platform interfaces.
 
 ## AP-R3-CORE-003 - ErrorCode contents
 
-- Status: Draft
+- Status: Approved
 - Requirement: `ErrorCode` shall contain an integral error value and a
   reference to its originating `ErrorDomain`.
 - AUTOSAR source:
@@ -52,7 +52,7 @@ AUTOSAR Adaptive Platform interfaces.
 
 ## AP-R3-CORE-004 - ErrorCode equality
 
-- Status: Draft
+- Status: Approved
 - Requirement: Two `ErrorCode` objects shall compare equal if and only if both
   their error values and originating error domains are equal.
 - AUTOSAR source:
@@ -63,7 +63,7 @@ AUTOSAR Adaptive Platform interfaces.
 
 ## AP-R3-CORE-005 - Result states
 
-- Status: Draft
+- Status: Approved
 - Requirement: `Result<T, E = ErrorCode>` shall represent exactly one active
   alternative: a value of type `T` or an error of type `E`.
 - AUTOSAR source:
@@ -76,7 +76,7 @@ AUTOSAR Adaptive Platform interfaces.
 
 ## AP-R3-CORE-006 - Result creation
 
-- Status: Draft
+- Status: Approved
 - Requirement: `Result<T, E>` shall provide the static factory functions
   `FromValue(...)` and `FromError(...)`. `FromValue(...)` shall create a value
   result and `FromError(...)` shall create an error result.
@@ -90,7 +90,7 @@ AUTOSAR Adaptive Platform interfaces.
 
 ## AP-R3-CORE-007 - Result state query
 
-- Status: Draft
+- Status: Approved
 - Requirement: `HasValue()` shall return `true` if and only if the result
   contains a value.
 - AUTOSAR source:
@@ -102,7 +102,7 @@ AUTOSAR Adaptive Platform interfaces.
 
 ## AP-R3-CORE-008 - Value access
 
-- Status: Draft
+- Status: Approved
 - Requirement: `Value()` shall provide access to the stored value only when
   `HasValue()` is `true`. Calling `Value()` on an error result shall be treated
   as a violation and shall terminate the process.
@@ -117,7 +117,7 @@ AUTOSAR Adaptive Platform interfaces.
 
 ## AP-R3-CORE-009 - Error access
 
-- Status: Draft
+- Status: Approved
 - Requirement: `Error()` shall provide access to the stored error only when
   `HasValue()` is `false`. Calling `Error()` on a value result shall be treated
   as a violation and shall terminate the process.
@@ -132,7 +132,7 @@ AUTOSAR Adaptive Platform interfaces.
 
 ## AP-R3-CORE-010 - Result move state
 
-- Status: Draft
+- Status: Approved
 - Requirement: Moving a `Result` shall preserve its active alternative in the
   destination object.
 - AUTOSAR source:
@@ -144,7 +144,7 @@ AUTOSAR Adaptive Platform interfaces.
 
 ## AP-R3-CORE-011 - Exception-free Result use
 
-- Status: Draft
+- Status: Approved
 - Requirement: Release 3 public operations that can report recoverable failures
   shall use `Result` rather than C++ exceptions.
 - AUTOSAR source:

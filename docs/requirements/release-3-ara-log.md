@@ -8,7 +8,7 @@ tests.
 
 ## AP-R3-LOG-001 - LogLevel
 
-- Status: Draft
+- Status: Approved
 - Requirement: The component shall define `LogLevel` with these levels: `Off`,
   `Fatal`, `Error`, `Warn`, `Info`, `Debug`, and `Verbose`.
 - AUTOSAR source:
@@ -20,7 +20,7 @@ tests.
 
 ## AP-R3-LOG-002 - Logger context
 
-- Status: Draft
+- Status: Approved
 - Requirement: A logger context shall have a context ID, context description,
   and default log-level threshold. The caller is responsible for using context IDs
   that are unique within one application process.
@@ -35,7 +35,7 @@ tests.
 
 ## AP-R3-LOG-003 - Logger creation and ownership
 
-- Status: Draft
+- Status: Approved
 - Requirement: `CreateLogger()` shall create and return a logger owned by the
   logging framework. Application code shall not directly construct a logger.
 - AUTOSAR source:
@@ -48,7 +48,7 @@ tests.
 
 ## AP-R3-LOG-004 - Default console sink
 
-- Status: Draft
+- Status: Approved
 - Requirement: When no generated logging model is available, a created logger
   shall use the console sink.
 - AUTOSAR source:
@@ -60,7 +60,7 @@ tests.
 
 ## AP-R3-LOG-005 - Logging operation
 
-- Status: Draft
+- Status: Approved
 - Requirement: A logger shall support a log operation that accepts a severity
   level and message. A successful call shall emit one newline-terminated record.
 - AUTOSAR source:
@@ -73,7 +73,7 @@ tests.
 
 ## AP-R3-LOG-006 - Deterministic record format
 
-- Status: Draft
+- Status: Approved
 - Requirement: The console sink shall format each record exactly as:
 
   `[LEVEL][CONTEXT] message\n`
@@ -89,7 +89,7 @@ tests.
 
 ## AP-R3-LOG-007 - Deterministic output
 
-- Status: Draft
+- Status: Approved
 - Requirement: The console sink shall not add timestamps, process IDs, thread
   IDs, colour codes, or other environment-dependent data.
 - AUTOSAR source: No direct AUTOSAR requirement. This is an AdaptivePi
@@ -100,7 +100,7 @@ tests.
 
 ## AP-R3-LOG-008 - Logging failure handling
 
-- Status: Draft
+- Status: Approved
 - Requirement: If an internal logging or sink failure occurs, the logging
   operation shall not throw an exception or return an error to application code.
   The affected log call shall be discarded.
@@ -115,7 +115,7 @@ tests.
 
 ## AP-R3-LOG-009 - Sequential ordering
 
-- Status: Draft
+- Status: Approved
 - Requirement: Sequential logging calls on one logger shall reach its sink in
   call order.
 - AUTOSAR source: No direct AUTOSAR requirement. This is an AdaptivePi
