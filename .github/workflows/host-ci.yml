@@ -86,12 +86,21 @@ jobs:
       - name: Configure AArch64 application build
         run: cmake --preset debug-qemu-app
 
-      - name: Build AArch64 application
+      - name: Build AArch64 applications
         run: cmake --build --preset debug-qemu-app
 
-      - name: Verify target executable architecture
+      - name: Verify target executable architectures
         run: |
-          target_binary="build/debug-qemu-app/apps/hello-adaptive/hello-adaptive"
+          mapfile -d '' target_binaries < <(
+            find build/debug-qemu-app/apps -type f -executable -print0
+          )
 
-          file "${target_binary}"
-          readelf -h "${target_binary}" | grep -q "Machine:.*AArch64"
+          if [[ "${#target_binaries[@]}" -eq 0 ]]; then
+            echo "No target application executables were built." >&2
+            exit 1
+          fi
+
+          for target_binary in "${target_binaries[@]}"; do
+            file "${target_binary}"
+            readelf -h "${target_binary}" | grep -q "Machine:.*AArch64"
+          done
