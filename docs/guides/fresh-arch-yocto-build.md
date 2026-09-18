@@ -25,7 +25,26 @@ Use a native 64-bit Arch Linux installation with:
 The first image build can take many hours. Run it in `tmux` and do not start
 a second BitBake build at the same time.
 
-## 2. Install all required host tools
+## 2. Configure a UTF-8 locale
+
+BitBake requires a UTF-8 locale. On a fresh Arch installation, enable
+`en_US.UTF-8` before starting the build:
+
+```bash
+sudo sed -i 's/^#en_US.UTF-8 UTF-8/en_US.UTF-8 UTF-8/' /etc/locale.gen
+sudo locale-gen
+echo 'LANG=en_US.UTF-8' | sudo tee /etc/locale.conf
+export LANG=en_US.UTF-8
+export LC_ALL=en_US.UTF-8
+locale
+```
+
+`locale` must report a UTF-8 value for `LANG` and `LC_ALL`. Log out and
+back in after this step so the configured locale is used by every new terminal.
+Without it, BitBake fails before the server starts with an error such as
+`Please make sure locale 'en_US.UTF-8' is available on your system`.
+
+## 3. Install all required host tools
 
 Update the system, then install the packages used by the Yocto build,
 repository workflow, and QEMU development target:
@@ -37,7 +56,7 @@ sudo pacman -Syu --needed \
   cmake \
   ninja \
   clang \
-  clang-tools \
+  clang-tools-extra \
   gtest \
   python \
   python-pexpect \
@@ -64,7 +83,7 @@ Tool groups:
 |---|---|
 | `base-devel git python python-pexpect diffstat chrpath cpio rpcsvc-proto xz file which unzip texinfo gawk wget zstd` | Poky/BitBake host build and fetch dependencies |
 | `qemu-system-aarch64 tmux openssh` | Running, persisting, and accessing the QEMU target |
-| `cmake ninja clang clang-tools gtest` | Native AdaptivePi C++ builds, tests, formatting, and static analysis |
+| `cmake ninja clang clang-tools-extra gtest` | Native AdaptivePi C++ builds, tests, formatting, and static analysis |
 
 Verify the essential executables:
 
@@ -81,7 +100,7 @@ ninja --version
 `bitbake` is supplied by Poky, so it is expected to be unavailable until the
 Poky environment is initialized.
 
-## 3. Clone AdaptivePi and the pinned Poky source
+## 4. Clone AdaptivePi and the pinned Poky source
 
 Choose a permanent workspace. The rest of this guide assumes
 `~/workspace/adaptive-pi`.
@@ -105,7 +124,7 @@ Do not place `yocto/build/`, `yocto/downloads/`,
 `yocto/sstate-cache/`, or `yocto/sdk/` under version control. They are
 machine-local generated data and are already ignored.
 
-## 4. Start a persistent build shell
+## 5. Start a persistent build shell
 
 Use `tmux` so a terminal or SSH disconnect does not interrupt the build:
 
@@ -117,11 +136,17 @@ Inside tmux, initialize a new build directory:
 
 ```bash
 cd ~/workspace/adaptive-pi
-source yocto/poky/oe-init-build-env "$PWD/yocto/build"
+repo_root="$(git rev-parse --show-toplevel)"
+source "$repo_root/yocto/poky/oe-init-build-env" "$repo_root/yocto/build"
 ```
 
-This command changes the current directory to `yocto/build/` and makes
-`bitbake` and `bitbake-layers` available. It does not start a build.
+`repo_root` is the absolute path of the checked-out AdaptivePi repository.
+`$PWD` is a shell variable that means “the current working directory”; it
+changes to `$repo_root/yocto/build` when `oe-init-build-env` finishes.
+Using `repo_root` keeps later paths unambiguous.
+
+This command makes `bitbake` and `bitbake-layers` available. It does not
+start a build.
 
 Detach without stopping the build with `Ctrl+B`, then `D`. Reattach later
 with:
@@ -130,33 +155,60 @@ with:
 tmux attach -t adaptive-pi-yocto
 ```
 
-## 5. Apply the AdaptivePi build configuration
+## 6. Apply the AdaptivePi build configuration
 
 Still in the initialized build shell, register the committed project layer and
-append the repository's host-safe configuration:
+append the repository's baseline configuration:
 
 ```bash
-bitbake-layers add-layer "$PWD/../meta-adaptive-pi"
-cat "$PWD/../config/local.conf.append" >> conf/local.conf
+bitbake-layers add-layer "$repo_root/yocto/meta-adaptive-pi"
+cat "$repo_root/yocto/config/local.conf.append" >> conf/local.conf
 
 bitbake-layers show-layers
 tail -n 20 conf/local.conf
 ```
 
-The configuration selects:
+The committed baseline selects:
 
 - `MACHINE = "qemuarm64"`;
 - persistent `yocto/downloads/` and `yocto/sstate-cache/` directories;
-- at most two BitBake tasks and compiler jobs, matching the current resource
-  policy;
+- two BitBake tasks and compiler jobs, the conservative setting used by the
+  original AdaptivePi host;
 - `systemd`;
 - the `linux-yocto-rt` PREEMPT_RT kernel provider.
+
+### Choose parallelism for the host
+
+The committed two-job setting is safe for a constrained 16 GiB host. It is not
+a universal optimum. For a dedicated build machine, begin with one concurrent
+task for each **4 GiB of RAM**, capped at the number of logical CPU threads.
+Increase only after observing stable memory use.
+
+| RAM | Initial `BB_NUMBER_THREADS` and `PARALLEL_MAKE` |
+|---|---|
+| Under 16 GiB | `1` |
+| 16–31 GiB | `2` |
+| 32–63 GiB | `4` |
+| 64 GiB or more | `8` |
+
+For example, a 12-logical-thread machine with 32 GiB RAM should start at four,
+not twelve. To override the baseline in the local, uncommitted build
+configuration, edit `conf/local.conf` after appending the project file:
+
+```conf
+# Local host tuning; do not commit this machine-specific override.
+BB_NUMBER_THREADS = "4"
+PARALLEL_MAKE = "-j 4"
+```
+
+Keep several GiB of RAM free for Arch Linux and other tools. Reduce the values
+if the host starts swapping or becomes unresponsive.
 
 These commands are for a new `yocto/build/` directory. Do not append
 `local.conf.append` again to an existing build directory; use the committed
 configuration as the source of truth and update the existing file deliberately.
 
-## 6. Build the image
+## 7. Build the image
 
 First prove that BitBake resolves the project configuration:
 
@@ -167,7 +219,17 @@ bitbake -e virtual/kernel | grep -E '^(PN|PREFERRED_PROVIDER_virtual/kernel)='
 
 The resolved kernel provider must be `linux-yocto-rt`.
 
-Start the complete AdaptivePi image build:
+Build order for this project:
+
+- **Normal path — build `adaptive-pi-image` directly.** BitBake automatically
+  builds every dependency, including the kernel and the minimal-image base. This
+  is the required reproducible AdaptivePi image.
+- **Optional diagnostic path — build `core-image-minimal` first.** Use this
+  only when bringing up a new host or investigating a generic Poky/QEMU failure.
+  It proves the upstream baseline before project metadata is involved, but is not
+  required before the AdaptivePi image.
+
+For the normal path, start the complete AdaptivePi image build:
 
 ```bash
 bitbake adaptive-pi-image
@@ -195,7 +257,7 @@ The expected AdaptivePi boot configuration is:
 adaptive-pi-image-qemuarm64.rootfs.qemuboot.conf
 ```
 
-## 7. Boot and verify the QEMU image
+## 8. Boot and verify the QEMU image
 
 From another terminal at the repository root, start the managed QEMU target:
 
@@ -234,7 +296,7 @@ scripts/qemu/stop-development-image.sh
 Use `scripts/qemu/stop-development-image.sh --force` only when a clean
 shutdown cannot complete.
 
-## 8. Create the SDK for application development
+## 9. Create the SDK for application development
 
 The image is rebuilt only for target-image, kernel, package, or system-service
 changes. For ordinary C++ application work, generate and use the matching SDK:
