@@ -1,42 +1,43 @@
 # Arch Linux WSL2 Yocto host on a non-C drive
 
-Use this guide to place the large Arch WSL2 distribution disk on `D:\` (or
-another non-system drive), then prepare it for the
+Use this guide to install the **official Arch Linux WSL distribution** directly
+onto `D:\` (or another non-system drive), then prepare it for the
 [Fresh Arch Linux to Yocto/QEMU setup](fresh-arch-yocto-build.md).
 
-The repository and all Yocto build data live in the Linux filesystem inside the
-WSL virtual disk, not on a mounted Windows drive.
+The AdaptivePi checkout and all Yocto build data live in the Linux filesystem
+inside the WSL virtual disk, not on a mounted Windows drive.
 
-> Windows still keeps the WSL platform and some system files on its system
-> drive. This guide moves the large, growable Linux `ext4.vhdx` and optional WSL
-> swap file off `C:\`.
+> Windows keeps the WSL platform and some system files on its system drive.
+> This guide moves the large Arch Linux WSL virtual disk and optional WSL swap
+> file off `C:\`.
 
-## 1. Install WSL2
+## 1. Install and update WSL2
 
 On Windows 11, enable CPU virtualization in UEFI/BIOS. Open **PowerShell as
-Administrator** and run:
+Administrator** and install WSL without a default distribution:
 
 ```powershell
 wsl --install --no-distribution
 ```
 
-Restart if prompted. Then, still in an elevated PowerShell:
+Restart if prompted. Then, still in an elevated PowerShell, update and inspect
+the currently available official distributions:
 
 ```powershell
 wsl --update
 wsl --set-default-version 2
-wsl --status
+wsl --list --online
 ```
 
-The status output must show default version `2`. `--no-distribution` prevents
-WSL from installing a default Linux distribution to its default location.
+The list must include the official `archlinux` entry. If it does not, run
+`wsl --update`, restart Windows, and check again before proceeding.
 
 ## 2. Configure WSL resources and storage
 
 Create the non-C directories:
 
 ```powershell
-New-Item -ItemType Directory -Force -Path D:\WSL\distros, D:\WSL\swap, D:\WSL\import
+New-Item -ItemType Directory -Force -Path D:\WSL\distros, D:\WSL\swap
 ```
 
 Create `%UserProfile%\.wslconfig` with a starting allocation appropriate to a
@@ -65,77 +66,41 @@ Apply the configuration:
 wsl --shutdown
 ```
 
-## 3. Download and verify the official Arch bootstrap archive
+## 3. Install official Arch Linux directly on D:
 
-Install 7-Zip, then download the current Arch bootstrap archive and its
-checksum list:
+Install the official image at the requested location. The `--location` value is
+the permanent storage directory for the distribution's virtual disk:
 
 ```powershell
-winget install --id 7zip.7zip --exact
-
-$import = 'D:\WSL\import'
-$name = 'archlinux-bootstrap-x86_64.tar.zst'
-$bootstrap = Join-Path $import $name
-
-Invoke-WebRequest -Uri "https://geo.mirror.pkgbuild.com/iso/latest/$name" -OutFile $bootstrap
-Invoke-WebRequest -Uri 'https://geo.mirror.pkgbuild.com/iso/latest/sha256sums.txt' -OutFile (Join-Path $import 'sha256sums.txt')
-
-$expected = (Select-String -Path (Join-Path $import 'sha256sums.txt') -Pattern "^([0-9a-f]{64})\s+\*?$name$").Matches.Groups[1].Value.ToLower()
-$actual = (Get-FileHash -Algorithm SHA256 $bootstrap).Hash.ToLower()
-if (-not $expected -or $actual -ne $expected) {
-  throw 'Arch bootstrap SHA-256 verification failed. Do not import this archive.'
-}
-'Arch bootstrap SHA-256 verified.'
+wsl --install --distribution archlinux --location D:\WSL\distros\AdaptivePi-Arch
 ```
 
-Do not skip the checksum check. It validates the exact archive downloaded for
-this installation.
-
-## 4. Create the rootfs tarball and import it to D:
-
-Create a WSL-importable tarball from the verified archive:
+After installation completes, verify that Arch uses WSL2:
 
 ```powershell
-$sevenZip = "$env:ProgramFiles\7-Zip\7z.exe"
-$stage = 'D:\WSL\import\arch-bootstrap'
-$rootfs = 'D:\WSL\import\archlinux-wsl-rootfs.tar'
-
-Remove-Item -Recurse -Force $stage -ErrorAction SilentlyContinue
-New-Item -ItemType Directory -Force -Path $stage | Out-Null
-& $sevenZip x $bootstrap "-o$stage"
-& $sevenZip x (Join-Path $stage 'archlinux-bootstrap-x86_64.tar') "-o$stage"
-tar.exe -C (Join-Path $stage 'root.x86_64') -cf $rootfs .
-if (-not (Test-Path $rootfs)) { throw 'WSL root filesystem tarball was not created.' }
-```
-
-Import it. The second argument is the permanent location of the distribution
-disk:
-
-```powershell
-wsl --import AdaptivePi-Arch `
-  D:\WSL\distros\AdaptivePi-Arch `
-  D:\WSL\import\archlinux-wsl-rootfs.tar `
-  --version 2
 wsl --list --verbose
 ```
 
-`AdaptivePi-Arch` must appear with version `2`. Its `ext4.vhdx` is stored under
-`D:\WSL\distros\AdaptivePi-Arch`.
+The output must show `archlinux` with version `2`. The large `ext4.vhdx` must
+be below `D:\WSL\distros\AdaptivePi-Arch`.
 
-## 5. Initialize Arch Linux
+If Windows reports that `--location` is unsupported, update WSL with
+`wsl --update` and restart Windows. Do not fall back to a third-party Arch
+image or manually-built bootstrap archive for this project.
 
-Start the imported distribution as root:
+## 4. Initialize Arch Linux
+
+Start the new official Arch distribution as root:
 
 ```powershell
-wsl -d AdaptivePi-Arch -u root
+wsl -d archlinux -u root
 ```
 
-In Arch, initialize package keys and create a normal development user. Replace
-`adaptivepi` with your preferred Linux username if needed.
+In Arch, update the system and install the minimal administration tools. Create
+a normal development user; replace `adaptivepi` with your preferred Linux
+username if needed.
 
 ```bash
-pacman-key --init
-pacman-key --populate archlinux
 pacman -Syu --needed sudo vi
 
 useradd -m -G wheel -s /bin/bash adaptivepi
@@ -159,14 +124,14 @@ printf 'LANG=en_US.UTF-8\n' > /etc/locale.conf
 exit
 ```
 
-## 6. Set the default user and begin AdaptivePi setup
+## 5. Set the default user and begin AdaptivePi setup
 
 Back in PowerShell, set the normal user as default and restart WSL:
 
 ```powershell
-wsl -d AdaptivePi-Arch -u root -- sh -c "printf '[user]\ndefault=adaptivepi\n' > /etc/wsl.conf"
+wsl -d archlinux -u root -- sh -c "printf '[user]\ndefault=adaptivepi\n' > /etc/wsl.conf"
 wsl --shutdown
-wsl -d AdaptivePi-Arch
+wsl -d archlinux
 ```
 
 In the new Arch shell, verify the environment and create the Linux-native
@@ -196,7 +161,7 @@ Yocto, QEMU, CMake, and Git commands in the Arch WSL shell. In VS Code, use
 | Symptom | Resolution |
 |---|---|
 | `wsl --install` reports virtualization is disabled | Enable CPU virtualization in UEFI/BIOS and reboot. |
-| `wsl --import` fails | Confirm that the rootfs tar exists, WSL2 is enabled, and `D:\` is NTFS with enough free space. |
-| `pacman-key --init` is slow | Let the initial key generation complete; do not interrupt it. |
-| BitBake cannot find `en_US.UTF-8` | Run `locale -a`, repeat the locale commands in section 5 if necessary, then open a new WSL shell. |
+| `archlinux` is not in `wsl --list --online` | Update WSL, restart Windows, then check the online list again. |
+| `--location` is unsupported | Update WSL, restart Windows, and retry. |
+| BitBake cannot find `en_US.UTF-8` | Run `locale -a`, repeat the locale commands in section 4 if necessary, then open a new WSL shell. |
 | Yocto is unexpectedly slow | Confirm the checkout is under `~/workspace`, not below `/mnt/c` or `/mnt/d`. |
