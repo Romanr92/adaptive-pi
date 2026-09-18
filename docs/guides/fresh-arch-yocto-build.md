@@ -173,15 +173,30 @@ tmux attach -t adaptive-pi-yocto
 ## 6. Apply the AdaptivePi build configuration
 
 Still in the initialized build shell, register the committed project layer and
-append the repository's baseline configuration:
+append the repository's baseline configuration. The commands are safe to rerun:
+they do not add the layer or configuration block twice.
 
 ```bash
-bitbake-layers add-layer "$repo_root/yocto/meta-adaptive-pi"
-cat "$repo_root/yocto/config/local.conf.append" >> conf/local.conf
+layer_path="$repo_root/yocto/meta-adaptive-pi"
+config_marker='# AdaptivePi Release 1: generic 64-bit ARM QEMU target.'
+
+if ! grep -Fqx "$layer_path" conf/bblayers.conf; then
+  bitbake-layers add-layer "$layer_path"
+fi
+
+if ! grep -Fqx "$config_marker" conf/local.conf; then
+  printf '\n' >> conf/local.conf
+  cat "$repo_root/yocto/config/local.conf.append" >> conf/local.conf
+  printf '\n' >> conf/local.conf
+fi
 
 bitbake-layers show-layers
 tail -n 20 conf/local.conf
 ```
+
+The leading and trailing `printf '\n'` commands ensure the copied block is
+always separated from neighbouring settings, even when a configuration file
+lacks a final newline.
 
 The committed baseline selects:
 
@@ -219,9 +234,27 @@ PARALLEL_MAKE = "-j 4"
 Keep several GiB of RAM free for Arch Linux and other tools. Reduce the values
 if the host starts swapping or becomes unresponsive.
 
-These commands are for a new `yocto/build/` directory. Do not append
-`local.conf.append` again to an existing build directory; use the committed
-configuration as the source of truth and update the existing file deliberately.
+These commands are for a new `yocto/build/` directory, and are safe to rerun.
+Use the committed configuration as the source of truth.
+
+### Repair a malformed local.conf
+
+If BitBake reports an **unparsed line** containing two settings joined together,
+for example `linux-yocto-rt"# AdaptivePi Release 1`, open the file:
+
+```bash
+nano conf/local.conf
+```
+
+Split it into two lines:
+
+```conf
+PREFERRED_PROVIDER_virtual/kernel = "linux-yocto-rt"
+# AdaptivePi Release 1: generic 64-bit ARM QEMU target.
+```
+
+Then remove any duplicated copy of the AdaptivePi configuration block, save
+with `Ctrl+O`, exit with `Ctrl+X`, and rerun the idempotent commands above.
 
 ## 7. Build the image
 
