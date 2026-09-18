@@ -60,11 +60,20 @@ sudo pacman -Syu --needed \
   gtest \
   python \
   python-pexpect \
+  python-gitpython \
+  python-jinja \
   diffstat \
   chrpath \
+  socat \
   cpio \
   rpcsvc-proto \
   xz \
+  lz4 \
+  bzip2 \
+  gzip \
+  tar \
+  iputils \
+  xterm \
   file \
   which \
   unzip \
@@ -81,7 +90,7 @@ Tool groups:
 
 | Tools | Used for |
 |---|---|
-| `base-devel git python python-pexpect diffstat chrpath cpio rpcsvc-proto xz file which unzip texinfo gawk wget zstd` | Poky/BitBake host build and fetch dependencies |
+| `base-devel git python python-pexpect python-gitpython python-jinja diffstat chrpath socat cpio rpcsvc-proto xz lz4 bzip2 gzip tar iputils xterm file which unzip texinfo gawk wget zstd` | Poky/BitBake host build, fetch, helper scripts, and headless QEMU dependencies |
 | `qemu-system-aarch64 tmux openssh` | Running, persisting, and accessing the QEMU target |
 | `cmake ninja clang clang-tools-extra gtest` | Native AdaptivePi C++ builds, tests, formatting, and static analysis |
 
@@ -92,6 +101,7 @@ git --version
 python --version
 bitbake --version 2>/dev/null || true
 qemu-system-aarch64 --version
+locale -a | grep -Fx 'en_US.utf8'
 tmux -V
 cmake --version
 ninja --version
@@ -102,6 +112,10 @@ Poky environment is initialized.
 
 ## 4. Clone AdaptivePi and the pinned Poky source
 
+These commands create every project directory that is not already provided by
+the Git checkout. They do not assume a previous Yocto build, cache, SDK, or
+QEMU image exists.
+
 Choose a permanent workspace. The rest of this guide assumes
 `~/workspace/adaptive-pi`.
 
@@ -110,13 +124,14 @@ mkdir -p ~/workspace
 cd ~/workspace
 git clone https://github.com/Romanr92/adaptive-pi.git
 cd adaptive-pi
+git status --short
 
 git clone --branch scarthgap https://git.yoctoproject.org/poky yocto/poky
 git -C yocto/poky checkout 77d1feb37e280733684ae8a9449fb031d5d7ff40
 git -C yocto/poky status --short
 ```
 
-The last command must print no output. `yocto/poky/` is intentionally ignored
+`git status --short` and the final Poky status command must print no output. `yocto/poky/` is intentionally ignored
 by Git: it is external upstream metadata, pinned by
 [`yocto/README.md`](../../yocto/README.md).
 
