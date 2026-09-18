@@ -84,6 +84,11 @@ memory=16GB
 processors=4
 swap=8GB
 swapFile=D:\\WSL\\swap\\swap.vhdx
+nestedVirtualization=true
+
+[experimental]
+# Reclaim unused memory back to Windows dynamically.
+autoMemoryReclaim=dropcache
 '@ | Set-Content -Path $wslConfig -Encoding ascii
 
 Get-Content $wslConfig
@@ -102,6 +107,40 @@ and close Notepad.
 Do not assign all host RAM or logical processors to WSL: Windows needs
 resources while Yocto builds. Apply the file before the Yocto build:
 
+### Worked examples
+
+**Intel Core i9-14900KF with 64 GiB RAM**: begin with 32 GiB WSL memory,
+8 processors, and 16 GiB swap. The host has 32 logical CPU threads, but this
+leaves capacity for Windows and avoids memory pressure during a Yocto build.
+
+```ini
+[wsl2]
+memory=32GB
+processors=8
+swap=16GB
+swapFile=D:\\WSL\\swap\\swap.vhdx
+nestedVirtualization=true
+
+[experimental]
+autoMemoryReclaim=dropcache
+```
+
+**ASUS TUF A18 FA808U with 32 GiB RAM**: begin with 16 GiB WSL memory,
+4 processors, and 8 GiB swap. If this laptop has 64 GiB RAM instead, use the
+64 GiB profile above; if it has 16 GiB, use the 16 GiB row in the table.
+
+```ini
+[wsl2]
+memory=16GB
+processors=4
+swap=8GB
+swapFile=D:\\WSL\\swap\\swap.vhdx
+nestedVirtualization=true
+
+[experimental]
+autoMemoryReclaim=dropcache
+```
+
 ```powershell
 wsl --shutdown
 ```
@@ -114,12 +153,19 @@ Start the new official Arch distribution as root:
 wsl -d archlinux -u root
 ```
 
-In Arch, update the system and install the minimal administration tools. In the
-commands below, replace `<selected_username>` everywhere with the Linux username
-you chose.
+In Arch, initialize package signing, update the system, and install the minimal
+administration tools.
+
+> [!IMPORTANT]
+> Replace every `<selected_username>` below with the Linux username you chose.
+> The angle brackets are only a visible placeholder; do not type them in the
+> commands.
 
 ```bash
-pacman -Syu --needed sudo nano
+pacman-key --init
+pacman-key --populate archlinux
+pacman -Syu --noconfirm
+pacman -S --needed sudo nano
 
 passwd root
 useradd -m -G wheel -s /bin/bash <selected_username>
@@ -139,14 +185,17 @@ configuration and remove the leading `#` only from `en_US.UTF-8 UTF-8`:
 ```bash
 chmod 440 /etc/sudoers.d/10-wheel
 nano /etc/locale.gen
-locale-gen
-printf 'LANG=en_US.UTF-8\n' > /etc/locale.conf
-exit
 ```
 
 In `nano`, use `Ctrl+W` to find `en_US.UTF-8 UTF-8`, remove its leading `#`,
 then save with `Ctrl+O`, press Enter, and exit with `Ctrl+X` before running
 `locale-gen`.
+
+```bash
+locale-gen
+printf 'LANG=en_US.UTF-8\n' > /etc/locale.conf
+exit
+```
 
 ## 5. Set the default user and begin AdaptivePi setup
 
