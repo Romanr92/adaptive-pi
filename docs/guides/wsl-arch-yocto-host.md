@@ -42,7 +42,14 @@ New-Item -ItemType Directory -Force -Path D:\WSL\distros
 wsl --install --distribution archlinux --location D:\WSL\distros\AdaptivePi-Arch
 ```
 
-After installation completes, verify that Arch uses WSL2:
+After installation, the distribution starts automatically as `root`. Run the
+following in that Arch shell, then return to PowerShell:
+
+```bash
+exit
+```
+
+Now verify that Arch uses WSL2:
 
 ```powershell
 wsl --list --verbose
@@ -55,18 +62,10 @@ If Windows reports that `--location` is unsupported, update WSL with
 `wsl --update` and restart Windows. Do not fall back to a third-party Arch
 image or manually-built bootstrap archive for this project.
 
-## 3. Start Arch once, then configure optional WSL resources
+## 3. Configure optional WSL resources
 
-Start **Arch Linux** once from the Windows Start menu, or run the following in
-PowerShell:
-
-```powershell
-wsl -d archlinux
-exit
-```
-
-Complete any first-start initialization shown by the distribution. The resource
-limits below are optional and can be configured after this first launch.
+The resource limits below are optional. Configure them after the first Arch
+launch and before starting a Yocto build.
 
 Create the non-C directories for WSL swap and the distribution location if they
 do not already exist:
@@ -115,16 +114,17 @@ Start the new official Arch distribution as root:
 wsl -d archlinux -u root
 ```
 
-In Arch, update the system and install the minimal administration tools. Create
-a normal development user; replace `adaptivepi` with your preferred Linux
-username if needed.
+In Arch, update the system and install the minimal administration tools. In the
+commands below, replace `<selected_username>` everywhere with the Linux username
+you chose.
 
 ```bash
-pacman -Syu --needed sudo vi
+pacman -Syu --needed sudo nano
 
-useradd -m -G wheel -s /bin/bash adaptivepi
-passwd adaptivepi
-EDITOR=vi visudo -f /etc/sudoers.d/10-wheel
+passwd root
+useradd -m -G wheel -s /bin/bash <selected_username>
+passwd <selected_username>
+EDITOR=nano visudo -f /etc/sudoers.d/10-wheel
 ```
 
 Add the following one line in the opened sudoers file, save, and exit:
@@ -133,22 +133,27 @@ Add the following one line in the opened sudoers file, save, and exit:
 %wheel ALL=(ALL:ALL) ALL
 ```
 
-Then configure the UTF-8 locale required by BitBake:
+Then configure the UTF-8 locale required by BitBake. Open the existing locale
+configuration and remove the leading `#` only from `en_US.UTF-8 UTF-8`:
 
 ```bash
 chmod 440 /etc/sudoers.d/10-wheel
-sed -i 's/^#en_US.UTF-8 UTF-8/en_US.UTF-8 UTF-8/' /etc/locale.gen
+nano /etc/locale.gen
 locale-gen
 printf 'LANG=en_US.UTF-8\n' > /etc/locale.conf
 exit
 ```
+
+In `nano`, use `Ctrl+W` to find `en_US.UTF-8 UTF-8`, remove its leading `#`,
+then save with `Ctrl+O`, press Enter, and exit with `Ctrl+X` before running
+`locale-gen`.
 
 ## 5. Set the default user and begin AdaptivePi setup
 
 Back in PowerShell, set the normal user as default and restart WSL:
 
 ```powershell
-wsl -d archlinux -u root -- sh -c "printf '[user]\ndefault=adaptivepi\n' > /etc/wsl.conf"
+wsl -d archlinux -u root -- sh -c "printf '[user]\ndefault=<selected_username>\n' > /etc/wsl.conf"
 wsl --shutdown
 wsl -d archlinux
 ```
@@ -163,8 +168,8 @@ sudo -v
 mkdir -p ~/workspace
 ```
 
-Expected results are `adaptivepi` from `whoami`, `en_US.UTF-8` for `LANG`, and
-working `sudo`.
+Expected results are the selected username from `whoami`, `en_US.UTF-8` for
+`LANG`, and working `sudo`.
 
 Do **not** store the Yocto checkout under `/mnt/c` or `/mnt/d`: those are
 mounted NTFS filesystems and are slower with different permission semantics.
