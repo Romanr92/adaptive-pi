@@ -32,46 +32,13 @@ wsl --list --online
 The list must include the official `archlinux` entry. If it does not, run
 `wsl --update`, restart Windows, and check again before proceeding.
 
-## 2. Configure WSL resources and storage
-
-Create the non-C directories:
-
-```powershell
-New-Item -ItemType Directory -Force -Path D:\WSL\distros, D:\WSL\swap
-```
-
-Create `%UserProfile%\.wslconfig` with a starting allocation appropriate to a
-32 GiB Windows host:
-
-```ini
-[wsl2]
-memory=16GB
-processors=4
-swap=8GB
-swapFile=D:\\WSL\\swap\\swap.vhdx
-```
-
-Use the table to choose an initial allocation. Do not assign all host RAM or
-logical processors to WSL: Windows needs resources while Yocto builds.
-
-| Windows RAM | WSL memory | WSL processors | WSL swap |
-|---|---:|---:|---:|
-| 16 GiB | 10 GiB | 2 | 8 GiB |
-| 32 GiB | 16–20 GiB | 4 | 8–16 GiB |
-| 64 GiB or more | 32 GiB | 8 | 16 GiB |
-
-Apply the configuration:
-
-```powershell
-wsl --shutdown
-```
-
-## 3. Install official Arch Linux directly on D:
+## 2. Install official Arch Linux directly on D:
 
 Install the official image at the requested location. The `--location` value is
 the permanent storage directory for the distribution's virtual disk:
 
 ```powershell
+New-Item -ItemType Directory -Force -Path D:\WSL\distros
 wsl --install --distribution archlinux --location D:\WSL\distros\AdaptivePi-Arch
 ```
 
@@ -87,6 +54,58 @@ be below `D:\WSL\distros\AdaptivePi-Arch`.
 If Windows reports that `--location` is unsupported, update WSL with
 `wsl --update` and restart Windows. Do not fall back to a third-party Arch
 image or manually-built bootstrap archive for this project.
+
+## 3. Start Arch once, then configure optional WSL resources
+
+Start **Arch Linux** once from the Windows Start menu, or run the following in
+PowerShell:
+
+```powershell
+wsl -d archlinux
+exit
+```
+
+Complete any first-start initialization shown by the distribution. The resource
+limits below are optional and can be configured after this first launch.
+
+Create the non-C directories for WSL swap and the distribution location if they
+do not already exist:
+
+```powershell
+New-Item -ItemType Directory -Force -Path D:\WSL\distros, D:\WSL\swap
+```
+
+To create `%UserProfile%\.wslconfig` directly from PowerShell, run:
+
+```powershell
+$wslConfig = Join-Path $env:USERPROFILE '.wslconfig'
+@'
+[wsl2]
+memory=16GB
+processors=4
+swap=8GB
+swapFile=D:\\WSL\\swap\\swap.vhdx
+'@ | Set-Content -Path $wslConfig -Encoding ascii
+
+Get-Content $wslConfig
+```
+
+This is a starting allocation for a 32 GiB Windows host. To create or edit the
+file manually instead, run `notepad $wslConfig`, paste the same content, save,
+and close Notepad.
+
+| Windows RAM | WSL memory | WSL processors | WSL swap |
+|---|---:|---:|---:|
+| 16 GiB | 10 GiB | 2 | 8 GiB |
+| 32 GiB | 16–20 GiB | 4 | 8–16 GiB |
+| 64 GiB or more | 32 GiB | 8 | 16 GiB |
+
+Do not assign all host RAM or logical processors to WSL: Windows needs
+resources while Yocto builds. Apply the file before the Yocto build:
+
+```powershell
+wsl --shutdown
+```
 
 ## 4. Initialize Arch Linux
 
