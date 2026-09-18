@@ -176,6 +176,8 @@ Before it becomes a required check, its harnesses and bounds must be stable.
 
 ## Documentation
 
+- [WSL2 Arch host on a non-C drive](docs/guides/wsl-arch-yocto-host.md)
+- [Fresh Arch Linux to Yocto/QEMU setup](docs/guides/fresh-arch-yocto-build.md)
 - [Yocto and PREEMPT_RT image build](docs/guides/yocto-qemu-preempt-rt-build-guide.md)
 - [SDK cross-build, deployment, and QEMU debugging](docs/guides/sdk-cross-build-and-qemu-deployment.md)
 - [Architecture Decision Records](docs/adr/)
