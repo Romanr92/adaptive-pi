@@ -208,14 +208,24 @@ settings, repair it **before** running `bitbake-layers`, because BitBake must
 parse `conf/local.conf` before it can add a layer:
 
 ```bash
-if grep -Fq 'linux-yocto-rt"# AdaptivePi Release 1' conf/local.conf; then
-  sed -i 's/\(PREFERRED_PROVIDER_virtual\/kernel = "linux-yocto-rt"\)# AdaptivePi/\1\
-# AdaptivePi/' conf/local.conf
-fi
+nano conf/local.conf
 ```
 
-Then inspect `conf/local.conf` with `nano` and remove any duplicate
-AdaptivePi configuration block.
+Find a line resembling:
+
+```conf
+PREFERRED_PROVIDER_virtual/kernel = "linux-yocto-rt"# AdaptivePi Release 1: generic 64-bit ARM QEMU target.
+```
+
+Split it into:
+
+```conf
+PREFERRED_PROVIDER_virtual/kernel = "linux-yocto-rt"
+# AdaptivePi Release 1: generic 64-bit ARM QEMU target.
+```
+
+Remove any duplicate AdaptivePi configuration block, save with `Ctrl+O`, press
+Enter, and exit with `Ctrl+X`.
 
 Still in the initialized build shell, register the committed project layer and
 append the repository's baseline configuration. The commands are safe to rerun:
