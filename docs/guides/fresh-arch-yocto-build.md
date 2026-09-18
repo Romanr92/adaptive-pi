@@ -73,6 +73,7 @@ sudo pacman -Syu --needed \
   gzip \
   tar \
   iputils \
+  inetutils \
   xterm \
   file \
   which \
@@ -90,7 +91,7 @@ Tool groups:
 
 | Tools | Used for |
 |---|---|
-| `base-devel git python python-pexpect python-gitpython python-jinja diffstat chrpath socat cpio rpcsvc-proto xz lz4 bzip2 gzip tar iputils xterm file which unzip texinfo gawk wget zstd` | Poky/BitBake host build, fetch, helper scripts, and headless QEMU dependencies |
+| `base-devel git python python-pexpect python-gitpython python-jinja diffstat chrpath socat cpio rpcsvc-proto xz lz4 bzip2 gzip tar iputils inetutils xterm file which unzip texinfo gawk wget zstd` | Poky/BitBake host build, fetch, helper scripts, and headless QEMU dependencies |
 | `qemu-system-aarch64 tmux openssh` | Running, persisting, and accessing the QEMU target |
 | `cmake ninja clang clang-tools-extra gtest` | Native AdaptivePi C++ builds, tests, formatting, and static analysis |
 
@@ -172,6 +173,50 @@ tmux attach -t adaptive-pi-yocto
 
 ## 6. Apply the AdaptivePi build configuration
 
+### Choose host-specific settings first
+
+The committed configuration uses two tasks and two compiler jobs because it was
+created on a constrained host. Before registering the layer, choose local
+overrides for a more powerful machine. These overrides are machine-local and
+must not be committed.
+
+For an **i9-14900KF with 64 GiB RAM** running WSL2 with a 48 GiB memory cap and
+24 WSL processors, begin with:
+
+```conf
+BB_NUMBER_THREADS = "20"
+PARALLEL_MAKE = "-j 20"
+```
+
+For an **ASUS TUF A18 FA808U** using the 32 GiB-RAM WSL profile from the WSL
+guide (16 GiB WSL memory and four processors), begin with:
+
+```conf
+BB_NUMBER_THREADS = "4"
+PARALLEL_MAKE = "-j 4"
+```
+
+After the project block is appended below, add the matching two lines to
+`conf/local.conf`. For other systems, start with one job per 4 GiB of available
+WSL/Linux memory, capped at the configured logical CPU count. Lower the values
+if the host starts swapping.
+
+### Repair an existing malformed configuration before BitBake starts
+
+A fresh build does not need this repair. If a previous append joined two
+settings, repair it **before** running `bitbake-layers`, because BitBake must
+parse `conf/local.conf` before it can add a layer:
+
+```bash
+if grep -Fq 'linux-yocto-rt"# AdaptivePi Release 1' conf/local.conf; then
+  sed -i 's/\(PREFERRED_PROVIDER_virtual\/kernel = "linux-yocto-rt"\)# AdaptivePi/\1\
+# AdaptivePi/' conf/local.conf
+fi
+```
+
+Then inspect `conf/local.conf` with `nano` and remove any duplicate
+AdaptivePi configuration block.
+
 Still in the initialized build shell, register the committed project layer and
 append the repository's baseline configuration. The commands are safe to rerun:
 they do not add the layer or configuration block twice.
@@ -207,54 +252,8 @@ The committed baseline selects:
 - `systemd`;
 - the `linux-yocto-rt` PREEMPT_RT kernel provider.
 
-### Choose parallelism for the host
-
-The committed two-job setting is safe for a constrained 16 GiB host. It is not
-a universal optimum. For a dedicated build machine, begin with one concurrent
-task for each **4 GiB of RAM**, capped at the number of logical CPU threads.
-Increase only after observing stable memory use.
-
-| RAM | Initial `BB_NUMBER_THREADS` and `PARALLEL_MAKE` |
-|---|---|
-| Under 16 GiB | `1` |
-| 16–31 GiB | `2` |
-| 32–63 GiB | `4` |
-| 64 GiB or more | `8` |
-
-For example, a 12-logical-thread machine with 32 GiB RAM should start at four,
-not twelve. To override the baseline in the local, uncommitted build
-configuration, edit `conf/local.conf` after appending the project file:
-
-```conf
-# Local host tuning; do not commit this machine-specific override.
-BB_NUMBER_THREADS = "4"
-PARALLEL_MAKE = "-j 4"
-```
-
-Keep several GiB of RAM free for Arch Linux and other tools. Reduce the values
-if the host starts swapping or becomes unresponsive.
-
 These commands are for a new `yocto/build/` directory, and are safe to rerun.
 Use the committed configuration as the source of truth.
-
-### Repair a malformed local.conf
-
-If BitBake reports an **unparsed line** containing two settings joined together,
-for example `linux-yocto-rt"# AdaptivePi Release 1`, open the file:
-
-```bash
-nano conf/local.conf
-```
-
-Split it into two lines:
-
-```conf
-PREFERRED_PROVIDER_virtual/kernel = "linux-yocto-rt"
-# AdaptivePi Release 1: generic 64-bit ARM QEMU target.
-```
-
-Then remove any duplicated copy of the AdaptivePi configuration block, save
-with `Ctrl+O`, exit with `Ctrl+X`, and rerun the idempotent commands above.
 
 ## 7. Build the image
 
