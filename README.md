@@ -153,7 +153,9 @@ Before it becomes a required check, its harnesses and bounds must be stable.
 ### Release 5 — Communication Management
 
 - Implement a focused `ara::com`-inspired publish/subscribe interface.
+- Add project-owned, clean-room SOME/IP-inspired communication for method request/response, events, and fields, without claiming AUTOSAR SOME/IP conformance.
 - Add service discovery concepts suitable for the demonstrator.
+- Handle service availability, timeouts, service loss, and reconnect after provider restart.
 - Validate communication between separate Linux processes.
 
 ### Release 6 — Diagnostics over Ethernet
