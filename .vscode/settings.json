@@ -10,6 +10,10 @@
   "C_Cpp.clang_format_style": "file",
   "C_Cpp.formatting": "clangFormat",
 
+  "editor.detectIndentation": false,
+  "editor.insertSpaces": true,
+  "editor.tabSize": 2,
+
   "[cpp]": {
     "editor.defaultFormatter": "xaver.clang-format",
     "editor.formatOnSave": true
