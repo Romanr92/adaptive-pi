@@ -1,4 +1,6 @@
+#include "ara/core/error_domain.h"
+
 namespace ara::core
 {
-  using IdType = std::uint64_t;
+
 }
