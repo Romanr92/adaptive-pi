@@ -14,7 +14,8 @@ Raspberry Pi emulator.
 
 ## 1. Host requirements
 
-Use a native 64-bit Arch Linux installation with:
+Use a 64-bit Arch Linux installation, either natively or through the
+[WSL2 setup documented for this project](wsl-arch-yocto-host.md), with:
 
 - at least 16 GiB RAM recommended;
 - at least 100 GiB of free SSD space for the first build, downloads, and
