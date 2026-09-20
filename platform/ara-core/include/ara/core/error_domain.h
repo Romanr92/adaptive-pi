@@ -2,6 +2,7 @@
 #define ARA_CORE_ERROR_DOMAIN_H_
 
 #include <cstdint>
+#include <exception>
 #include <string_view>
 
 namespace ara::core
@@ -12,7 +13,13 @@ namespace ara::core
     public:
       using IdType = std::uint64_t;
 
-      constexpr ErrorDomain(IdType id, std::string_view name) noexcept : id_{id}, name_{name} {}
+      constexpr ErrorDomain(IdType id, std::string_view name) noexcept : id_{id}, name_{name}
+      {
+        if (name_.empty())
+        {
+          std::terminate();
+        }
+      }
 
       [[nodiscard]] constexpr IdType Id() const noexcept
       {
@@ -22,6 +29,16 @@ namespace ara::core
       [[nodiscard]] constexpr std::string_view Name() const noexcept
       {
         return name_;
+      }
+
+      [[nodiscard]] constexpr bool operator==(const ErrorDomain& other) const noexcept
+      {
+        return id_ == other.id_;
+      }
+
+      [[nodiscard]] constexpr bool operator!=(const ErrorDomain& other) const noexcept
+      {
+        return !(*this == other);
       }
 
     private:
