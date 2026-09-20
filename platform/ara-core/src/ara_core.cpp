@@ -5,4 +5,4 @@
 namespace ara::core
 {
 
-}
+} // namespace ara::core
