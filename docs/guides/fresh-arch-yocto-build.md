@@ -386,7 +386,7 @@ Continue with the [SDK cross-build, QEMU deployment, and debugging guide](sdk-cr
 |---|---|
 | `bitbake: command not found` | Re-run `source yocto/poky/oe-init-build-env "$PWD/yocto/build"` from the repository root. |
 | Poky checkout reports local changes | Ensure the checkout is at `77d1feb37e280733684ae8a9449fb031d5d7ff40`; do not modify upstream Poky files for AdaptivePi changes. |
-| Build fails due to missing host command/module | Re-run the package installation command in section 2, then retry the failed task. |
+| Build fails due to missing host command/module | Re-run the package installation command in section 3, then retry the failed task. |
 | Host becomes unresponsive or swaps heavily | Keep the committed `BB_NUMBER_THREADS = "2"` and `PARALLEL_MAKE = "-j 2"` limits; close other heavy workloads. |
 | QEMU script cannot find a boot configuration | Complete `bitbake adaptive-pi-image` successfully and check `yocto/build/tmp/deploy/images/qemuarm64/`. |
 | SSH to port 2222 fails | Inspect the serial console with `tmux attach -t adaptive-pi-qemu`; do not start a second QEMU instance. |
