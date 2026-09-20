@@ -1,0 +1,51 @@
+#ifndef ARA_CORE_ERROR_DOMAIN_H_
+#define ARA_CORE_ERROR_DOMAIN_H_
+
+#include <cstdint>
+#include <exception>
+#include <string_view>
+
+namespace ara::core
+{
+  /* Implements: AP-R3-CORE-001, AP-R3-CORE-002*/
+  class ErrorDomain final
+  {
+    public:
+      using IdType = std::uint64_t;
+
+      constexpr ErrorDomain(IdType id, std::string_view name) noexcept : id_{id}, name_{name}
+      {
+        if (name_.empty())
+        {
+          std::terminate();
+        }
+      }
+
+      [[nodiscard]] constexpr IdType Id() const noexcept
+      {
+        return id_;
+      }
+
+      [[nodiscard]] constexpr std::string_view Name() const noexcept
+      {
+        return name_;
+      }
+
+      [[nodiscard]] constexpr bool operator==(const ErrorDomain& other) const noexcept
+      {
+        return id_ == other.id_;
+      }
+
+      [[nodiscard]] constexpr bool operator!=(const ErrorDomain& other) const noexcept
+      {
+        return !(*this == other);
+      }
+
+    private:
+      IdType id_;
+      std::string_view name_;
+  };
+
+} // namespace ara::core
+
+#endif /* ARA_CORE_ERROR_DOMAIN_H_ */

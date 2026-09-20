@@ -2,6 +2,7 @@
     "recommendations": [
         "ms-vscode.cpptools",
         "ms-vscode.cmake-tools",
-        "ms-python.python"
+        "ms-python.python",
+        "xaver.clang-format"
     ]
 }

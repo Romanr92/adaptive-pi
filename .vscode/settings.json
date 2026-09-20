@@ -3,9 +3,16 @@
   "cmake.configurePreset": "debug-app",
   "cmake.buildBeforeRun": true,
 
+  "C_Cpp.intelliSenseEngine": "default",
+  "C_Cpp.autocomplete": "default",
+
   "C_Cpp.clang_format_path": "/usr/bin/clang-format",
   "C_Cpp.clang_format_style": "file",
   "C_Cpp.formatting": "clangFormat",
+
+  "editor.detectIndentation": false,
+  "editor.insertSpaces": true,
+  "editor.tabSize": 2,
 
   "[cpp]": {
     "editor.defaultFormatter": "xaver.clang-format",
