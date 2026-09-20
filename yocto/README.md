@@ -28,3 +28,9 @@ This development host has four CPU threads and limited RAM. Yocto builds are con
 - Verified the guest distribution as Poky 5.0.20.
 
 This is a generic AArch64 QEMU environment, not a Raspberry Pi hardware emulation.
+
+## Versioned platform releases
+
+`platform-version` records the project platform release version. Use the
+[manual publisher and developer installer](../docs/guides/publish-platform-release.md)
+to distribute or consume the QEMU image and matching SDK without rebuilding Yocto.

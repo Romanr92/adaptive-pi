@@ -16,7 +16,9 @@ ssh_options=(
     -p "${ssh_port}"
 )
 
-if [[ ! -f "${qemuboot_conf}" ]]; then
+platform_runner="${yocto_dir}/platform/run-platform.py"
+
+if [[ ! -f "${platform_runner}" && ! -f "${qemuboot_conf}" ]]; then
     echo "AdaptivePi QEMU boot configuration was not found:" >&2
     echo "  ${qemuboot_conf}" >&2
     exit 1
@@ -30,6 +32,10 @@ if tmux has-session -t "${tmux_session}" 2>/dev/null; then
 fi
 
 tmux_command="bash -lc 'source \"${yocto_dir}/poky/oe-init-build-env\" \"${build_dir}\" >/dev/null && exec runqemu \"${qemuboot_conf}\" nographic slirp'"
+
+if [[ -f "${platform_runner}" ]]; then
+    printf -v tmux_command 'python3 %q' "${platform_runner}"
+fi
 
 echo "AdaptivePi QEMU is starting up; please wait for SSH readiness..."
 
