@@ -181,12 +181,12 @@ created on a constrained host. Before registering the layer, choose local
 overrides for a more powerful machine. These overrides are machine-local and
 must not be committed.
 
-For an **i9-14900KF with 64 GiB RAM** running WSL2 with a 48 GiB memory cap and
-24 WSL processors, begin with:
+For an **i9-14900KF with 64 GiB RAM** using the WSL profile from the WSL
+guide (32 GiB WSL memory and eight processors), begin with:
 
 ```conf
-BB_NUMBER_THREADS = "20"
-PARALLEL_MAKE = "-j 20"
+BB_NUMBER_THREADS = "8"
+PARALLEL_MAKE = "-j 8"
 ```
 
 For an **ASUS TUF A18 FA808U** using the 32 GiB-RAM WSL profile from the WSL
