@@ -1,5 +1,7 @@
 add_executable(
     ara_core_test
+    error_code_comparison_test.cpp
+    error_code_test.cpp
     error_domain_test.cpp
 )
 

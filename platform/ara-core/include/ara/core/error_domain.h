@@ -7,7 +7,7 @@
 
 namespace ara::core
 {
-
+  /* Implements: AP-R3-CORE-001, AP-R3-CORE-002*/
   class ErrorDomain final
   {
     public:
