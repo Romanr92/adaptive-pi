@@ -4,6 +4,8 @@ import importlib.util
 import io
 import json
 from pathlib import Path
+import runpy
+import shutil
 import subprocess
 import sys
 import tarfile
@@ -195,6 +197,22 @@ class ReleaseTests(unittest.TestCase):
             self.install(output, developer, commands)
         self.assertFalse(commands)
         self.assertFalse((developer / "yocto/sdk").exists())
+
+    def test_platform_launcher_accepts_missing_serial_consoles(self):
+        platform = self.root / "platform"
+        platform.mkdir()
+        shutil.copyfile(SCRIPTS.parent / "qemu/run-platform.py", platform / "run-platform.py")
+        (platform / "adaptive-pi-image-qemuarm64.rootfs.qemuboot.conf").write_text(
+            "[config_bsp]\n"
+            "qb_rootfs_opt=-drive file=@ROOTFS@\n"
+            "qb_network_device=-device virtio-net-pci,netdev=net0,mac=@MAC@\n")
+        launched = []
+
+        with patch("os.execvp", side_effect=lambda executable, args: launched.append(args)):
+            runpy.run_path(str(platform / "run-platform.py"), run_name="__main__")
+
+        kernel_commandline = launched[0][launched[0].index("-append") + 1]
+        self.assertEqual(kernel_commandline.strip(), "root=/dev/vda rw ip=dhcp")
 
 
 if __name__ == "__main__":

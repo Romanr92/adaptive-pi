@@ -19,7 +19,7 @@ for argument in shlex.split(c["qb_rootfs_opt"]):
 args.extend(["-netdev", "user,id=net0,hostfwd=tcp:127.0.0.1:2222-:22"])
 args.extend(shlex.split(c["qb_network_device"].replace("@MAC@", "52:54:00:12:34:56")))
 commandline = "root=/dev/vda rw ip=dhcp"
-for console in c["serial_consoles"].split():
+for console in c.get("serial_consoles", "").split():
     commandline += " console=" + console.split(";")[1]
 commandline += " " + c.get("qb_kernel_cmdline_append", "")
 args.extend(["-append", commandline])
