@@ -1,5 +1,9 @@
 # Publish a Yocto SDK
 
+For a complete image + SDK release, use the automated manual
+[publish/install platform workflow](publish-platform-release.md). This page
+describes the older SDK-only upload process.
+
 ## Purpose
 
 The AdaptivePi Yocto SDK is a generated release artifact. It is not committed to Git.

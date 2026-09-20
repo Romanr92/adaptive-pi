@@ -184,6 +184,7 @@ Before it becomes a required check, its harnesses and bounds must be stable.
 - [SDK cross-build, deployment, and QEMU debugging](docs/guides/sdk-cross-build-and-qemu-deployment.md)
 - [Architecture Decision Records](docs/adr/)
 - [Per-application unit tests](docs/guides/per-application-unit-tests.md)
+- [Publishing and installing a complete Yocto platform](docs/guides/publish-platform-release.md)
 - [Publishing a versioned Yocto SDK](docs/guides/publish-yocto-sdk.md)
 
 ## License

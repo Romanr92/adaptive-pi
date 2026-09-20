@@ -15,10 +15,14 @@ This workflow does not rebuild the Yocto image for every application change.
 
 The following must already exist:
 
-- AdaptivePi Yocto image built successfully.
+- AdaptivePi Yocto image built locally or installed from a versioned platform release.
 - Yocto SDK generated and installed in `yocto/sdk/`.
 - QEMU lifecycle scripts available under `scripts/qemu/`.
+- Python 3 (`python` on Arch Linux) for the platform release scripts and downloaded-image launcher.
 - A Bash terminal open at the repository root.
+
+To install both the image and SDK automatically without a Yocto build, follow the
+[platform release installation guide](publish-platform-release.md#developer-install-without-rebuilding-yocto).
 
 The Yocto image-build procedure is documented separately in:
 
