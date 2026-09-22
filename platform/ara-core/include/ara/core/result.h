@@ -42,7 +42,7 @@ namespace ara::core
       /* Deffered until we design safe state replacement */
 
     private:
-      Result(std::in_place_index_t<c_resultIdx> tag, E error) : storage_{tag, std::move(value)} {}
+      Result(std::in_place_index_t<c_resultIdx> tag, T value) : storage_{tag, std::move(value)} {}
       Result(std::in_place_index_t<c_errorIdx> tag, E error) : storage_{tag, std::move(error)} {}
 
       std::variant<T, E> storage_;
@@ -65,7 +65,7 @@ namespace ara::core
 
       [[nodiscard]] bool HasValue() const noexcept
       {
-        return storage_.index() = 0;
+        return storage_.index() == 0;
       }
 
       Result(const Result&) = default;
