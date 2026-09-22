@@ -10,7 +10,7 @@ BreakBeforeBraces: Allman
 PointerAlignment: Left
 ReferenceAlignment: Left
 DerivePointerAlignment: false
-BreakTemplateDeclarations: Yes
+AlwaysBreakTemplateDeclarations: Yes
 
 AllowShortFunctionsOnASingleLine: Empty
 AllowShortIfStatementsOnASingleLine: Never
