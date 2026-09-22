@@ -22,7 +22,7 @@ Cover, in this order:
 1. **What it requires:** Restate the observable behavior in plain English, including important edge cases.
 2. **Why it exists:** Connect it to the component and, where useful, a familiar embedded-software concept.
 3. **How to implement it:** Identify the likely types, interfaces, ownership or state rules, and an incremental implementation sequence. Explain the reasoning behind meaningful design choices. Label proposed choices that the requirement does not prescribe.
-4. **Example:** Give an example how it should be used in the software and why it should be implemented as suggested.
+4. **Example:** Give an example of how it should be used in the software and why it should be implemented as suggested.
 5. **How to verify it:** Translate the listed verification method into concrete test cases. Include compile-time checks, death tests, or failure cases when the requirement calls for them.
 6. **Scope and dependencies:** Call out stated deviations, related requirement IDs, and anything deferred to a later release.
 
