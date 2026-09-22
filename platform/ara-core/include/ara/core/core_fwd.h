@@ -7,7 +7,8 @@ namespace ara::core
   class ErrorDomain;
   class ErrorCode;
 
-  template <typename T, typename E = ErrorCode> class Result;
+  template <typename T, typename E = ErrorCode>
+  class Result;
 
 } // namespace ara::core
 

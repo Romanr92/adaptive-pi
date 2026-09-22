@@ -36,10 +36,10 @@ namespace ara::core
       Result(const Result&) = default;
       Result(Result&&) = default;
 
-      /* Deffered until we design safe state replacement */
+      /* Deferred until we design safe state replacement */
       Result& operator=(const Result&) = delete;
       Result& operator=(Result&&) = delete;
-      /* Deffered until we design safe state replacement */
+      /* Deferred until we design safe state replacement */
 
     private:
       Result(std::in_place_index_t<c_resultIdx> tag, T value) : storage_{tag, std::move(value)} {}
