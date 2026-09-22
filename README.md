@@ -91,6 +91,17 @@ Stop QEMU cleanly after development:
 scripts/qemu/stop-development-image.sh
 ```
 
+Format entire project according to rules:
+```bash
+find apps platform -type f \( -name '*.cpp' -o -name '*.h' -o -name '*.hpp' \) -print0 | xargs -0 clang-format -i
+```
+
+or
+
+```Bash
+git ls-files -z -- '*.c' '*.cc' '*.cpp' '*.cxx' '*.h' '*.hh' '*.hpp' '*.hxx' '*.ipp' '*.inl' | xargs -0 -r clang-format -i
+```
+
 ## Build presets
 
 | Preset | Purpose |
