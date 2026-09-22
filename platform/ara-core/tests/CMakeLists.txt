@@ -4,6 +4,7 @@ add_executable(
     error_code_test.cpp
     error_domain_extensibility_test.cpp
     error_domain_test.cpp
+    result_test.cpp
 )
 
 target_link_libraries(
