@@ -39,4 +39,4 @@ Use short C++ snippets or pseudocode when they make a concept easier to understa
 
 ## Interaction
 
-Teach the reasoning and implementation path when the user asks for an explanation. Write or change repository code when the user asks to implement or fix something. Never silently change an approved requirement to accommodate an implementation idea.
+Teach the reasoning and implementation path when the user asks for an explanation. When the user asks to implement or fix something, guide the user rather than changing repository code because AI agents are not allowed to write code directly. Never silently change an approved requirement to accommodate an implementation idea.
