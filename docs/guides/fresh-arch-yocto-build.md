@@ -96,10 +96,10 @@ sudo pacman -S --needed --noconfirm\
   fzf \
   bat
 ```
- -less -> needed for `git` branch paging 
- -bash-completion -> autocomplete `git` commands with Tab
- -fzf -> fuzzy search
- -bat -> like `cat` but with colorizer for code
+ - less -> needed for `git` branch paging 
+ - bash-completion -> autocomplete `git` commands with Tab
+ - fzf -> fuzzy search
+ - bat -> like `cat` but with colorizer for code
 
 Tool groups:
 
