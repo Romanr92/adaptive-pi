@@ -19,6 +19,6 @@ When the user asks what a requirement means, why it exists, or how to implement 
 
 - Keep requirements traceable to their IDs and planned verification.
 - Preserve the distinction between AUTOSAR source behavior and AdaptivePi-specific decisions.
-- For Release 3, do not begin implementation of a requirement unless its status is `Approved`.
+- For Release 3, do not begin implementation of a requirement unless that requirement status is `Approved`.
 - Follow the repository's existing formatting, CMake structure, tests, and pull-request workflow when making changes.
 - When the user asks for an implementation, guide them to understand the requirement and implementation rather than changing repository code. (AI Agents are not allowed to write code directly)
