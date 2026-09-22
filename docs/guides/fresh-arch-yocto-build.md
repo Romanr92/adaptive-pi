@@ -88,6 +88,19 @@ sudo pacman -Syu --needed \
   openssh
 ```
 
+Other recommended packages but not necessary:
+```bash
+sudo pacman -S --needed --noconfirm\
+  less \
+  bash-completion \
+  fzf \
+  bat
+```
+ - less -> needed for `git` branch paging 
+ - bash-completion -> autocomplete `git` commands with Tab
+ - fzf -> fuzzy search
+ - bat -> like `cat` but with colorizer for code
+
 Tool groups:
 
 | Tools | Used for |
