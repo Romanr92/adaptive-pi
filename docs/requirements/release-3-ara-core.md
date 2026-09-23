@@ -110,8 +110,10 @@ where the toolchain supports C++ exceptions, exception-based retrieval through
   SWS_CORE_00721 to SWS_CORE_00724, SWS_CORE_00731 to SWS_CORE_00736,
   SWS_CORE_00743, and SWS_CORE_00744](https://www.autosar.org/fileadmin/standards/R23-11/AP/AUTOSAR_AP_SWS_Core.pdf).
   [Guidelines for using Adaptive Platform interfaces, R23-11, §3.1.2.1, p. 9](https://www.autosar.org/fileadmin/standards/R23-11/AP/AUTOSAR_AP_EXP_InterfacesGuidelines.pdf).
-- Verification: Unit test
-  `AP_R3_CORE_006_ResultCreationAndEmplacement`.
+- Verification: Compile-time constructor checks and unit-test suites
+  `AP_R3_CORE_006_ResultCreationAndEmplacement`,
+  `AP_R3_CORE_006_ReplacementTransitions`, and
+  `AP_R3_CORE_006_VoidReplacement`.
 - Deviation: None.
 
 ## AP-R3-CORE-007 - Result state query
