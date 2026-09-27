@@ -2154,7 +2154,7 @@ namespace ara::core
     TEST_P(AP_R3_CORE_008_ValueOnErrorTerminates_Rvalue, Terminates)
     {
       /* Arrange */
-      auto r = Result<int>::FromError(MakeErrorCode(GetParam().error));
+      auto r = Result<std::string>::FromError(MakeErrorCode(GetParam().error));
       /* Act */
       const auto access = [&r]()
       {
@@ -2255,8 +2255,9 @@ namespace ara::core
       }
       /* Expect */
       ASSERT_TRUE(observed.has_value());
-      EXPECT_EQ(*observed, error);
-      EXPECT_EQ(&observed->Domain(), &error.Domain());
+      const auto& observed_error = observed.value();
+      EXPECT_EQ(observed_error, error);
+      EXPECT_EQ(observed_error.Domain(), error.Domain());
     }
     std::string NameCase008ValueOrThrowMutable(const ::testing::TestParamInfo<Case008ValueOrThrowMutable>& info)
     {
@@ -2308,8 +2309,9 @@ namespace ara::core
       }
       /* Expect */
       ASSERT_TRUE(observed.has_value());
-      EXPECT_EQ(*observed, error);
-      EXPECT_EQ(&observed->Domain(), &error.Domain());
+      const auto& observed_error = observed.value();
+      EXPECT_EQ(observed_error, error);
+      EXPECT_EQ(observed_error.Domain(), error.Domain());
     }
     std::string NameCase008ValueOrThrowConst(const ::testing::TestParamInfo<Case008ValueOrThrowConst>& info)
     {
@@ -2348,7 +2350,7 @@ namespace ara::core
     {
       /* Arrange */
       const auto error = MakeErrorCode(GetParam().error);
-      auto r = Result<int>::FromError(error);
+      auto r = Result<std::string>::FromError(error);
       std::optional<ErrorCode> observed;
       /* Act */
       try
@@ -2361,8 +2363,9 @@ namespace ara::core
       }
       /* Expect */
       ASSERT_TRUE(observed.has_value());
-      EXPECT_EQ(*observed, error);
-      EXPECT_EQ(&observed->Domain(), &error.Domain());
+      const auto& observed_error = observed.value();
+      EXPECT_EQ(observed_error, error);
+      EXPECT_EQ(observed_error.Domain(), error.Domain());
     }
     std::string NameCase008ValueOrThrowRvalue(const ::testing::TestParamInfo<Case008ValueOrThrowRvalue>& info)
     {
@@ -2413,8 +2416,9 @@ namespace ara::core
       }
       /* Expect */
       ASSERT_TRUE(observed.has_value());
-      EXPECT_EQ(*observed, error);
-      EXPECT_EQ(&observed->Domain(), &error.Domain());
+      const auto& observed_error = observed.value();
+      EXPECT_EQ(observed_error, error);
+      EXPECT_EQ(observed_error.Domain(), error.Domain());
     }
     std::string NameCase008ValueOrThrowVoid(const ::testing::TestParamInfo<Case008ValueOrThrowVoid>& info)
     {
@@ -2436,14 +2440,14 @@ namespace ara::core
     TEST(AP_R3_CORE_008_ThrowSuccess, PreservesReferences)
     {
       /* Arrange */
-      auto r = Result<int>::FromValue(42);
+      auto r = Result<std::string>::FromValue("42");
       const auto& c = r;
       /* Act */
       auto& v = r.ValueOrThrow();
       const auto& cv = c.ValueOrThrow();
       auto&& mv = std::move(r).ValueOrThrow();
       /* Expect */
-      EXPECT_EQ(v, 42);
+      EXPECT_EQ(v, "42");
       EXPECT_EQ(&v, &cv);
       EXPECT_EQ(&v, &mv);
     }
@@ -2668,7 +2672,8 @@ namespace ara::core
       }
       /* Expect */
       ASSERT_TRUE(observed.has_value());
-      EXPECT_EQ(*observed, error);
+      const auto& observed_error = observed.value();
+      EXPECT_EQ(observed_error, error);
 #else
       /* Arrange */
       constexpr bool has_value_or_throw = HasValueOrThrow011<Result<int>&>::value;
