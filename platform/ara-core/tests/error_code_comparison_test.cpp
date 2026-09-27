@@ -1,4 +1,5 @@
 #include "ara/core/adaptive_pi_error_domain.h"
+#include "ara/core/error_code.h"
 
 #include <gtest/gtest.h>
 #include <ostream>
@@ -11,20 +12,6 @@ namespace ara::core
   namespace
   {
     /* ========================== Test_AP_R3_CORE_004 ==================================== */
-
-    struct ErrorCodeComparisonCase
-    {
-        AdaptivePiErrc error;
-        AdaptivePiErrc different_error;
-        ErrorDomain::IdType different_domain_id;
-        std::string_view test_name;
-        const char* description;
-    };
-
-    std::ostream& operator<<(std::ostream& output, const ErrorCodeComparisonCase& parameter)
-    {
-      return output << parameter.description;
-    }
 
     static_assert(std::is_enum_v<AdaptivePiErrc>, "AdaptivePiErrc must be an enumeration");
 
@@ -39,90 +26,430 @@ namespace ara::core
     static_assert(AdaptivePiErrc::kInvalidState != compile_time_error,
                   "Enum-to-ErrorCode inequality must work in a constant expression");
 
-    class AP_R3_CORE_004_ErrorCodeEqualityAndEnumComparison : public ::testing::TestWithParam<ErrorCodeComparisonCase>
+    /* ----------------------------------------------------------------------------------- */
+
+    struct ErrorCodeComparisonCase_EnumConversionStoresValueAndDomain
+    {
+        AdaptivePiErrc error;
+        AdaptivePiErrc different_error;
+        ErrorDomain::IdType different_domain_id;
+        std::string_view test_name;
+        const char* description;
+    };
+
+    std::ostream& operator<<(std::ostream& output,
+                             const ErrorCodeComparisonCase_EnumConversionStoresValueAndDomain& parameter)
+    {
+      return output << parameter.description;
+    }
+
+    /* Provides the case data for this check: Verify that enum conversion preserves the error value and concrete domain.
+     * GetParam() supplies this test's inputs and expected results.
+     */
+    class AP_R3_CORE_004_ErrorCodeEqualityAndEnumComparison
+        : public ::testing::TestWithParam<ErrorCodeComparisonCase_EnumConversionStoresValueAndDomain>
     {
     };
 
+    /* Verify that enum conversion preserves the error value and concrete domain.
+     * 1. Arrange: Read the case inputs and construct the domains and error codes needed for this check.
+     * 2. Act: Read the converted error value and domain address.
+     * 3. Expect: Both match the enumeration and AdaptivePi domain.
+     */
     TEST_P(AP_R3_CORE_004_ErrorCodeEqualityAndEnumComparison, EnumConversionStoresValueAndDomain)
     {
-      const ErrorCodeComparisonCase& parameter{GetParam()};
+      /* Arrange */
+      const ErrorCodeComparisonCase_EnumConversionStoresValueAndDomain& parameter{GetParam()};
       const ErrorCode error_code{MakeErrorCode(parameter.error)};
 
-      EXPECT_EQ(error_code.Value(), static_cast<ErrorCode::ValueType>(parameter.error));
-      EXPECT_EQ(&error_code.Domain(), &GetAdaptivePiErrorDomain());
+      /* Act */
+      const auto actual_value = error_code.Value();
+      const auto actual_domain = &error_code.Domain();
+
+      /* Expect */
+      EXPECT_EQ(actual_value, static_cast<ErrorCode::ValueType>(parameter.error));
+      EXPECT_EQ(actual_domain, &GetAdaptivePiErrorDomain());
     }
 
-    TEST_P(AP_R3_CORE_004_ErrorCodeEqualityAndEnumComparison, EquivalentErrorCodesCompareEqual)
-    {
-      const ErrorCodeComparisonCase& parameter{GetParam()};
-      const ErrorCode first{MakeErrorCode(parameter.error)};
-      const ErrorCode second{static_cast<ErrorCode::ValueType>(parameter.error), GetAdaptivePiErrorDomain()};
-
-      EXPECT_TRUE(first == second);
-      EXPECT_FALSE(first != second);
-    }
-
-    TEST_P(AP_R3_CORE_004_ErrorCodeEqualityAndEnumComparison, DifferentValuesInSameDomainCompareUnequal)
-    {
-      const ErrorCodeComparisonCase& parameter{GetParam()};
-      const ErrorCode first{MakeErrorCode(parameter.error)};
-      const ErrorCode second{MakeErrorCode(parameter.different_error)};
-
-      EXPECT_FALSE(first == second);
-      EXPECT_TRUE(first != second);
-    }
-
-    TEST_P(AP_R3_CORE_004_ErrorCodeEqualityAndEnumComparison, SameValueInDifferentDomainsCompareUnequal)
-    {
-      const ErrorCodeComparisonCase& parameter{GetParam()};
-      const ErrorCode adaptive_pi_error{MakeErrorCode(parameter.error)};
-      const ErrorDomain different_domain{parameter.different_domain_id, "DifferentDomain"};
-      const ErrorCode different_domain_error{static_cast<ErrorCode::ValueType>(parameter.error), different_domain};
-
-      EXPECT_FALSE(adaptive_pi_error == different_domain_error);
-      EXPECT_TRUE(adaptive_pi_error != different_domain_error);
-    }
-
-    TEST_P(AP_R3_CORE_004_ErrorCodeEqualityAndEnumComparison, MatchingEnumComparesEqualInBothDirections)
-    {
-      const ErrorCodeComparisonCase& parameter{GetParam()};
-      const ErrorCode error_code{MakeErrorCode(parameter.error)};
-
-      EXPECT_TRUE(error_code == parameter.error);
-      EXPECT_TRUE(parameter.error == error_code);
-      EXPECT_FALSE(error_code != parameter.error);
-      EXPECT_FALSE(parameter.error != error_code);
-    }
-
-    TEST_P(AP_R3_CORE_004_ErrorCodeEqualityAndEnumComparison, DifferentEnumComparesUnequalInBothDirections)
-    {
-      const ErrorCodeComparisonCase& parameter{GetParam()};
-      const ErrorCode error_code{MakeErrorCode(parameter.error)};
-
-      EXPECT_FALSE(error_code == parameter.different_error);
-      EXPECT_FALSE(parameter.different_error == error_code);
-      EXPECT_TRUE(error_code != parameter.different_error);
-      EXPECT_TRUE(parameter.different_error != error_code);
-    }
-
-    std::string ErrorCodeComparisonCaseName(const ::testing::TestParamInfo<ErrorCodeComparisonCase>& information)
+    std::string ErrorCodeComparisonCaseName_EnumConversionStoresValueAndDomain(
+      const ::testing::TestParamInfo<ErrorCodeComparisonCase_EnumConversionStoresValueAndDomain>& information)
     {
       return std::string{information.param.test_name};
     }
 
     INSTANTIATE_TEST_SUITE_P(
       AdaptivePiErrorComparisons, AP_R3_CORE_004_ErrorCodeEqualityAndEnumComparison,
-      ::testing::Values(ErrorCodeComparisonCase{AdaptivePiErrc::kInvalidArgument, AdaptivePiErrc::kInvalidState,
-                                                0x4150490000000002ULL, "InvalidArgumentComparisons",
-                                                "Invalid argument error conversion and comparison behavior"},
-                        ErrorCodeComparisonCase{AdaptivePiErrc::kInvalidState, AdaptivePiErrc::kOperationFailed,
-                                                0x4150490000000003ULL, "InvalidStateComparisons",
-                                                "Invalid state error conversion and comparison behavior"},
-                        ErrorCodeComparisonCase{AdaptivePiErrc::kOperationFailed, AdaptivePiErrc::kInvalidArgument,
-                                                0x4150490000000004ULL, "OperationFailedComparisons",
-                                                "Operation failed error conversion and comparison behavior"}),
-      ErrorCodeComparisonCaseName);
+      ::testing::Values(
+        ErrorCodeComparisonCase_EnumConversionStoresValueAndDomain{
+          AdaptivePiErrc::kInvalidArgument, AdaptivePiErrc::kInvalidState, 0x4150490000000002ULL,
+          "InvalidArgumentComparisons", "Invalid argument error conversion and comparison behavior"},
+        ErrorCodeComparisonCase_EnumConversionStoresValueAndDomain{
+          AdaptivePiErrc::kInvalidState, AdaptivePiErrc::kOperationFailed, 0x4150490000000003ULL,
+          "InvalidStateComparisons", "Invalid state error conversion and comparison behavior"},
+        ErrorCodeComparisonCase_EnumConversionStoresValueAndDomain{
+          AdaptivePiErrc::kOperationFailed, AdaptivePiErrc::kInvalidArgument, 0x4150490000000004ULL,
+          "OperationFailedComparisons", "Operation failed error conversion and comparison behavior"}),
+      ErrorCodeComparisonCaseName_EnumConversionStoresValueAndDomain);
+
+    /* ----------------------------------------------------------------------------------- */
+
+    struct ErrorCodeComparisonCase_EquivalentErrorCodesCompareEqual
+    {
+        AdaptivePiErrc error;
+        AdaptivePiErrc different_error;
+        ErrorDomain::IdType different_domain_id;
+        std::string_view test_name;
+        const char* description;
+    };
+
+    std::ostream& operator<<(std::ostream& output,
+                             const ErrorCodeComparisonCase_EquivalentErrorCodesCompareEqual& parameter)
+    {
+      return output << parameter.description;
+    }
+
+    /* Provides the case data for this check: Verify that equivalent error codes compare equal.
+     * GetParam() supplies this test's inputs and expected results.
+     */
+    class AP_R3_CORE_004_ErrorCodeEqualityAndEnumComparison_EquivalentErrorCodesCompareEqual
+        : public ::testing::TestWithParam<ErrorCodeComparisonCase_EquivalentErrorCodesCompareEqual>
+    {
+    };
+
+    /* Verify that equivalent error codes compare equal.
+     * 1. Arrange: Read the case inputs and construct the domains and error codes needed for this check.
+     * 2. Act: Evaluate equality and inequality for codes with the same value and domain.
+     * 3. Expect: Equality is true and inequality is false.
+     */
+    TEST_P(AP_R3_CORE_004_ErrorCodeEqualityAndEnumComparison_EquivalentErrorCodesCompareEqual,
+           EquivalentErrorCodesCompareEqual)
+    {
+      /* Arrange */
+      const ErrorCodeComparisonCase_EquivalentErrorCodesCompareEqual& parameter{GetParam()};
+      const ErrorCode first{MakeErrorCode(parameter.error)};
+      const ErrorCode second{static_cast<ErrorCode::ValueType>(parameter.error), GetAdaptivePiErrorDomain()};
+
+      /* Act */
+      const auto equal = first == second;
+      const auto unequal = first != second;
+
+      /* Expect */
+      EXPECT_TRUE(equal);
+      EXPECT_FALSE(unequal);
+    }
+
+    std::string ErrorCodeComparisonCaseName_EquivalentErrorCodesCompareEqual(
+      const ::testing::TestParamInfo<ErrorCodeComparisonCase_EquivalentErrorCodesCompareEqual>& information)
+    {
+      return std::string{information.param.test_name};
+    }
+
+    INSTANTIATE_TEST_SUITE_P(
+      AdaptivePiErrorComparisons, AP_R3_CORE_004_ErrorCodeEqualityAndEnumComparison_EquivalentErrorCodesCompareEqual,
+      ::testing::Values(
+        ErrorCodeComparisonCase_EquivalentErrorCodesCompareEqual{
+          AdaptivePiErrc::kInvalidArgument, AdaptivePiErrc::kInvalidState, 0x4150490000000002ULL,
+          "InvalidArgumentComparisons", "Invalid argument error conversion and comparison behavior"},
+        ErrorCodeComparisonCase_EquivalentErrorCodesCompareEqual{
+          AdaptivePiErrc::kInvalidState, AdaptivePiErrc::kOperationFailed, 0x4150490000000003ULL,
+          "InvalidStateComparisons", "Invalid state error conversion and comparison behavior"},
+        ErrorCodeComparisonCase_EquivalentErrorCodesCompareEqual{
+          AdaptivePiErrc::kOperationFailed, AdaptivePiErrc::kInvalidArgument, 0x4150490000000004ULL,
+          "OperationFailedComparisons", "Operation failed error conversion and comparison behavior"}),
+      ErrorCodeComparisonCaseName_EquivalentErrorCodesCompareEqual);
+
+    /* ----------------------------------------------------------------------------------- */
+
+    struct ErrorCodeComparisonCase_DifferentValuesInSameDomainCompareUnequal
+    {
+        AdaptivePiErrc error;
+        AdaptivePiErrc different_error;
+        ErrorDomain::IdType different_domain_id;
+        std::string_view test_name;
+        const char* description;
+    };
+
+    std::ostream& operator<<(std::ostream& output,
+                             const ErrorCodeComparisonCase_DifferentValuesInSameDomainCompareUnequal& parameter)
+    {
+      return output << parameter.description;
+    }
+
+    /* Provides the case data for this check: Verify that different values in one domain compare unequal.
+     * GetParam() supplies this test's inputs and expected results.
+     */
+    class AP_R3_CORE_004_ErrorCodeEqualityAndEnumComparison_DifferentValuesInSameDomainCompareUnequal
+        : public ::testing::TestWithParam<ErrorCodeComparisonCase_DifferentValuesInSameDomainCompareUnequal>
+    {
+    };
+
+    /* Verify that different values in one domain compare unequal.
+     * 1. Arrange: Read the case inputs and construct the domains and error codes needed for this check.
+     * 2. Act: Evaluate equality and inequality for codes with different values.
+     * 3. Expect: Equality is false and inequality is true.
+     */
+    TEST_P(AP_R3_CORE_004_ErrorCodeEqualityAndEnumComparison_DifferentValuesInSameDomainCompareUnequal,
+           DifferentValuesInSameDomainCompareUnequal)
+    {
+      /* Arrange */
+      const ErrorCodeComparisonCase_DifferentValuesInSameDomainCompareUnequal& parameter{GetParam()};
+      const ErrorCode first{MakeErrorCode(parameter.error)};
+      const ErrorCode second{MakeErrorCode(parameter.different_error)};
+
+      /* Act */
+      const auto equal = first == second;
+      const auto unequal = first != second;
+
+      /* Expect */
+      EXPECT_FALSE(equal);
+      EXPECT_TRUE(unequal);
+    }
+
+    std::string ErrorCodeComparisonCaseName_DifferentValuesInSameDomainCompareUnequal(
+      const ::testing::TestParamInfo<ErrorCodeComparisonCase_DifferentValuesInSameDomainCompareUnequal>& information)
+    {
+      return std::string{information.param.test_name};
+    }
+
+    INSTANTIATE_TEST_SUITE_P(
+      AdaptivePiErrorComparisons,
+      AP_R3_CORE_004_ErrorCodeEqualityAndEnumComparison_DifferentValuesInSameDomainCompareUnequal,
+      ::testing::Values(
+        ErrorCodeComparisonCase_DifferentValuesInSameDomainCompareUnequal{
+          AdaptivePiErrc::kInvalidArgument, AdaptivePiErrc::kInvalidState, 0x4150490000000002ULL,
+          "InvalidArgumentComparisons", "Invalid argument error conversion and comparison behavior"},
+        ErrorCodeComparisonCase_DifferentValuesInSameDomainCompareUnequal{
+          AdaptivePiErrc::kInvalidState, AdaptivePiErrc::kOperationFailed, 0x4150490000000003ULL,
+          "InvalidStateComparisons", "Invalid state error conversion and comparison behavior"},
+        ErrorCodeComparisonCase_DifferentValuesInSameDomainCompareUnequal{
+          AdaptivePiErrc::kOperationFailed, AdaptivePiErrc::kInvalidArgument, 0x4150490000000004ULL,
+          "OperationFailedComparisons", "Operation failed error conversion and comparison behavior"}),
+      ErrorCodeComparisonCaseName_DifferentValuesInSameDomainCompareUnequal);
+
+    /* ----------------------------------------------------------------------------------- */
+
+    struct ErrorCodeComparisonCase_SameValueInDifferentDomainsCompareUnequal
+    {
+        AdaptivePiErrc error;
+        AdaptivePiErrc different_error;
+        ErrorDomain::IdType different_domain_id;
+        std::string_view test_name;
+        const char* description;
+    };
+
+    std::ostream& operator<<(std::ostream& output,
+                             const ErrorCodeComparisonCase_SameValueInDifferentDomainsCompareUnequal& parameter)
+    {
+      return output << parameter.description;
+    }
+
+    /* Provides the case data for this check: Verify that equal values from different domains compare unequal.
+     * GetParam() supplies this test's inputs and expected results.
+     */
+    class AP_R3_CORE_004_ErrorCodeEqualityAndEnumComparison_SameValueInDifferentDomainsCompareUnequal
+        : public ::testing::TestWithParam<ErrorCodeComparisonCase_SameValueInDifferentDomainsCompareUnequal>
+    {
+    };
+
+    /* Verify that equal values from different domains compare unequal.
+     * 1. Arrange: Read the case inputs and construct the domains and error codes needed for this check.
+     * 2. Act: Evaluate equality and inequality across the two domains.
+     * 3. Expect: Equality is false and inequality is true.
+     */
+    TEST_P(AP_R3_CORE_004_ErrorCodeEqualityAndEnumComparison_SameValueInDifferentDomainsCompareUnequal,
+           SameValueInDifferentDomainsCompareUnequal)
+    {
+      /* Arrange */
+      const ErrorCodeComparisonCase_SameValueInDifferentDomainsCompareUnequal& parameter{GetParam()};
+      const ErrorCode adaptive_pi_error{MakeErrorCode(parameter.error)};
+      const ErrorDomain different_domain{parameter.different_domain_id, "DifferentDomain"
+#if ADAPTIVE_PI_EXCEPTIONS_ENABLED
+                                         ,
+                                         [](const ErrorCode& error)
+                                         {
+                                           /* This test domain preserves its error in a distinct exception type. */
+                                           struct DomainException
+                                           {
+                                               ErrorCode code;
+                                           };
+                                           throw DomainException{error};
+                                         }
+#endif
+      };
+      const ErrorCode different_domain_error{static_cast<ErrorCode::ValueType>(parameter.error), different_domain};
+
+      /* Act */
+      const auto equal = adaptive_pi_error == different_domain_error;
+      const auto unequal = adaptive_pi_error != different_domain_error;
+
+      /* Expect */
+      EXPECT_FALSE(equal);
+      EXPECT_TRUE(unequal);
+    }
+
+    std::string ErrorCodeComparisonCaseName_SameValueInDifferentDomainsCompareUnequal(
+      const ::testing::TestParamInfo<ErrorCodeComparisonCase_SameValueInDifferentDomainsCompareUnequal>& information)
+    {
+      return std::string{information.param.test_name};
+    }
+
+    INSTANTIATE_TEST_SUITE_P(
+      AdaptivePiErrorComparisons,
+      AP_R3_CORE_004_ErrorCodeEqualityAndEnumComparison_SameValueInDifferentDomainsCompareUnequal,
+      ::testing::Values(
+        ErrorCodeComparisonCase_SameValueInDifferentDomainsCompareUnequal{
+          AdaptivePiErrc::kInvalidArgument, AdaptivePiErrc::kInvalidState, 0x4150490000000002ULL,
+          "InvalidArgumentComparisons", "Invalid argument error conversion and comparison behavior"},
+        ErrorCodeComparisonCase_SameValueInDifferentDomainsCompareUnequal{
+          AdaptivePiErrc::kInvalidState, AdaptivePiErrc::kOperationFailed, 0x4150490000000003ULL,
+          "InvalidStateComparisons", "Invalid state error conversion and comparison behavior"},
+        ErrorCodeComparisonCase_SameValueInDifferentDomainsCompareUnequal{
+          AdaptivePiErrc::kOperationFailed, AdaptivePiErrc::kInvalidArgument, 0x4150490000000004ULL,
+          "OperationFailedComparisons", "Operation failed error conversion and comparison behavior"}),
+      ErrorCodeComparisonCaseName_SameValueInDifferentDomainsCompareUnequal);
+
+    /* ----------------------------------------------------------------------------------- */
+
+    struct ErrorCodeComparisonCase_MatchingEnumComparesEqualInBothDirections
+    {
+        AdaptivePiErrc error;
+        AdaptivePiErrc different_error;
+        ErrorDomain::IdType different_domain_id;
+        std::string_view test_name;
+        const char* description;
+    };
+
+    std::ostream& operator<<(std::ostream& output,
+                             const ErrorCodeComparisonCase_MatchingEnumComparesEqualInBothDirections& parameter)
+    {
+      return output << parameter.description;
+    }
+
+    /* Provides the case data for this check: Verify that a matching enumeration compares equal in both operand orders.
+     * GetParam() supplies this test's inputs and expected results.
+     */
+    class AP_R3_CORE_004_ErrorCodeEqualityAndEnumComparison_MatchingEnumComparesEqualInBothDirections
+        : public ::testing::TestWithParam<ErrorCodeComparisonCase_MatchingEnumComparesEqualInBothDirections>
+    {
+    };
+
+    /* Verify that a matching enumeration compares equal in both operand orders.
+     * 1. Arrange: Read the case inputs and construct the domains and error codes needed for this check.
+     * 2. Act: Evaluate both comparison operators with the enum on either side.
+     * 3. Expect: Both equality checks are true and both inequality checks are false.
+     */
+    TEST_P(AP_R3_CORE_004_ErrorCodeEqualityAndEnumComparison_MatchingEnumComparesEqualInBothDirections,
+           MatchingEnumComparesEqualInBothDirections)
+    {
+      /* Arrange */
+      const ErrorCodeComparisonCase_MatchingEnumComparesEqualInBothDirections& parameter{GetParam()};
+      const ErrorCode error_code{MakeErrorCode(parameter.error)};
+
+      /* Act */
+      const auto code_equals_enum = error_code == parameter.error;
+      const auto enum_equals_code = parameter.error == error_code;
+      const auto code_differs_from_enum = error_code != parameter.error;
+      const auto enum_differs_from_code = parameter.error != error_code;
+
+      /* Expect */
+      EXPECT_TRUE(code_equals_enum);
+      EXPECT_TRUE(enum_equals_code);
+      EXPECT_FALSE(code_differs_from_enum);
+      EXPECT_FALSE(enum_differs_from_code);
+    }
+
+    std::string ErrorCodeComparisonCaseName_MatchingEnumComparesEqualInBothDirections(
+      const ::testing::TestParamInfo<ErrorCodeComparisonCase_MatchingEnumComparesEqualInBothDirections>& information)
+    {
+      return std::string{information.param.test_name};
+    }
+
+    INSTANTIATE_TEST_SUITE_P(
+      AdaptivePiErrorComparisons,
+      AP_R3_CORE_004_ErrorCodeEqualityAndEnumComparison_MatchingEnumComparesEqualInBothDirections,
+      ::testing::Values(
+        ErrorCodeComparisonCase_MatchingEnumComparesEqualInBothDirections{
+          AdaptivePiErrc::kInvalidArgument, AdaptivePiErrc::kInvalidState, 0x4150490000000002ULL,
+          "InvalidArgumentComparisons", "Invalid argument error conversion and comparison behavior"},
+        ErrorCodeComparisonCase_MatchingEnumComparesEqualInBothDirections{
+          AdaptivePiErrc::kInvalidState, AdaptivePiErrc::kOperationFailed, 0x4150490000000003ULL,
+          "InvalidStateComparisons", "Invalid state error conversion and comparison behavior"},
+        ErrorCodeComparisonCase_MatchingEnumComparesEqualInBothDirections{
+          AdaptivePiErrc::kOperationFailed, AdaptivePiErrc::kInvalidArgument, 0x4150490000000004ULL,
+          "OperationFailedComparisons", "Operation failed error conversion and comparison behavior"}),
+      ErrorCodeComparisonCaseName_MatchingEnumComparesEqualInBothDirections);
+
+    /* ----------------------------------------------------------------------------------- */
+
+    struct ErrorCodeComparisonCase_DifferentEnumComparesUnequalInBothDirections
+    {
+        AdaptivePiErrc error;
+        AdaptivePiErrc different_error;
+        ErrorDomain::IdType different_domain_id;
+        std::string_view test_name;
+        const char* description;
+    };
+
+    std::ostream& operator<<(std::ostream& output,
+                             const ErrorCodeComparisonCase_DifferentEnumComparesUnequalInBothDirections& parameter)
+    {
+      return output << parameter.description;
+    }
+
+    /* Provides the case data for this check: Verify that a different enumeration compares unequal in both operand
+     * orders. GetParam() supplies this test's inputs and expected results.
+     */
+    class AP_R3_CORE_004_ErrorCodeEqualityAndEnumComparison_DifferentEnumComparesUnequalInBothDirections
+        : public ::testing::TestWithParam<ErrorCodeComparisonCase_DifferentEnumComparesUnequalInBothDirections>
+    {
+    };
+
+    /* Verify that a different enumeration compares unequal in both operand orders.
+     * 1. Arrange: Read the case inputs and construct the domains and error codes needed for this check.
+     * 2. Act: Evaluate both comparison operators with the different enum on either side.
+     * 3. Expect: Both equality checks are false and both inequality checks are true.
+     */
+    TEST_P(AP_R3_CORE_004_ErrorCodeEqualityAndEnumComparison_DifferentEnumComparesUnequalInBothDirections,
+           DifferentEnumComparesUnequalInBothDirections)
+    {
+      /* Arrange */
+      const ErrorCodeComparisonCase_DifferentEnumComparesUnequalInBothDirections& parameter{GetParam()};
+      const ErrorCode error_code{MakeErrorCode(parameter.error)};
+
+      /* Act */
+      const auto code_equals_enum = error_code == parameter.different_error;
+      const auto enum_equals_code = parameter.different_error == error_code;
+      const auto code_differs_from_enum = error_code != parameter.different_error;
+      const auto enum_differs_from_code = parameter.different_error != error_code;
+
+      /* Expect */
+      EXPECT_FALSE(code_equals_enum);
+      EXPECT_FALSE(enum_equals_code);
+      EXPECT_TRUE(code_differs_from_enum);
+      EXPECT_TRUE(enum_differs_from_code);
+    }
+
+    std::string ErrorCodeComparisonCaseName_DifferentEnumComparesUnequalInBothDirections(
+      const ::testing::TestParamInfo<ErrorCodeComparisonCase_DifferentEnumComparesUnequalInBothDirections>& information)
+    {
+      return std::string{information.param.test_name};
+    }
+
+    INSTANTIATE_TEST_SUITE_P(
+      AdaptivePiErrorComparisons,
+      AP_R3_CORE_004_ErrorCodeEqualityAndEnumComparison_DifferentEnumComparesUnequalInBothDirections,
+      ::testing::Values(
+        ErrorCodeComparisonCase_DifferentEnumComparesUnequalInBothDirections{
+          AdaptivePiErrc::kInvalidArgument, AdaptivePiErrc::kInvalidState, 0x4150490000000002ULL,
+          "InvalidArgumentComparisons", "Invalid argument error conversion and comparison behavior"},
+        ErrorCodeComparisonCase_DifferentEnumComparesUnequalInBothDirections{
+          AdaptivePiErrc::kInvalidState, AdaptivePiErrc::kOperationFailed, 0x4150490000000003ULL,
+          "InvalidStateComparisons", "Invalid state error conversion and comparison behavior"},
+        ErrorCodeComparisonCase_DifferentEnumComparesUnequalInBothDirections{
+          AdaptivePiErrc::kOperationFailed, AdaptivePiErrc::kInvalidArgument, 0x4150490000000004ULL,
+          "OperationFailedComparisons", "Operation failed error conversion and comparison behavior"}),
+      ErrorCodeComparisonCaseName_DifferentEnumComparesUnequalInBothDirections);
 
     /* ======================== End Test_AP_R3_CORE_004 ================================== */
-  } // namespace
-} // namespace ara::core
+  } /* namespace */
+} /* namespace ara::core */

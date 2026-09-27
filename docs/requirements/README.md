@@ -10,6 +10,12 @@ AdaptivePi does not claim AUTOSAR conformance. The requirements are written in
 project-owned wording and do not reproduce AUTOSAR specification text or
 implementation code.
 
+The accepted [exception build policy](../adr/0006-exception-build-policy.md)
+requires exceptions disabled by default and an optional exception-enabled build.
+AP-R3-CORE-008 defines the configuration-dependent value-access contract.
+Build integration is present. Verification of the exception-enabled configuration
+remains a CI obligation; see the evidence notes in the core requirement file.
+
 ## Requirement identifiers
 
 - `AP-R3-CORE-xxx`: `ara::core`-inspired requirements

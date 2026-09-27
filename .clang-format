@@ -1,6 +1,7 @@
 BasedOnStyle: LLVM
 
 IndentWidth: 2
+IndentPPDirectives: BeforeHash
 ContinuationIndentWidth: 2
 NamespaceIndentation: All
 IndentAccessModifiers: true
@@ -10,6 +11,7 @@ BreakBeforeBraces: Allman
 PointerAlignment: Left
 ReferenceAlignment: Left
 DerivePointerAlignment: false
+AlwaysBreakTemplateDeclarations: Yes
 
 AllowShortFunctionsOnASingleLine: Empty
 AllowShortIfStatementsOnASingleLine: Never

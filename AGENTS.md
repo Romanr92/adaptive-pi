@@ -4,12 +4,16 @@ AdaptivePi is an educational, clean-room Adaptive AUTOSAR-inspired project. It d
 
 ## Source of truth
 
-- Read `docs/requirements/README.md` and the relevant requirement file before discussing or implementing a requirement.
+- Before any implementation, feature question, requirement discussion, or unit-test work, read `AGENTS.md`, `README.md`, `docs/requirements/README.md`, and the relevant skill file in `.agents/skills/`.
+- Read the relevant requirement file before discussing or implementing a requirement.
 - Treat approved requirement text, its verification method, and its stated deviation as the implementation baseline.
 - Consult `README.md` and `docs/` for information about the project contents, architecture, guides or requirements.
 - Consult `docs/adr/`, relevant code, and tests for architectural and implementation context.
 - Use conversation history when available, but do not let remembered decisions override the current repository. If they disagree, point out the difference.
 - Do not add AUTOSAR features beyond the project's stated scope merely to match a specification.
+- Use the requirement text and verification method as the baseline for implementation and tests
+
+
 
 ## Teaching requirement discussions
 
@@ -21,4 +25,5 @@ When the user asks what a requirement means, why it exists, or how to implement 
 - Preserve the distinction between AUTOSAR source behavior and AdaptivePi-specific decisions.
 - For Releases, do not begin implementation of a requirement from that release unless all the requirements in that release have the status `Approved`.
 - Follow the repository's existing formatting, CMake structure, tests, and pull-request workflow when making changes.
-- When the user asks for an implementation, guide them to understand the requirement and implementation rather than changing repository code. (AI Agents are not allowed to write code directly)
+- When the user asks for an implementation, guide them to understand the requirement and implementation rather than changing repository code. (AI agents are not allowed to write production code directly; they are allowed to write and modify unit tests.)
+- When writing or modifying unit tests, follow `.agents/skills/write-unit-tests/SKILL.md`.

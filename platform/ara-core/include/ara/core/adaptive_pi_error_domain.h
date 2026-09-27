@@ -1,7 +1,10 @@
 #ifndef ARA_CORE_ADAPTIVE_PI_ERROR_DOMAIN_H_
 #define ARA_CORE_ADAPTIVE_PI_ERROR_DOMAIN_H_
 
+#include "ara/core/config.h"
 #include "ara/core/error_code.h"
+
+#include <exception>
 
 namespace ara::core
 {
@@ -16,9 +19,45 @@ namespace ara::core
     kOperationFailed = 3
   };
 
+#if ADAPTIVE_PI_EXCEPTIONS_ENABLED
+  class AdaptivePiException final : public std::exception
+  {
+    public:
+      explicit AdaptivePiException(ErrorCode error) noexcept : error_{error} {}
+
+      [[nodiscard]] const ErrorCode& Error() const noexcept
+      {
+        return error_;
+      }
+
+      [[nodiscard]] const char* what() const noexcept override
+      {
+        return "AdaptivePi operation failed";
+      }
+
+    private:
+      ErrorCode error_;
+  };
+
+  namespace detail
+  {
+    [[noreturn]] inline void ThrowAdaptivePiException(const ErrorCode& error)
+    {
+      throw AdaptivePiException{error};
+    }
+  } // namespace detail
+#endif // ADAPTIVE_PI_EXCEPTIONS_ENABLED
+
+#if ADAPTIVE_PI_EXCEPTIONS_ENABLED
   /* The high bytes encode ASCII "API" for AdaptivePi, while the low-order value
-     1 identifies the first project-owned domain. This published ID remains stable. */
+    1 identifies the first project-owned domain. This published ID remains stable. */
+  inline constexpr ErrorDomain kAdaptivePiErrorDomain{0x4150490000000001ULL, "AdaptivePi",
+                                                      &detail::ThrowAdaptivePiException};
+#else  // ADAPTIVE_PI_EXCEPTIONS_ENABLED
+  /* The high bytes encode ASCII "API" for AdaptivePi, while the low-order value
+      1 identifies the first project-owned domain. This published ID remains stable. */
   inline constexpr ErrorDomain kAdaptivePiErrorDomain{0x4150490000000001ULL, "AdaptivePi"};
+#endif // ADAPTIVE_PI_EXCEPTIONS_ENABLED
 
   [[nodiscard]] constexpr const ErrorDomain& GetAdaptivePiErrorDomain() noexcept
   {

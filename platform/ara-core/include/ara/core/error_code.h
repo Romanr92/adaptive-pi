@@ -15,6 +15,7 @@ namespace ara::core
 
       constexpr ErrorCode(ValueType value, const ErrorDomain& domain) noexcept : value_{value}, domain_{&domain} {}
 
+      /* Implements AP-R3-CORE-003: Value returns the stored integral error value. */
       [[nodiscard]] constexpr ValueType Value() const noexcept
       {
         return value_;

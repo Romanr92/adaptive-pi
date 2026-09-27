@@ -1,0 +1,18 @@
+#ifndef ARA_CORE_CONFIG_H_
+#define ARA_CORE_CONFIG_H_
+
+#if defined(__cpp_exceptions) || defined(__EXCEPTIONS)
+  #define ADAPTIVE_PI_COMPILER_EXCEPTIONS_ENABLED 1
+#else
+  #define ADAPTIVE_PI_COMPILER_EXCEPTIONS_ENABLED 0
+#endif
+
+#ifndef ADAPTIVE_PI_EXCEPTIONS_ENABLED
+  #define ADAPTIVE_PI_EXCEPTIONS_ENABLED ADAPTIVE_PI_COMPILER_EXCEPTIONS_ENABLED
+#endif
+
+#if ADAPTIVE_PI_EXCEPTIONS_ENABLED != ADAPTIVE_PI_COMPILER_EXCEPTIONS_ENABLED
+  #error "AdaptivePi exception configuration disagrees with compiler flags"
+#endif
+
+#endif /* ARA_CORE_CONFIG_H_ */
