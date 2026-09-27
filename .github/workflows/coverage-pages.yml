@@ -42,7 +42,7 @@ jobs:
       - name: Configure coverage-enabled unit tests
         run: |
           cmake --preset debug-unit-tests \
-            -DADAPTIVE_PI_ENABLE_EXCEPTIONS=OFF \
+            -DADAPTIVE_PI_ENABLE_EXCEPTIONS=ON \
             -DCMAKE_BUILD_TYPE=Debug \
             -DCMAKE_C_COMPILER=clang \
             -DCMAKE_CXX_COMPILER=clang++ \
