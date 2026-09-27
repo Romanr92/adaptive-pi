@@ -2596,6 +2596,11 @@ namespace ara::core
 
     /* =============================== Test_AP_R3_CORE_011 =============================== */
 
+    static_assert(std::is_constructible_v<Result<int>, ErrorCode>);
+    static_assert(!std::is_convertible_v<ErrorCode, Result<int>>);
+    static_assert(std::is_constructible_v<Result<void, ErrorCode>, ErrorCode>);
+    static_assert(!std::is_convertible_v<ErrorCode, Result<void, ErrorCode>>);
+
     template <typename R, typename = void>
     struct HasValueOrThrow011 : std::false_type
     {

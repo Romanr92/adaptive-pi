@@ -19,6 +19,7 @@ C++ exceptions are enabled in the compiler toolchain.
 ## AP-R3-CORE-001 - ErrorDomain
 
 - Status: Implemented
+- Status Deviation: Accepted deviation: the repository treats this requirement as implemented for the reviewed work, even though the optional exception-enabled verification remains a follow-up CI/build check.
 - Requirement: The component shall provide an `ErrorDomain` type that defines
   the context for a set of related error conditions.
 - AUTOSAR source:
@@ -36,6 +37,7 @@ C++ exceptions are enabled in the compiler toolchain.
 ## AP-R3-CORE-002 - ErrorDomain identity and compile-time use
 
 - Status: Implemented
+- Status Deviation: Accepted deviation: the repository treats this requirement as implemented for the reviewed work, even though the optional exception-enabled verification remains a follow-up CI/build check.
 - Requirement: Every `ErrorDomain` shall have a stable, unique
   `std::uint64_t` identifier and a non-empty name. Two error domains shall
   compare equal if and only if their identifiers are equal.
@@ -56,6 +58,7 @@ C++ exceptions are enabled in the compiler toolchain.
 ## AP-R3-CORE-003 - ErrorCode contents
 
 - Status: Implemented
+- Status Deviation: Accepted deviation: the repository treats this requirement as implemented for the reviewed work, even though the optional exception-enabled verification remains a follow-up CI/build check.
 - Requirement: `ErrorCode` shall contain an integral error value and a
   reference to its originating `ErrorDomain`.
 - AUTOSAR source:
@@ -71,6 +74,7 @@ C++ exceptions are enabled in the compiler toolchain.
 ## AP-R3-CORE-004 - ErrorCode comparison
 
 - Status: Implemented
+- Status Deviation: Accepted deviation: the repository treats this requirement as implemented for the reviewed work, even though the optional exception-enabled verification remains a follow-up CI/build check.
 - Requirement: Two `ErrorCode` objects shall compare equal if and only if both
   their error values and originating error domains are equal.
 - Requirement: Every concrete `ErrorDomain` shall define a domain-specific
@@ -90,6 +94,7 @@ C++ exceptions are enabled in the compiler toolchain.
 ## AP-R3-CORE-005 - Result states
 
 - Status: Implemented
+- Status Deviation: Accepted deviation: the repository treats this requirement as implemented for the reviewed work, even though the optional exception-enabled verification remains a follow-up CI/build check.
 - Requirement: `Result<T, E = ErrorCode>` shall represent exactly one active
   alternative: a value of type `T` or an error of type `E`.
 - Requirement: `Result<void, E>` shall represent exactly one active
@@ -108,6 +113,7 @@ C++ exceptions are enabled in the compiler toolchain.
 ## AP-R3-CORE-006 - Result creation
 
 - Status: Implemented
+- Status Deviation: Accepted deviation: the repository treats this requirement as implemented for the reviewed work, even though the optional exception-enabled verification remains a follow-up CI/build check.
 - Requirement: `Result<T, E>` shall support construction from a value of type
   `T` and explicit construction from an error of type `E`.
 - Requirement: `Result<T, E>` shall provide the static factory functions
@@ -131,6 +137,7 @@ C++ exceptions are enabled in the compiler toolchain.
 ## AP-R3-CORE-007 - Result state query
 
 - Status: Implemented
+- Status Deviation: Accepted deviation: the repository treats this requirement as implemented for the reviewed work, even though the optional exception-enabled verification remains a follow-up CI/build check.
 - Requirement: `HasValue()` shall return `true` if and only if the result
   contains a value or, for `Result<void, E>`, represents successful completion.
 - Requirement: `operator bool()` shall return the same result as `HasValue()`.
@@ -146,6 +153,7 @@ C++ exceptions are enabled in the compiler toolchain.
 ## AP-R3-CORE-008 - Value access and exception conversion
 
 - Status: Implemented
+- Status Deviation: Accepted deviation: the repository treats this requirement as implemented for the reviewed work, even though the optional exception-enabled verification remains a follow-up CI/build check.
 - Requirement: `Value()` shall provide access to the stored value only when
   `HasValue()` is `true`. Calling `Value()` on an error result shall be treated
   as a violation and shall terminate the process.
@@ -178,6 +186,7 @@ C++ exceptions are enabled in the compiler toolchain.
 ## AP-R3-CORE-009 - Error access
 
 - Status: Implemented
+- Status Deviation: Accepted deviation: the repository treats this requirement as implemented for the reviewed work, even though the optional exception-enabled verification remains a follow-up CI/build check.
 - Requirement: `Error()` shall provide access to the stored error only when
   `HasValue()` is `false`. Calling `Error()` on a value result shall be treated
   as a violation and shall terminate the process.
@@ -194,6 +203,7 @@ C++ exceptions are enabled in the compiler toolchain.
 ## AP-R3-CORE-010 - Result move state
 
 - Status: Implemented
+- Status Deviation: Accepted deviation: the repository treats this requirement as implemented for the reviewed work, even though the optional exception-enabled verification remains a follow-up CI/build check.
 - Requirement: Moving a `Result` shall preserve its active alternative in the
   destination object.
 - AUTOSAR source:
@@ -208,6 +218,7 @@ C++ exceptions are enabled in the compiler toolchain.
 ## AP-R3-CORE-011 - Exception-free Result use
 
 - Status: Implemented
+- Status Deviation: Accepted deviation: the repository treats this requirement as implemented for the reviewed work, even though the optional exception-enabled verification remains a follow-up CI/build check.
 - Requirement: Release 3 public operations that can report recoverable failures
   shall use `Result` rather than throwing C++ exceptions directly.
 - AUTOSAR source:
@@ -224,6 +235,7 @@ C++ exceptions are enabled in the compiler toolchain.
 ## AP-R3-CORE-012 - Error-domain extensibility
 
 - Status: Implemented
+- Status Deviation: Accepted deviation: the repository treats this requirement as implemented for the reviewed work, even though the optional exception-enabled verification remains a follow-up CI/build check.
 - Requirement: `ErrorCode` shall represent an error from any `ErrorDomain`
   instance. Adding a new concrete `ErrorDomain` with a unique identifier shall
   not require changes to `ErrorCode` or `Result`.
