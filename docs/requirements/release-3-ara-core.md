@@ -195,7 +195,7 @@ Approved pending confirmed exception-enabled CI verification.
   Compile-time checks shall verify absence of `ValueOrThrow()` with exceptions
   disabled and presence with exceptions enabled, for ordinary and void results.
   Inspect compiler commands to verify the selected mode.
-- Unit Tests: `AP_R3_CORE_008_DomainConversion.NullConverterTerminates`; `AP_R3_CORE_008_DomainConversion.DispatchesCustomDomain`; `AP_R3_CORE_008_ValueAccess.ReferencesStoredValue`; `AP_R3_CORE_008_ValueAccess.MovesPayload`; `AP_R3_CORE_008_ValueAccess.VoidSuccess`; `AP_R3_CORE_008_ValueOnErrorTerminates.Terminates`; `AP_R3_CORE_008_ValueOnErrorTerminates_Const.Terminates`; `AP_R3_CORE_008_ValueOnErrorTerminates_Rvalue.Terminates`; `AP_R3_CORE_008_ValueOnErrorTerminates_Void.Terminates`; `AP_R3_CORE_008_ValueOrThrowConvertsDomainError.ConvertsError`; `AP_R3_CORE_008_ValueOrThrowConvertsDomainError_Const.ConvertsError`; `AP_R3_CORE_008_ValueOrThrowConvertsDomainError_Rvalue.ConvertsError`; `AP_R3_CORE_008_ValueOrThrowConvertsDomainError_Void.ConvertsError`; `AP_R3_CORE_008_ThrowSuccess.PreservesReferences`; `AP_R3_CORE_008_ThrowSuccess.MovesPayload`; `AP_R3_CORE_008_ThrowSuccess.VoidSuccess`
+- Unit Tests: `AP_R3_CORE_008_DomainConversion.NullConverterTerminates`; `AP_R3_CORE_008_DomainConversion.DispatchesCustomDomain`; `AP_R3_CORE_008_DomainConversion.ReturningConverterTerminates`; `AP_R3_CORE_008_ValueAccess.ReferencesStoredValue`; `AP_R3_CORE_008_ValueAccess.MovesPayload`; `AP_R3_CORE_008_ValueAccess.VoidSuccess`; `AP_R3_CORE_008_ValueOnErrorTerminates.Terminates`; `AP_R3_CORE_008_ValueOnErrorTerminates_Const.Terminates`; `AP_R3_CORE_008_ValueOnErrorTerminates_Rvalue.Terminates`; `AP_R3_CORE_008_ValueOnErrorTerminates_Void.Terminates`; `AP_R3_CORE_008_ValueOrThrowConvertsDomainError.ConvertsError`; `AP_R3_CORE_008_ValueOrThrowConvertsDomainError_Const.ConvertsError`; `AP_R3_CORE_008_ValueOrThrowConvertsDomainError_Rvalue.ConvertsError`; `AP_R3_CORE_008_ValueOrThrowConvertsDomainError_Void.ConvertsError`; `AP_R3_CORE_008_ThrowSuccess.PreservesReferences`; `AP_R3_CORE_008_ThrowSuccess.MovesPayload`; `AP_R3_CORE_008_ThrowSuccess.VoidSuccess`
 - Deviation: None.
 
 ## AP-R3-CORE-009 - Error access
@@ -212,7 +212,7 @@ Approved pending confirmed exception-enabled CI verification.
   [Guidelines for using Adaptive Platform interfaces, R23-11, §3.1.2, p. 10](https://www.autosar.org/fileadmin/standards/R23-11/AP/AUTOSAR_AP_EXP_InterfacesGuidelines.pdf).
 - Verification: Death test
   `AP_R3_CORE_009_ErrorOnValueTerminates` ✅.
-- Unit Tests: `AP_R3_CORE_009_ErrorAccess.ReturnsStoredError`; `AP_R3_CORE_009_ErrorAccess.VoidReturnsStoredError`; `AP_R3_CORE_009_ErrorOnValueTerminates.Terminates`; `AP_R3_CORE_009_ErrorAccess.MovesErrorPayload`; `AP_R3_CORE_009_ErrorAccess.VoidMovesErrorPayload`
+- Unit Tests: `AP_R3_CORE_009_ErrorAccess.ReturnsStoredError`; `AP_R3_CORE_009_ErrorAccess.VoidReturnsStoredError`; `AP_R3_CORE_009_ErrorOnValueTerminates.Terminates`; `AP_R3_CORE_009_ErrorOnValueTerminates.RvalueTerminates`; `AP_R3_CORE_009_ErrorOnValueTerminates.VoidRvalueTerminates`; `AP_R3_CORE_009_ErrorAccess.MovesErrorPayload`; `AP_R3_CORE_009_ErrorAccess.VoidMovesErrorPayload`
 - Deviation: None.
 
 ## AP-R3-CORE-010 - Result move state

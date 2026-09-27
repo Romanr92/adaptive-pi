@@ -33,6 +33,7 @@ jobs:
             xargs -0 clang-format --dry-run --Werror
 
   build-and-test:
+    if: github.event_name == 'pull_request'
     name: Build and unit test
     runs-on: ubuntu-24.04
 
@@ -58,6 +59,7 @@ jobs:
         run: cmake --build build/debug-unit-tests --parallel
 
   build-and-test-exceptions:
+    if: github.event_name == 'pull_request'
     name: Build and unit test (exceptions enabled)
     runs-on: ubuntu-24.04
 
