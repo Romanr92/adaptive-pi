@@ -2482,6 +2482,67 @@ namespace ara::core
     }
 
 #endif
-    /* ============================= End Test_AP_R3_CORE_008 ============================= */
+    /* =============================== Test_AP_R3_CORE_009 =============================== */
+
+    /* ----------------------------------------------------------------------------------- */
+    /* Verify error access returns the stored error only on error results.
+     * 1. Arrange: Prepare a value result and an error result with the same domain error.
+     * 2. Act: Read the stored error from the error result and attempt to read it from the value result.
+     * 3. Expect: The error matches the original payload and access on a value result terminates.
+     */
+    TEST(AP_R3_CORE_009_ErrorAccess, ReturnsStoredError)
+    {
+      /* Arrange */
+      const auto error = MakeErrorCode(AdaptivePiErrc::kInvalidArgument);
+      auto value_result = Result<int>::FromValue(42);
+      auto error_result = Result<int>::FromError(error);
+      /* Act */
+      const auto& observed = error_result.Error();
+      const auto access = [&value_result]()
+      {
+        (void)value_result.Error();
+      };
+      /* Expect */
+      EXPECT_EQ(observed, error);
+      EXPECT_DEATH(access(), "");
+    }
+
+    /* ----------------------------------------------------------------------------------- */
+    /* Verify the void result exposes the stored error without terminating.
+     * 1. Arrange: Prepare a void result holding the selected failure code.
+     * 2. Act: Read the stored error.
+     * 3. Expect: The result remains in error state and returns the original code.
+     */
+    TEST(AP_R3_CORE_009_ErrorAccess, VoidReturnsStoredError)
+    {
+      /* Arrange */
+      const auto error = MakeErrorCode(AdaptivePiErrc::kOperationFailed);
+      auto result = Result<void>::FromError(error);
+      /* Act */
+      const auto& observed = result.Error();
+      /* Expect */
+      EXPECT_EQ(observed, error);
+      EXPECT_FALSE(result.HasValue());
+    }
+
+    /* ----------------------------------------------------------------------------------- */
+    /* Verify error access on a successful result terminates the process.
+     * 1. Arrange: Construct a success result for each selected failure state.
+     * 2. Act: Attempt invalid error access.
+     * 3. Expect: The process terminates.
+     */
+    TEST(AP_R3_CORE_009_ErrorOnValueTerminates, Terminates)
+    {
+      /* Arrange */
+      auto result = Result<int>::FromValue(42);
+      const auto access = [&result]()
+      {
+        (void)result.Error();
+      };
+      /* Expect */
+      EXPECT_DEATH(access(), "");
+    }
+
+    /* ============================= End Test_AP_R3_CORE_009 ============================= */
   } /* namespace */
 } /* namespace ara::core */

@@ -4,12 +4,16 @@ AdaptivePi is an educational, clean-room Adaptive AUTOSAR-inspired project. It d
 
 ## Source of truth
 
-- Read `docs/requirements/README.md` and the relevant requirement file before discussing or implementing a requirement.
+- Before any implementation, feature question, requirement discussion, or unit-test work, read `AGENTS.md`, `README.md`, `docs/requirements/README.md`, and the relevant skill file in `.agents/skills/`.
+- Read the relevant requirement file before discussing or implementing a requirement.
 - Treat approved requirement text, its verification method, and its stated deviation as the implementation baseline.
 - Consult `README.md` and `docs/` for information about the project contents, architecture, guides or requirements.
 - Consult `docs/adr/`, relevant code, and tests for architectural and implementation context.
 - Use conversation history when available, but do not let remembered decisions override the current repository. If they disagree, point out the difference.
 - Do not add AUTOSAR features beyond the project's stated scope merely to match a specification.
+- Before any implementation, feature question or test work, read AGENTS.md, README.md, README.md, and the relevant skill file. Use the requirement text and verification method as the baseline.
+
+
 
 ## Teaching requirement discussions
 

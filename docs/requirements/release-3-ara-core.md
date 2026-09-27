@@ -188,7 +188,7 @@ C++ exceptions are enabled in the compiler toolchain.
   [Guidelines for using Adaptive Platform interfaces, R23-11, §3.1.2, p. 10](https://www.autosar.org/fileadmin/standards/R23-11/AP/AUTOSAR_AP_EXP_InterfacesGuidelines.pdf).
 - Verification: Death test
   `AP_R3_CORE_009_ErrorOnValueTerminates`.
-- Unit Tests:
+- Unit Tests: `AP_R3_CORE_009_ErrorAccess.ReturnsStoredError`; `AP_R3_CORE_009_ErrorAccess.VoidReturnsStoredError`; `AP_R3_CORE_009_ErrorOnValueTerminates.Terminates`
 - Deviation: None.
 
 ## AP-R3-CORE-010 - Result move state

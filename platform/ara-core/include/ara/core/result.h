@@ -183,11 +183,13 @@ namespace ara::core
         storage_.template emplace<c_errorIdx>(std::forward<Args>(args)...);
       }
 
+      /* Implements AP-R3-CORE-007: HasValue reports whether the result stores a value. */
       [[nodiscard]] bool HasValue() const noexcept
       {
         return storage_.index() == c_resultIdx;
       }
 
+      /* Implements AP-R3-CORE-007: operator bool mirrors HasValue. */
       [[nodiscard]] explicit operator bool() const noexcept
       {
         return HasValue();
@@ -206,6 +208,28 @@ namespace ara::core
       T&& Value() && noexcept
       {
         return std::move(storage_).template get<c_resultIdx>();
+      }
+
+      /* Implements AP-R3-CORE-009 */
+      const E& Error() const& noexcept
+      {
+        if (HasValue())
+        {
+          std::terminate();
+        }
+
+        return storage_.template get<c_errorIdx>();
+      }
+
+      /* Implements AP-R3-CORE-009 */
+      E&& Error() && noexcept
+      {
+        if (HasValue())
+        {
+          std::terminate();
+        }
+
+        return std::move(storage_).template get<c_errorIdx>();
       }
 
 #if ADAPTIVE_PI_EXCEPTIONS_ENABLED
@@ -314,6 +338,7 @@ namespace ara::core
         storage_.template emplace<c_errorIdx>(std::forward<Args>(args)...);
       }
 
+      /* Implements AP-R3-CORE-007: HasValue reports whether the void result is successful. */
       [[nodiscard]] bool HasValue() const noexcept
       {
         return storage_.index() == c_resultIdx;
@@ -324,6 +349,7 @@ namespace ara::core
         return HasValue();
       }
 
+      /* Implements AP-R3-CORE-008: Void Value checks success and terminates when the result holds an error. */
       void Value() const noexcept
       {
         if (!HasValue())
@@ -332,7 +358,31 @@ namespace ara::core
         }
       }
 
+      /* Implements AP-R3-CORE-009 */
+      const E& Error() const& noexcept
+      {
+        if (HasValue())
+        {
+          std::terminate();
+        }
+
+        return storage_.template get<c_errorIdx>();
+      }
+
+      /* Implements AP-R3-CORE-009 */
+      E&& Error() && noexcept
+      {
+        if (HasValue())
+        {
+          std::terminate();
+        }
+
+        return std::move(storage_).template get<c_errorIdx>();
+      }
+
 #if ADAPTIVE_PI_EXCEPTIONS_ENABLED
+      /* Implements AP-R3-CORE-008: ValueOrThrow returns the stored value or converts the ErrorCode through the domain.
+       */
       void ValueOrThrow() const
       {
         ThrowIfError();
