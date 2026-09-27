@@ -76,9 +76,13 @@ jobs:
             -B build/ci-unit-tests-exceptions \
             -DADAPTIVE_PI_ENABLE_EXCEPTIONS=ON
 
-      # The default build target runs CTest through run-unit-tests.
-      - name: Build and run exception-enabled unit tests
-        run: cmake --build build/ci-unit-tests-exceptions --parallel
+      # Build only the exception-enabled unit-test target; do not build the entire
+      # software tree in this job.
+      - name: Build exception-enabled unit test binary
+        run: cmake --build build/ci-unit-tests-exceptions --target ara_core_test --parallel
+
+      - name: Run exception-enabled unit tests
+        run: ctest --test-dir build/ci-unit-tests-exceptions --output-on-failure
 
   cross-build-qemu-target:
     name: Cross-build QEMU target
