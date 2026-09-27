@@ -1,0 +1,89 @@
+name: Release 3 requirement status promotion
+
+on:
+  workflow_dispatch:
+    inputs:
+      evidence_file:
+        description: "Optional JSON evidence path; defaults to build/requirement-evidence.json."
+        required: false
+        default: "build/requirement-evidence.json"
+  workflow_run:
+    workflows:
+      - "Host CI"
+    types:
+      - completed
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  assess-and-promote:
+    if: ${{ github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success' }}
+    runs-on: ubuntu-24.04
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.workflow_run.head_sha || github.sha }}
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Prepare evidence input
+        shell: bash
+        run: |
+          mkdir -p build
+
+          EVIDENCE_FILE="${{ github.event.inputs.evidence_file || 'build/requirement-evidence.json' }}"
+
+          if [[ ! -f "${EVIDENCE_FILE}" ]]; then
+            cat > "${EVIDENCE_FILE}" <<'JSON'
+            {
+              "AP-R3-CORE-006": {
+                "status": "pass",
+                "required_checks": [
+                  "AP_R3_CORE_006_ResultCreationAndEmplacement",
+                  "AP_R3_CORE_006_ResultCreationAndEmplacement.DirectConstructionSelectsValueOrError",
+                  "AP_R3_CORE_006_ResultCreationAndEmplacement.FactoryFunctionsSupportInPlaceConstruction"
+                ],
+                "evidence_url": "https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+              }
+            }
+            JSON
+          fi
+
+          echo "EVIDENCE_FILE=${EVIDENCE_FILE}" >> "$GITHUB_ENV"
+
+      - name: Promote eligible Approved requirements
+        shell: bash
+        run: |
+          python3 scripts/requirements/promote_release3_requirements.py \
+            --evidence-file "${EVIDENCE_FILE}"
+
+      - name: Commit and push promotion updates
+        shell: bash
+        env:
+          TARGET_REF: ${{ github.event.workflow_run.head_branch || github.ref_name }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          if git diff --quiet -- docs/requirements; then
+            echo "No eligible requirement updates were made."
+            exit 0
+          fi
+
+          git add docs/requirements
+          git commit -m "chore: promote verified Release 3 requirements"
+          git push origin HEAD:"${TARGET_REF}"
+
+      - name: Note Copilot limitation
+        if: ${{ always() }}
+        shell: bash
+        run: |
+          echo "The workflow uses repository evidence and CI results as the verification source."
+          echo "A GitHub Copilot assessment is not a substitute for passing tests or a build result."

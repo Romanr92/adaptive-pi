@@ -28,7 +28,20 @@ requirement.
 
 - `Draft`: proposed and subject to review
 - `Approved`: accepted as the Release 3 implementation baseline
-- `Implemented`: implemented and verified
+- `Implemented`: implemented and verified with traceable evidence in the required
+  build configuration(s)
+
+A requirement is `Implemented` only when all of the following are true:
+
+- the implementation exists in the repository;
+- the mapped tests or checks have passed in the required configuration(s);
+- the evidence is traceable to the requirement ID and the relevant CI/test run;
+- a missing, ambiguous, or incomplete evidence set keeps the entry at `Approved`.
+
+A GitHub Copilot assessment alone is not verification evidence. Copilot may help
+review the evidence and summarize the result, but the final promotion decision
+must be backed by actual test or build output that remains traceable to the
+requirement.
 
 No Release 3 C++ implementation shall begin until every requirement in this
 baseline is `Approved`.
