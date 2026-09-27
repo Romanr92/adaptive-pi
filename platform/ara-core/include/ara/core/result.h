@@ -150,9 +150,11 @@ namespace ara::core
   class Result final
   {
     public:
-      Result(const T& value) : storage_{std::in_place_index<c_resultIdx>, value} {}
-
-      Result(T&& value) : storage_{std::in_place_index<c_resultIdx>, std::move(value)} {}
+      template <typename U,
+                std::enable_if_t<std::is_same_v<std::decay_t<U>, T> && std::is_constructible_v<T, U&&>, int> = 0>
+      Result(U&& value) : storage_{std::in_place_index<c_resultIdx>, std::forward<U>(value)}
+      {
+      }
 
       template <typename U = E, std::enable_if_t<!std::is_same_v<T, U>, int> = 0>
       explicit Result(const E& error) : storage_{std::in_place_index<c_errorIdx>, error}

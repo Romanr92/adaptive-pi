@@ -16,6 +16,20 @@ Both configurations shall support exception-free handling through `Result`.
 Exception-based retrieval through `ValueOrThrow()` shall be available only when
 C++ exceptions are enabled in the compiler toolchain.
 
+
+## Verification evidence
+
+Verification entries name the planned checks. Checkmarks record declaration
+existence only, not test execution or complete coverage. Exception-disabled core
+execution has been observed locally; exception-enabled verification is delegated
+to Host CI and remains unconfirmed here without a successful run for the current
+revision. Existing Status Deviation entries explicitly retain their accepted
+status convention and do not claim both configurations passed.
+
+The CORE-006 convertible-error constructor defect is fixed. Its regression test
+and all 154 core tests passed locally with exceptions disabled. CORE-006 remains
+Approved pending confirmed exception-enabled CI verification.
+
 ## AP-R3-CORE-001 - ErrorDomain
 
 - Status: Implemented
@@ -112,8 +126,7 @@ C++ exceptions are enabled in the compiler toolchain.
 
 ## AP-R3-CORE-006 - Result creation
 
-- Status: Implemented
-- Status Deviation: Accepted deviation: the repository treats this requirement as implemented for the reviewed work, even though the optional exception-enabled verification remains a follow-up CI/build check.
+- Status: Approved
 - Requirement: `Result<T, E>` shall support construction from a value of type
   `T` and explicit construction from an error of type `E`.
 - Requirement: `Result<T, E>` shall provide the static factory functions
@@ -128,10 +141,10 @@ C++ exceptions are enabled in the compiler toolchain.
   SWS_CORE_00743, and SWS_CORE_00744](https://www.autosar.org/fileadmin/standards/R23-11/AP/AUTOSAR_AP_SWS_Core.pdf).
   [Guidelines for using Adaptive Platform interfaces, R23-11, §3.1.2.1, p. 9](https://www.autosar.org/fileadmin/standards/R23-11/AP/AUTOSAR_AP_EXP_InterfacesGuidelines.pdf).
 - Verification: Compile-time constructor checks and unit-test suites
-  `AP_R3_CORE_006_ResultCreationAndEmplacement` ✅,
-  `AP_R3_CORE_006_ReplacementTransitions` ✅, and
-  `AP_R3_CORE_006_VoidReplacement` ✅.
-- Unit Tests: `AP_R3_CORE_006_ResultCreationAndEmplacement.DirectConstructionSelectsValueOrError`; `AP_R3_CORE_006_ResultCreationAndEmplacement.DirectConstructionSupportsMoveOnlyAlternatives`; `AP_R3_CORE_006_ResultCreationAndEmplacement.SameTypesUseDirectConstructionForValue`; `AP_R3_CORE_006_ResultCreationAndEmplacement.VoidResultSupportsDirectErrorConstruction`; `AP_R3_CORE_006_ResultCreationAndEmplacement.FactoryFunctionsSupportInPlaceConstruction`; `AP_R3_CORE_006_ResultCreationAndEmplacement.EmplaceValueAndErrorReplaceActiveAlternative`; `AP_R3_CORE_006_ResultCreationAndEmplacement.VoidResultSupportsEmplacement`; `AP_R3_CORE_006_ReplacementTransitions.PreservesPayloadOnFailureAndReplacesOnSuccess`; `AP_R3_CORE_006_VoidReplacement.PreservesStateOnFailureAndReplacesOnSuccess`
+  `AP_R3_CORE_006_ResultCreationAndEmplacement`,
+  `AP_R3_CORE_006_ReplacementTransitions`, and
+  `AP_R3_CORE_006_VoidReplacement`.
+- Unit Tests: `AP_R3_CORE_006_ResultCreationAndEmplacement.ConvertibleErrorRequiresExplicitConstruction`; `AP_R3_CORE_006_ResultCreationAndEmplacement.DirectConstructionSelectsValueOrError`; `AP_R3_CORE_006_ResultCreationAndEmplacement.DirectConstructionSupportsMoveOnlyAlternatives`; `AP_R3_CORE_006_ResultCreationAndEmplacement.SameTypesUseDirectConstructionForValue`; `AP_R3_CORE_006_ResultCreationAndEmplacement.VoidResultSupportsDirectErrorConstruction`; `AP_R3_CORE_006_ResultCreationAndEmplacement.FactoryFunctionsSupportInPlaceConstruction`; `AP_R3_CORE_006_ResultCreationAndEmplacement.EmplaceValueAndErrorReplaceActiveAlternative`; `AP_R3_CORE_006_ResultCreationAndEmplacement.VoidResultSupportsEmplacement`; `AP_R3_CORE_006_ReplacementTransitions.PreservesPayloadOnFailureAndReplacesOnSuccess`; `AP_R3_CORE_006_VoidReplacement.PreservesStateOnFailureAndReplacesOnSuccess`
 - Deviation: None.
 
 ## AP-R3-CORE-007 - Result state query

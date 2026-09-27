@@ -43,21 +43,23 @@ This is not a universal AUTOSAR ban on exceptions or a claim about OEM policies.
 
 ## Implementation path
 
-These are pending production changes, not an already available build option.
+The CMake option, configuration header, conditional APIs, and separate CI job
+are implemented. The following checklist describes the design and remaining
+verification obligations; it is not a claim that CI has passed.
 
-1. Add the CMake option and propagate compiler options through target usage
+1. Maintain the CMake option and propagate compiler options through target usage
    requirements, including consumers of public template headers. Select
    `-fexceptions` for the enabled GCC/Clang build. Diagnose unsupported compilers
    rather than silently ignoring the policy.
-2. Centralize feature detection in a configuration header. Check actual compiler
+2. Keep feature detection centralized in a configuration header. Check actual compiler
    exception support and diagnose conflicts with the selected mode. Preprocess
    away throwing code and entire ValueOrThrow declarations: a runtime condition
    does not hide a throw from an exception-disabled compiler.
 3. Guard exception types, converters, and converter registration consistently.
    Preserve constexpr domain identity in both configurations.
-4. Finish checked value access and conditional conversion for requirement 008.
+4. Maintain checked value access and conditional conversion for requirement 008.
    Throwing conversion operations must not be noexcept.
-5. Adapt exception-specific test support and bodies. Add compile-time API checks,
+5. Maintain exception-specific test support and bodies. Add compile-time API checks,
    success and death tests in both modes, and exception conversion tests in the
    enabled mode. Preserve existing throwing-emplacement tests for 005–007.
 6. Verify compile commands for libraries, applications, and tests. Audit
@@ -78,8 +80,14 @@ These are pending production changes, not an already available build option.
 
 The default workflow teaches explicit error handling while the optional build
 preserves the exception-related learning goals. Requirement 008 states the
-configuration-dependent contract. Requirements remain Approved until verified;
-this decision does not mark implementation complete.
+configuration-dependent contract. The requirement file records explicit accepted
+Status Deviations for items labelled Implemented before exception-enabled CI was
+confirmed. Those labels and declaration-existence checkmarks are not evidence of
+successful dual-mode execution. The CORE-006 constructor defect is fixed, and its
+regression test passed in the local exception-disabled build. Exception-enabled
+verification remains pending confirmation from CI.
+The option is available now; full verification requires successful CI for the
+current revision.
 
 With exceptions disabled, throwing constructors cannot provide recoverable
 failure paths. Perform fallible work through explicit result-returning APIs.

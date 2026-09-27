@@ -690,6 +690,31 @@ namespace ara::core
 
     using ConstructorResult = Result<int, AdaptivePiErrc>;
 
+    /* ----------------------------------------------------------------------------------- */
+
+    /* Verify an error convertible to the value type still requires explicit construction.
+     * 1. Arrange: Choose distinct arithmetic value and error types with an implicit conversion.
+     * 2. Act: Inspect implicit conversion and explicitly construct an error result.
+     * 3. Expect: Implicit error conversion is forbidden and explicit construction selects error.
+     */
+    TEST(AP_R3_CORE_006_ResultCreationAndEmplacement, ConvertibleErrorRequiresExplicitConstruction)
+    {
+      /* Arrange */
+      using ConvertibleErrorResult = Result<long, int>;
+      const int error{42};
+
+      /* Act */
+      constexpr bool implicitly_convertible = std::is_convertible_v<int, ConvertibleErrorResult>;
+      constexpr bool lvalue_convertible = std::is_convertible_v<const int&, ConvertibleErrorResult>;
+      const ConvertibleErrorResult result{error};
+
+      /* Expect */
+      EXPECT_FALSE(implicitly_convertible);
+      EXPECT_FALSE(lvalue_convertible);
+      ASSERT_FALSE(result.HasValue());
+      EXPECT_EQ(result.Error(), error);
+    }
+
     /* Values may convert implicitly; errors require explicit construction. */
     static_assert(std::is_convertible_v<int, ConstructorResult>);
     static_assert(std::is_constructible_v<ConstructorResult, const int&>);
