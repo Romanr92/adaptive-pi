@@ -11,7 +11,7 @@ AdaptivePi is an educational, clean-room Adaptive AUTOSAR-inspired project. It d
 - Consult `docs/adr/`, relevant code, and tests for architectural and implementation context.
 - Use conversation history when available, but do not let remembered decisions override the current repository. If they disagree, point out the difference.
 - Do not add AUTOSAR features beyond the project's stated scope merely to match a specification.
-- Before any implementation, feature question or test work, read AGENTS.md, README.md, README.md, and the relevant skill file. Use the requirement text and verification method as the baseline.
+- Use the requirement text and verification method as the baseline for implementation and tests
 
 
 
