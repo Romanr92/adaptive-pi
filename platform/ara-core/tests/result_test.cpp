@@ -2556,16 +2556,16 @@ namespace ara::core
     TEST(AP_R3_CORE_010_MovePreservesState, ValueResultKeepsState)
     {
       /* Arrange */
-      auto value_result = Result<int>::FromValue(42);
-      auto error_result = Result<int>::FromError(MakeErrorCode(AdaptivePiErrc::kInvalidState));
+      auto value_result = Result<std::string>::FromValue("payload");
+      auto error_result = Result<std::string>::FromError(MakeErrorCode(AdaptivePiErrc::kInvalidState));
 
       /* Act */
-      const Result<int> moved_value{value_result};
-      const Result<int> moved_error{error_result};
+      const Result<std::string> moved_value{std::move(value_result)};
+      const Result<std::string> moved_error{std::move(error_result)};
 
       /* Expect */
       EXPECT_TRUE(moved_value.HasValue());
-      EXPECT_EQ(moved_value.Value(), 42);
+      EXPECT_EQ(moved_value.Value(), "payload");
       EXPECT_FALSE(moved_error.HasValue());
       EXPECT_EQ(moved_error.Error(), MakeErrorCode(AdaptivePiErrc::kInvalidState));
     }

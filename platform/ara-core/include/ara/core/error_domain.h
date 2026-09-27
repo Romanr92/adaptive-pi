@@ -64,7 +64,7 @@ namespace ara::core
           converter_(error);
         }
 
-        /* Missing coversion or a converter that unexpectedly returned. */
+        /* Missing conversion or a converter that unexpectedly returned. */
         std::terminate();
       }
 #endif // ADAPTIVE_PI_EXCEPTIONS_ENABLED
