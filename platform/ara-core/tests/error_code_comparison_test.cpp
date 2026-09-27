@@ -450,6 +450,7 @@ namespace ara::core
           "OperationFailedComparisons", "Operation failed error conversion and comparison behavior"}),
       ErrorCodeComparisonCaseName_DifferentEnumComparesUnequalInBothDirections);
 
+#if ADAPTIVE_PI_EXCEPTIONS_ENABLED
     /* ----------------------------------------------------------------------------------- */
 
     /* Verify the published AdaptivePi exception preserves both its original error and message.
@@ -495,6 +496,7 @@ namespace ara::core
     }
 
     /* ----------------------------------------------------------------------------------- */
+#endif // ADAPTIVE_PI_EXCEPTIONS_ENABLED
 
     /* Verify the published AdaptivePi domain identity remains stable and self-equal.
      * 1. Arrange: Capture the singleton domain and expected metadata.

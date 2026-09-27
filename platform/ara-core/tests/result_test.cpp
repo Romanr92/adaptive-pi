@@ -1,12 +1,16 @@
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wkeyword-macro"
+#if defined(__clang__)
+  #pragma clang diagnostic push
+  #pragma clang diagnostic ignored "-Wkeyword-macro"
+#endif
 #define private public
 #define protected public
 #include "ara/core/error_domain.h"
 #include "ara/core/result.h"
 #undef private
 #undef protected
-#pragma clang diagnostic pop
+#if defined(__clang__)
+  #pragma clang diagnostic pop
+#endif
 
 #include "ara/core/adaptive_pi_error_domain.h"
 
