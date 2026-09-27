@@ -8,6 +8,8 @@ The project deliberately does **not** use proprietary AUTOSAR implementation cod
 
 ## Current status
 
+Coverage report: https://romanr92.github.io/adaptive-pi/
+
 **Release 2 complete — SDK cross-build, QEMU deployment, and remote debugging** ✅
 
 The project has a verified development platform for ARM64 target software:
