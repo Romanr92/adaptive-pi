@@ -2584,6 +2584,50 @@ namespace ara::core
       EXPECT_DEATH(access(), "");
     }
 
+    /* ----------------------------------------------------------------------------------- */
+
+    /* Verify rvalue error access transfers a move-only payload.
+     * 1. Arrange: Construct an error result owning an integer and save its address.
+     * 2. Act: Extract ownership through rvalue Error().
+     * 3. Expect: The extracted error retains its address and value.
+     */
+    TEST(AP_R3_CORE_009_ErrorAccess, MovesErrorPayload)
+    {
+      /* Arrange */
+      auto result = Result<int, std::unique_ptr<int>>::FromError(std::make_unique<int>(42));
+      const auto* original = result.Error().get();
+
+      /* Act */
+      auto observed = std::move(result).Error();
+
+      /* Expect */
+      ASSERT_NE(observed, nullptr);
+      EXPECT_EQ(observed.get(), original);
+      EXPECT_EQ(*observed, 42);
+    }
+
+    /* ----------------------------------------------------------------------------------- */
+
+    /* Verify rvalue error access transfers a move-only payload.
+     * 1. Arrange: Construct an error result owning an integer and save its address.
+     * 2. Act: Extract ownership through rvalue Error().
+     * 3. Expect: The extracted error retains its address and value.
+     */
+    TEST(AP_R3_CORE_009_ErrorAccess, VoidMovesErrorPayload)
+    {
+      /* Arrange */
+      auto result = Result<void, std::unique_ptr<int>>::FromError(std::make_unique<int>(42));
+      const auto* original = result.Error().get();
+
+      /* Act */
+      auto observed = std::move(result).Error();
+
+      /* Expect */
+      ASSERT_NE(observed, nullptr);
+      EXPECT_EQ(observed.get(), original);
+      EXPECT_EQ(*observed, 42);
+    }
+
     /* ============================= End Test_AP_R3_CORE_009 ============================= */
 
     /* =============================== Test_AP_R3_CORE_010 =============================== */

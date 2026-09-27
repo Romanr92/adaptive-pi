@@ -210,7 +210,7 @@ Approved pending confirmed exception-enabled CI verification.
   [Guidelines for using Adaptive Platform interfaces, R23-11, §3.1.2, p. 10](https://www.autosar.org/fileadmin/standards/R23-11/AP/AUTOSAR_AP_EXP_InterfacesGuidelines.pdf).
 - Verification: Death test
   `AP_R3_CORE_009_ErrorOnValueTerminates` ✅.
-- Unit Tests: `AP_R3_CORE_009_ErrorAccess.ReturnsStoredError`; `AP_R3_CORE_009_ErrorAccess.VoidReturnsStoredError`; `AP_R3_CORE_009_ErrorOnValueTerminates.Terminates`
+- Unit Tests: `AP_R3_CORE_009_ErrorAccess.ReturnsStoredError`; `AP_R3_CORE_009_ErrorAccess.VoidReturnsStoredError`; `AP_R3_CORE_009_ErrorOnValueTerminates.Terminates`; `AP_R3_CORE_009_ErrorAccess.MovesErrorPayload`; `AP_R3_CORE_009_ErrorAccess.VoidMovesErrorPayload`
 - Deviation: None.
 
 ## AP-R3-CORE-010 - Result move state
@@ -224,7 +224,7 @@ Approved pending confirmed exception-enabled CI verification.
   SWS_CORE_00726; p. 64,
   SWS_CORE_00742](https://www.autosar.org/fileadmin/standards/R23-11/AP/AUTOSAR_AP_SWS_Core.pdf).
 - Verification: Unit test `AP_R3_CORE_010_MovePreservesState` ✅.
-- Unit Tests: `AP_R3_CORE_010_MovePreservesState.ValueResultKeepsState`; `AP_R3_CORE_010_MovePreservesState.VoidResultKeepsState`
+- Unit Tests: `AP_R3_CORE_010_MovePreservesState.ValueResultKeepsState`; `AP_R3_CORE_010_MovePreservesState.VoidResultKeepsState`; `AP_R3_CORE_005_ResultHasExactlyOneState_MoveConstructionPreservesState.MoveConstructionPreservesState`; `AP_R3_CORE_005_ResultVoidHasExactlyOneState_MoveConstructionPreservesState.MoveConstructionPreservesState`
 - Deviation: The moved-from object is valid only for destruction or assignment.
   Its state and contained object are unspecified and shall not be used.
 
