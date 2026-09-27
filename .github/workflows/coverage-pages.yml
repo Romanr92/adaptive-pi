@@ -1,0 +1,90 @@
+name: Coverage Pages
+
+on:
+  pull_request:
+    types: [closed]
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: coverage-pages
+  cancel-in-progress: false
+
+jobs:
+  coverage:
+    name: Generate coverage after merge
+    if: github.event.pull_request.merged == true
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: https://romanr92.github.io/adaptive-pi/coverage/
+
+    steps:
+      - name: Configure GitHub Pages
+        uses: actions/configure-pages@v5
+
+      - name: Check out the merged main commit
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.merge_commit_sha }}
+
+      - name: Install build and coverage tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes clang clang-tidy ninja-build gcovr llvm
+
+      - name: Configure coverage-enabled unit tests
+        run: |
+          cmake --preset debug-unit-tests \
+            -DADAPTIVE_PI_ENABLE_EXCEPTIONS=OFF \
+            -DCMAKE_BUILD_TYPE=Debug \
+            -DCMAKE_C_COMPILER=clang \
+            -DCMAKE_CXX_COMPILER=clang++ \
+            -DCMAKE_CXX_FLAGS="--coverage -O0 -g" \
+            -DCMAKE_C_FLAGS="--coverage -O0 -g" \
+            -DCMAKE_EXE_LINKER_FLAGS="--coverage" \
+            -DCMAKE_SHARED_LINKER_FLAGS="--coverage"
+
+      - name: Build coverage-enabled unit tests
+        run: cmake --build build/debug-unit-tests --parallel
+
+      - name: Run unit tests with coverage data
+        run: ctest --test-dir build/debug-unit-tests --output-on-failure
+
+      - name: Generate report at /coverage/
+        run: |
+          mkdir -p site/coverage
+          LLVM_COV_BIN="$(command -v llvm-cov || command -v llvm-cov-18 || command -v llvm-cov-17 || true)"
+          if [ -z "$LLVM_COV_BIN" ]; then
+            echo "llvm-cov not found" >&2
+            exit 1
+          fi
+          gcovr -r . \
+            --gcov-executable "${LLVM_COV_BIN} gcov" \
+            --filter './platform/' \
+            --filter './apps/' \
+            --exclude '.*/tests/.*' \
+            --html-details \
+            --output site/coverage/index.html \
+            --print-summary
+          test -s site/coverage/index.html
+          cat > site/index.html <<'HTML'
+          <!doctype html>
+          <html lang="en"><head><meta charset="utf-8"><title>AdaptivePi coverage</title></head>
+          <body><a href="coverage/">View unit-test coverage</a></body></html>
+          HTML
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: ./site
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
