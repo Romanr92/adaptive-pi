@@ -2611,6 +2611,29 @@ namespace ara::core
       EXPECT_EQ(&observed->Domain(), &domain);
     }
 
+    /* ----------------------------------------------------------------------------------- */
+
+    /* Verify that a converter returning without throwing cannot report successful conversion.
+     * 1. Arrange: Construct a domain with a converter that returns normally and an error from that domain.
+     * 2. Act: Ask the domain to convert the error in a death-test child.
+     * 3. Expect: The child terminates instead of returning to its caller.
+     */
+    TEST(AP_R3_CORE_008_DomainConversion, ReturningConverterTerminates)
+    {
+      /* Arrange */
+      const ErrorDomain domain{0x54455354000AULL, "ReturningConverter", [](const ErrorCode&) {}};
+      const ErrorCode error{42, domain};
+
+      /* Act */
+      const auto convert = [&domain, &error]()
+      {
+        domain.ThrowAsException(error);
+      };
+
+      /* Expect */
+      EXPECT_DEATH(convert(), "");
+    }
+
 #endif
     /* =============================== Test_AP_R3_CORE_009 =============================== */
 
@@ -2669,6 +2692,50 @@ namespace ara::core
       {
         (void)result.Error();
       };
+      /* Expect */
+      EXPECT_DEATH(access(), "");
+    }
+
+    /* ----------------------------------------------------------------------------------- */
+
+    /* Verify that rvalue error access on a successful non-void result terminates.
+     * 1. Arrange: Construct a successful result with an integer value.
+     * 2. Act: Call the rvalue Error() overload in a death-test child.
+     * 3. Expect: The child terminates instead of returning an error.
+     */
+    TEST(AP_R3_CORE_009_ErrorOnValueTerminates, RvalueTerminates)
+    {
+      /* Arrange */
+      auto result = Result<int>::FromValue(42);
+
+      /* Act */
+      const auto access = [&result]()
+      {
+        (void)std::move(result).Error();
+      };
+
+      /* Expect */
+      EXPECT_DEATH(access(), "");
+    }
+
+    /* ----------------------------------------------------------------------------------- */
+
+    /* Verify that rvalue error access on a successful void result terminates.
+     * 1. Arrange: Construct a successful void result.
+     * 2. Act: Call the rvalue Error() overload in a death-test child.
+     * 3. Expect: The child terminates instead of returning an error.
+     */
+    TEST(AP_R3_CORE_009_ErrorOnValueTerminates, VoidRvalueTerminates)
+    {
+      /* Arrange */
+      auto result = Result<void>::FromValue();
+
+      /* Act */
+      const auto access = [&result]()
+      {
+        (void)std::move(result).Error();
+      };
+
       /* Expect */
       EXPECT_DEATH(access(), "");
     }

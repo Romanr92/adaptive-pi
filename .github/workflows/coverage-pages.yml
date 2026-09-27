@@ -42,7 +42,7 @@ jobs:
       - name: Configure coverage-enabled unit tests
         run: |
           cmake --preset debug-unit-tests \
-            -DADAPTIVE_PI_ENABLE_EXCEPTIONS=OFF \
+            -DADAPTIVE_PI_ENABLE_EXCEPTIONS=ON \
             -DCMAKE_BUILD_TYPE=Debug \
             -DCMAKE_C_COMPILER=clang \
             -DCMAKE_CXX_COMPILER=clang++ \
@@ -67,13 +67,36 @@ jobs:
           fi
           gcovr -r . \
             --gcov-executable "${LLVM_COV_BIN} gcov" \
-            --filter './platform/' \
-            --filter './apps/' \
-            --exclude '.*/tests/.*' \
-            --html-details \
-            --output site/coverage/index.html \
+            --filter '^(apps|platform)/.*\.(c|cpp|cxx|h|hpp|hxx)$' \
+            --exclude '^(apps|platform)/(.*/)?tests?/' \
+            --exclude '^(apps|platform)/(.*/)?(test_[^/]*|[^/]*_(test|tests|spec))\.(c|cpp|cxx|h|hpp|hxx)$' \
+            --html-details site/coverage/index.html \
+            --json-summary site/coverage/summary.json \
             --print-summary
           test -s site/coverage/index.html
+          python3 - <<'PY'
+          import json
+          import re
+          import sys
+          from pathlib import Path
+
+          summary = json.loads(Path("site/coverage/summary.json").read_text())
+          files = summary.get("files", [])
+          production = re.compile(r"^(apps|platform)/.*\.(c|cpp|cxx|h|hpp|hxx)$")
+          test_dir = re.compile(r"^(apps|platform)/(.*/)?tests?/")
+          test_file = re.compile(r"^(apps|platform)/(.*/)?(test_[^/]*|[^/]*_(test|tests|spec))\.(c|cpp|cxx|h|hpp|hxx)$")
+          reported = [
+              entry for entry in files
+              if production.fullmatch(entry.get("filename", ""))
+              and not test_dir.match(entry["filename"])
+              and not test_file.fullmatch(entry["filename"])
+          ]
+          lines = sum(entry.get("line_total", 0) for entry in reported)
+          if len(reported) != len(files) or not reported or lines <= 0:
+              print("Coverage report has no valid production source results", file=sys.stderr)
+              sys.exit(1)
+          print(f"Coverage report contains {len(reported)} production files and {lines} instrumented lines")
+          PY
           cat > site/index.html <<'HTML'
           <!doctype html>
           <html lang="en"><head><meta charset="utf-8"><title>AdaptivePi coverage</title></head>
