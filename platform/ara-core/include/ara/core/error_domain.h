@@ -20,20 +20,22 @@ namespace ara::core
 
 #if ADAPTIVE_PI_EXCEPTIONS_ENABLED
       constexpr ErrorDomain(IdType id, std::string_view name, ExceptionConverter converter = nullptr) noexcept
-          : id_{id}, name_{name}, converter_
-      {
-        converter
-      }
-#else  // ADAPTIVE_PI_EXCEPTIONS_ENABLED
-      constexpr ErrorDomain(IdType id, std::string_view name) noexcept : id_{id}, name_{name}
-#endif // ADAPTIVE_PI_EXCEPTIONS_ENABLED
+          : id_{id}, name_{name}, converter_{converter}
       {
         if (name_.empty())
         {
           std::terminate();
         }
       }
-
+#else  // ADAPTIVE_PI_EXCEPTIONS_ENABLED
+      constexpr ErrorDomain(IdType id, std::string_view name) noexcept : id_{id}, name_{name}
+      {
+        if (name_.empty())
+        {
+          std::terminate();
+        }
+      }
+#endif // ADAPTIVE_PI_EXCEPTIONS_ENABLED
       [[nodiscard]] constexpr IdType Id() const noexcept
       {
         return id_;
