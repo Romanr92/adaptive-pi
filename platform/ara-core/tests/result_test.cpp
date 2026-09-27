@@ -1,5 +1,14 @@
-#include "ara/core/adaptive_pi_error_domain.h"
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wkeyword-macro"
+#define private public
+#define protected public
+#include "ara/core/error_domain.h"
 #include "ara/core/result.h"
+#undef private
+#undef protected
+#pragma clang diagnostic pop
+
+#include "ara/core/adaptive_pi_error_domain.h"
 
 #include <gtest/gtest.h>
 #include <memory>
@@ -2098,6 +2107,121 @@ namespace ara::core
     }
 
     /* ----------------------------------------------------------------------------------- */
+    /* Verify the internal storage guard terminates when no active payload exists.
+     * 1. Arrange: Construct a default ResultStorage instance with no active value.
+     * 2. Act: Query its active index and payload access in the spawned child.
+     * 3. Expect: The child terminates instead of returning an invalid internal state.
+     */
+    TEST(AP_R3_CORE_008_ValueAccess, EmptyStorageGuardTerminates)
+    {
+      /* Arrange */
+      const auto access_index = []()
+      {
+        detail::ResultStorage<int, ErrorCode> storage{std::in_place_index<c_resultIdx>, 42};
+        storage.active_ = 0U;
+        storage.slots_[0].reset();
+        (void)storage.index();
+      };
+      const auto access_payload = []()
+      {
+        detail::ResultStorage<int, ErrorCode> storage{std::in_place_index<c_resultIdx>, 42};
+        storage.active_ = 0U;
+        storage.slots_[0].reset();
+        (void)storage.template get<c_resultIdx>();
+      };
+
+      /* Expect */
+      EXPECT_DEATH(access_index(), "");
+      EXPECT_DEATH(access_payload(), "");
+    }
+
+    /* ----------------------------------------------------------------------------------- */
+    /* Verify the storage mismatch guard terminates on the wrong alternative.
+     * 1. Arrange: Prepare value and error results whose private storage is probed with the opposite type.
+     * 2. Act: Retrieve the mismatched alternative from the private storage slots.
+     * 3. Expect: The child process terminates instead of returning an invalid active alternative.
+     */
+    TEST(AP_R3_CORE_008_ValueAccess, WrongAlternativeTerminates)
+    {
+      /* Arrange */
+      auto value_result = Result<int>::FromValue(42);
+      auto error_result = Result<int>::FromError(MakeErrorCode(AdaptivePiErrc::kInvalidArgument));
+      const auto value_access = [&value_result]()
+      {
+        (void)value_result.storage_.template get<c_errorIdx>();
+      };
+      const auto value_const_access = [&value_result]()
+      {
+        (void)std::as_const(value_result).storage_.template get<c_errorIdx>();
+      };
+      const auto value_rvalue_access = [&value_result]()
+      {
+        (void)std::move(value_result).storage_.template get<c_errorIdx>();
+      };
+      const auto error_access = [&error_result]()
+      {
+        (void)error_result.storage_.template get<c_resultIdx>();
+      };
+      const auto error_const_access = [&error_result]()
+      {
+        (void)std::as_const(error_result).storage_.template get<c_resultIdx>();
+      };
+      const auto error_rvalue_access = [&error_result]()
+      {
+        (void)std::move(error_result).storage_.template get<c_resultIdx>();
+      };
+
+      /* Expect */
+      EXPECT_DEATH(value_access(), "");
+      EXPECT_DEATH(value_const_access(), "");
+      EXPECT_DEATH(value_rvalue_access(), "");
+      EXPECT_DEATH(error_access(), "");
+      EXPECT_DEATH(error_const_access(), "");
+      EXPECT_DEATH(error_rvalue_access(), "");
+    }
+
+    /* ----------------------------------------------------------------------------------- */
+    /* Verify the private storage guards remain active for the const and rvalue accessors too.
+     * 1. Arrange: Build a storage object with an empty active slot and a mismatched wrong-type access.
+     * 2. Act: Probe the private const and rvalue storage accessors in child processes.
+     * 3. Expect: The child terminates instead of returning a value for an invalid internal state.
+     */
+    TEST(AP_R3_CORE_008_ValueAccess, StorageGuardConstAndRvalueTerminate)
+    {
+      /* Arrange */
+      const auto empty_slot_const = []()
+      {
+        detail::ResultStorage<int, ErrorCode> storage{std::in_place_index<c_resultIdx>, 42};
+        storage.active_ = 0U;
+        storage.slots_[0].reset();
+        (void)std::as_const(storage).template get<c_resultIdx>();
+      };
+      const auto empty_slot_rvalue = []()
+      {
+        detail::ResultStorage<int, ErrorCode> storage{std::in_place_index<c_resultIdx>, 42};
+        storage.active_ = 0U;
+        storage.slots_[0].reset();
+        (void)std::move(storage).template get<c_resultIdx>();
+      };
+      const auto mismatched_const = []()
+      {
+        auto result = Result<int>::FromValue(42);
+        (void)std::as_const(result).storage_.template get<c_errorIdx>();
+      };
+      const auto mismatched_rvalue = []()
+      {
+        auto result = Result<int>::FromValue(42);
+        (void)std::move(result).storage_.template get<c_errorIdx>();
+      };
+
+      /* Expect */
+      EXPECT_DEATH(empty_slot_const(), "");
+      EXPECT_DEATH(empty_slot_rvalue(), "");
+      EXPECT_DEATH(mismatched_const(), "");
+      EXPECT_DEATH(mismatched_rvalue(), "");
+    }
+
+    /* ----------------------------------------------------------------------------------- */
 
     struct Case008ValueMutable
     {
@@ -2634,6 +2758,29 @@ namespace ara::core
       EXPECT_DEATH(convert(), "");
     }
 
+    /* ----------------------------------------------------------------------------------- */
+    /* Verify the conversion guard also terminates when the stored converter is cleared.
+     * 1. Arrange: Construct a valid domain, replace its converter with null, and prepare its error.
+     * 2. Act: Ask the domain to convert the error in a child process.
+     * 3. Expect: The child terminates instead of falling through a null conversion boundary.
+     */
+    TEST(AP_R3_CORE_008_DomainConversion, NullConverterThrowTerminates)
+    {
+      /* Arrange */
+      ErrorDomain domain{0x54455354000BULL, "NullThrower", [](const ErrorCode&) {}};
+      const ErrorCode error{42, domain};
+      domain.converter_ = nullptr;
+
+      /* Act */
+      const auto convert = [&domain, &error]()
+      {
+        domain.ThrowAsException(error);
+      };
+
+      /* Expect */
+      EXPECT_DEATH(convert(), "");
+    }
+
 #endif
     /* =============================== Test_AP_R3_CORE_009 =============================== */
 
@@ -2738,6 +2885,30 @@ namespace ara::core
 
       /* Expect */
       EXPECT_DEATH(access(), "");
+    }
+
+    /* ----------------------------------------------------------------------------------- */
+    /* Verify void error access terminates when the result is successful.
+     * 1. Arrange: Construct a successful void result in both const and rvalue forms.
+     * 2. Act: Attempt invalid access to the error payload through each overload.
+     * 3. Expect: Each child process terminates instead of returning an error from a value result.
+     */
+    TEST(AP_R3_CORE_009_ErrorOnValueTerminates, VoidResultErrorAccessTerminates)
+    {
+      /* Arrange */
+      auto result = Result<void>::FromValue();
+      const auto const_access = [&result]()
+      {
+        (void)std::as_const(result).Error();
+      };
+      const auto rvalue_access = [&result]()
+      {
+        (void)std::move(result).Error();
+      };
+
+      /* Expect */
+      EXPECT_DEATH(const_access(), "");
+      EXPECT_DEATH(rvalue_access(), "");
     }
 
     /* ----------------------------------------------------------------------------------- */

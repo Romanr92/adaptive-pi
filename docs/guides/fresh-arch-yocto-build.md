@@ -94,7 +94,9 @@ sudo pacman -S --needed --noconfirm\
   less \
   bash-completion \
   fzf \
-  bat
+  bat \
+  gcovr \
+  llvm
 ```
  - less -> needed for `git` branch paging 
  - bash-completion -> autocomplete `git` commands with Tab
