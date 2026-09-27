@@ -188,7 +188,8 @@ Approved pending confirmed exception-enabled CI verification.
   SWS_CORE_00755 to SWS_CORE_00756 and SWS_CORE_00766 to
   SWS_CORE_00769](https://www.autosar.org/fileadmin/standards/R23-11/AP/AUTOSAR_AP_SWS_Core.pdf).
 - Verification: Build and run common value-access tests and death test
-  `AP_R3_CORE_008_ValueOnErrorTerminates` ✅ in both configurations. Run unit test
+  `AP_R3_CORE_008_ValueOnErrorTerminates` (declaration exists; exception-disabled
+  execution observed, exception-enabled execution remains pending). Run unit test
   `AP_R3_CORE_008_ValueOrThrowConvertsDomainError` ✅ (test declaration exists;
   exception-enabled execution remains pending confirmed CI evidence).
   Compile-time checks shall verify absence of `ValueOrThrow()` with exceptions
