@@ -70,10 +70,26 @@ jobs:
             --filter '^(apps|platform)/.*\.(c|cpp|cxx|h|hpp|hxx)$' \
             --exclude '^(apps|platform)/(.*/)?tests?/' \
             --exclude '^(apps|platform)/(.*/)?(test_[^/]*|[^/]*_(test|tests|spec))\.(c|cpp|cxx|h|hpp|hxx)$' \
-            --html-details \
-            --output site/coverage/index.html \
+            --html-details site/coverage/index.html \
+            --json-summary site/coverage/summary.json \
             --print-summary
           test -s site/coverage/index.html
+          python3 - <<'PY'
+          import json
+          import re
+          import sys
+          from pathlib import Path
+
+          summary = json.loads(Path("site/coverage/summary.json").read_text())
+          files = summary.get("files", [])
+          production = re.compile(r"^(apps|platform)/.*\\.(c|cpp|cxx|h|hpp|hxx)$")
+          reported = [entry for entry in files if production.fullmatch(entry.get("filename", ""))]
+          lines = sum(entry.get("line_total", 0) for entry in reported)
+          if len(reported) != len(files) or not reported or lines <= 0:
+              print("Coverage report has no valid production source results", file=sys.stderr)
+              sys.exit(1)
+          print(f"Coverage report contains {len(reported)} production files and {lines} instrumented lines")
+          PY
           cat > site/index.html <<'HTML'
           <!doctype html>
           <html lang="en"><head><meta charset="utf-8"><title>AdaptivePi coverage</title></head>
