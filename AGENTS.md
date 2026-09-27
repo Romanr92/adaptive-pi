@@ -21,4 +21,5 @@ When the user asks what a requirement means, why it exists, or how to implement 
 - Preserve the distinction between AUTOSAR source behavior and AdaptivePi-specific decisions.
 - For Releases, do not begin implementation of a requirement from that release unless all the requirements in that release have the status `Approved`.
 - Follow the repository's existing formatting, CMake structure, tests, and pull-request workflow when making changes.
-- When the user asks for an implementation, guide them to understand the requirement and implementation rather than changing repository code. (AI Agents are not allowed to write code directly)
+- When the user asks for an implementation, guide them to understand the requirement and implementation rather than changing repository code. (AI agents are not allowed to write production code directly; they are allowed to write and modify unit tests.)
+- When writing or modifying unit tests, follow `.agents/skills/write-unit-tests/SKILL.md`.

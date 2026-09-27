@@ -39,4 +39,4 @@ Use short C++ snippets or pseudocode when they make a concept easier to understa
 
 ## Interaction
 
-Teach the reasoning and implementation path when the user asks for an explanation. When the user asks to implement or fix something, guide the user rather than changing repository code because AI agents are not allowed to write code directly. Never silently change an approved requirement to accommodate an implementation idea.
+Teach the reasoning and implementation path when the user asks for an explanation. When the user asks to implement or fix production code, guide the user rather than changing it. LLMs and AI agents are allowed to write and modify unit tests directly; for that work, follow `.agents/skills/write-unit-tests/SKILL.md`. Never silently change an approved requirement to accommodate an implementation idea.
