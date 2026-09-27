@@ -7,6 +7,8 @@
         "ms-python.python",
         "xaver.clang-format",
         "ibm.output-colorizer",
-        "ms-vscode-remote.remote-wsl"
+        "ms-vscode-remote.remote-wsl",
+        "github.vscode-github-actions",
+        "mhutchie.git-graph"
     ]
 }
