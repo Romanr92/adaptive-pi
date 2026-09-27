@@ -6,7 +6,6 @@
 #include <stdexcept>
 #include <string>
 #include <string_view>
-#include <tuple>
 #include <utility>
 
 namespace ara::core
@@ -15,7 +14,9 @@ namespace ara::core
   {
     /* ========================== Test_AP_R3_CORE_005 ==================================== */
 
-    struct ResultStateCase
+    /* ----------------------------------------------------------------------------------- */
+
+    struct ResultStateCase_ReportsSelectedState
     {
         bool has_value;
         int value;
@@ -24,140 +25,380 @@ namespace ara::core
         const char* description;
     };
 
-    std::ostream& operator<<(std::ostream& output, const ResultStateCase& parameter)
+    std::ostream& operator<<(std::ostream& output, const ResultStateCase_ReportsSelectedState& parameter)
     {
       return output << parameter.description;
     }
 
-    // Non-default-constructible and move-only: the inactive alternative must not
-    // require construction. Count live objects, independently of copy elision.
-    class TrackedObject final
-    {
-      public:
-        explicit TrackedObject(int& live_count) : live_count_{live_count}
-        {
-          ++live_count_;
-        }
-
-        TrackedObject(const TrackedObject&) = delete;
-        TrackedObject(TrackedObject&& other) noexcept : TrackedObject{other.live_count_} {}
-        TrackedObject& operator=(const TrackedObject&) = delete;
-        TrackedObject& operator=(TrackedObject&&) = delete;
-
-        ~TrackedObject()
-        {
-          --live_count_;
-        }
-
-      private:
-        int& live_count_;
-    };
-
-    class TrackedError final
-    {
-      public:
-        explicit TrackedError(int& live_count) : live_count_{live_count}
-        {
-          ++live_count_;
-        }
-
-        TrackedError(const TrackedError&) = delete;
-        TrackedError(TrackedError&& other) noexcept : TrackedError{other.live_count_} {}
-        TrackedError& operator=(const TrackedError&) = delete;
-        TrackedError& operator=(TrackedError&&) = delete;
-
-        ~TrackedError()
-        {
-          --live_count_;
-        }
-
-      private:
-        int& live_count_;
-    };
-
-    class AP_R3_CORE_005_ResultHasExactlyOneState : public ::testing::TestWithParam<ResultStateCase>
+    /* Provides the case data for this check: Verify that the selected result state is reported correctly.
+     * GetParam() supplies this test's inputs and expected results.
+     */
+    class AP_R3_CORE_005_ResultHasExactlyOneState
+        : public ::testing::TestWithParam<ResultStateCase_ReportsSelectedState>
     {
     };
 
+    /* Verify that the selected result state is reported correctly.
+     * 1. Arrange: Read the case parameters and prepare the selected result state.
+     * 2. Act: Construct the results using the constructor or factory under test.
+     * 3. Expect: The resulting objects report the intended value or error state.
+     */
     TEST_P(AP_R3_CORE_005_ResultHasExactlyOneState, ReportsSelectedState)
     {
-      const ResultStateCase& parameter{GetParam()};
+      /* Arrange */
+      const ResultStateCase_ReportsSelectedState& parameter{GetParam()};
+
+      /* Act */
       const auto result = parameter.has_value ? Result<int>::FromValue(parameter.value)
                                               : Result<int>::FromError(MakeErrorCode(parameter.error));
 
+      /* Expect */
       EXPECT_EQ(result.HasValue(), parameter.has_value);
     }
 
-    TEST_P(AP_R3_CORE_005_ResultHasExactlyOneState, CopyConstructionPreservesState)
-    {
-      const ResultStateCase& parameter{GetParam()};
-      const auto source = parameter.has_value ? Result<int>::FromValue(parameter.value)
-                                              : Result<int>::FromError(MakeErrorCode(parameter.error));
-      const Result<int> destination{source};
-
-      EXPECT_EQ(destination.HasValue(), parameter.has_value);
-      EXPECT_EQ(source.HasValue(), parameter.has_value);
-    }
-
-    // Also exercises AP-R3-CORE-010. Do not observe the moved-from result.
-    TEST_P(AP_R3_CORE_005_ResultHasExactlyOneState, MoveConstructionPreservesState)
-    {
-      const ResultStateCase& parameter{GetParam()};
-      auto source = parameter.has_value ? Result<int>::FromValue(parameter.value)
-                                        : Result<int>::FromError(MakeErrorCode(parameter.error));
-      // Explicitly exercise move construction even when the payload is trivial.
-      // NOLINTNEXTLINE(performance-move-const-arg)
-      const Result<int> destination{std::move(source)};
-
-      EXPECT_EQ(destination.HasValue(), parameter.has_value);
-    }
-
-    TEST_P(AP_R3_CORE_005_ResultHasExactlyOneState, SameTypesAndPayloadsKeepAlternativesDistinct)
-    {
-      const ResultStateCase& parameter{GetParam()};
-      const auto result = parameter.has_value ? Result<int, int>::FromValue(parameter.value)
-                                              : Result<int, int>::FromError(parameter.value);
-
-      EXPECT_EQ(result.HasValue(), parameter.has_value);
-    }
-
-    TEST_P(AP_R3_CORE_005_ResultHasExactlyOneState, ConstructsAndDestroysOnlySelectedAlternative)
-    {
-      const ResultStateCase& parameter{GetParam()};
-      int live_values{0};
-      int live_errors{0};
-
-      {
-        const auto result = parameter.has_value
-                              ? Result<TrackedObject, TrackedObject>::FromValue(TrackedObject{live_values})
-                              : Result<TrackedObject, TrackedObject>::FromError(TrackedObject{live_errors});
-
-        EXPECT_EQ(result.HasValue(), parameter.has_value);
-        EXPECT_EQ(live_values, parameter.has_value ? 1 : 0);
-        EXPECT_EQ(live_errors, parameter.has_value ? 0 : 1);
-      }
-
-      EXPECT_EQ(live_values, 0);
-      EXPECT_EQ(live_errors, 0);
-    }
-
-    std::string ResultStateCaseName(const ::testing::TestParamInfo<ResultStateCase>& information)
+    std::string ResultStateCaseName_ReportsSelectedState(
+      const ::testing::TestParamInfo<ResultStateCase_ReportsSelectedState>& information)
     {
       return std::string{information.param.test_name};
     }
 
     INSTANTIATE_TEST_SUITE_P(
       ResultStates, AP_R3_CORE_005_ResultHasExactlyOneState,
-      ::testing::Values(
-        ResultStateCase{true, 0, AdaptivePiErrc::kInvalidArgument, "ZeroValue", "Zero is a successful value"},
-        ResultStateCase{true, 42, AdaptivePiErrc::kInvalidState, "PositiveValue", "Positive integer success"},
-        ResultStateCase{true, -1, AdaptivePiErrc::kOperationFailed, "NegativeValue", "Negative integer success"},
-        ResultStateCase{false, 0, AdaptivePiErrc::kInvalidArgument, "InvalidArgument", "Invalid argument failure"},
-        ResultStateCase{false, 42, AdaptivePiErrc::kInvalidState, "InvalidState", "Invalid state failure"},
-        ResultStateCase{false, -1, AdaptivePiErrc::kOperationFailed, "OperationFailed", "Operation failed"}),
-      ResultStateCaseName);
+      ::testing::Values(ResultStateCase_ReportsSelectedState{true, 0, AdaptivePiErrc::kInvalidArgument, "ZeroValue",
+                                                             "Zero is a successful value"},
+                        ResultStateCase_ReportsSelectedState{true, 42, AdaptivePiErrc::kInvalidState, "PositiveValue",
+                                                             "Positive integer success"},
+                        ResultStateCase_ReportsSelectedState{true, -1, AdaptivePiErrc::kOperationFailed,
+                                                             "NegativeValue", "Negative integer success"},
+                        ResultStateCase_ReportsSelectedState{false, 0, AdaptivePiErrc::kInvalidArgument,
+                                                             "InvalidArgument", "Invalid argument failure"},
+                        ResultStateCase_ReportsSelectedState{false, 42, AdaptivePiErrc::kInvalidState, "InvalidState",
+                                                             "Invalid state failure"},
+                        ResultStateCase_ReportsSelectedState{false, -1, AdaptivePiErrc::kOperationFailed,
+                                                             "OperationFailed", "Operation failed"}),
+      ResultStateCaseName_ReportsSelectedState);
 
-    struct ResultVoidStateCase
+    /* ----------------------------------------------------------------------------------- */
+
+    struct ResultStateCase_CopyConstructionPreservesState
+    {
+        bool has_value;
+        int value;
+        AdaptivePiErrc error;
+        std::string_view test_name;
+        const char* description;
+    };
+
+    std::ostream& operator<<(std::ostream& output, const ResultStateCase_CopyConstructionPreservesState& parameter)
+    {
+      return output << parameter.description;
+    }
+
+    /* Provides the case data for this check: Verify that copying preserves both source and destination states.
+     * GetParam() supplies this test's inputs and expected results.
+     */
+    class AP_R3_CORE_005_ResultHasExactlyOneState_CopyConstructionPreservesState
+        : public ::testing::TestWithParam<ResultStateCase_CopyConstructionPreservesState>
+    {
+    };
+
+    /* Verify that copying preserves both source and destination states.
+     * 1. Arrange: Read the case parameters and construct the source result.
+     * 2. Act: Construct the results using the constructor or factory under test.
+     * 3. Expect: The resulting objects report the intended value or error state.
+     */
+    TEST_P(AP_R3_CORE_005_ResultHasExactlyOneState_CopyConstructionPreservesState, CopyConstructionPreservesState)
+    {
+      /* Arrange */
+      const ResultStateCase_CopyConstructionPreservesState& parameter{GetParam()};
+      const auto source = parameter.has_value ? Result<int>::FromValue(parameter.value)
+                                              : Result<int>::FromError(MakeErrorCode(parameter.error));
+
+      /* Act */
+      const Result<int> destination{source};
+
+      /* Expect */
+      EXPECT_EQ(destination.HasValue(), parameter.has_value);
+      EXPECT_EQ(source.HasValue(), parameter.has_value);
+    }
+
+    std::string ResultStateCaseName_CopyConstructionPreservesState(
+      const ::testing::TestParamInfo<ResultStateCase_CopyConstructionPreservesState>& information)
+    {
+      return std::string{information.param.test_name};
+    }
+
+    INSTANTIATE_TEST_SUITE_P(
+      ResultStates, AP_R3_CORE_005_ResultHasExactlyOneState_CopyConstructionPreservesState,
+      ::testing::Values(ResultStateCase_CopyConstructionPreservesState{true, 0, AdaptivePiErrc::kInvalidArgument,
+                                                                       "ZeroValue", "Zero is a successful value"},
+                        ResultStateCase_CopyConstructionPreservesState{true, 42, AdaptivePiErrc::kInvalidState,
+                                                                       "PositiveValue", "Positive integer success"},
+                        ResultStateCase_CopyConstructionPreservesState{true, -1, AdaptivePiErrc::kOperationFailed,
+                                                                       "NegativeValue", "Negative integer success"},
+                        ResultStateCase_CopyConstructionPreservesState{false, 0, AdaptivePiErrc::kInvalidArgument,
+                                                                       "InvalidArgument", "Invalid argument failure"},
+                        ResultStateCase_CopyConstructionPreservesState{false, 42, AdaptivePiErrc::kInvalidState,
+                                                                       "InvalidState", "Invalid state failure"},
+                        ResultStateCase_CopyConstructionPreservesState{false, -1, AdaptivePiErrc::kOperationFailed,
+                                                                       "OperationFailed", "Operation failed"}),
+      ResultStateCaseName_CopyConstructionPreservesState);
+
+    /* ----------------------------------------------------------------------------------- */
+
+    /* Also exercises AP-R3-CORE-010. Do not observe the moved-from result. */
+    struct ResultStateCase_MoveConstructionPreservesState
+    {
+        bool has_value;
+        int value;
+        AdaptivePiErrc error;
+        std::string_view test_name;
+        const char* description;
+    };
+
+    std::ostream& operator<<(std::ostream& output, const ResultStateCase_MoveConstructionPreservesState& parameter)
+    {
+      return output << parameter.description;
+    }
+
+    /* Provides the case data for this check: Verify that moving preserves the destination state without inspecting the
+     * moved-from object. GetParam() supplies this test's inputs and expected results.
+     */
+    class AP_R3_CORE_005_ResultHasExactlyOneState_MoveConstructionPreservesState
+        : public ::testing::TestWithParam<ResultStateCase_MoveConstructionPreservesState>
+    {
+    };
+
+    /* Verify that moving preserves the destination state without inspecting the moved-from object.
+     * 1. Arrange: Read the case parameters and construct the source result.
+     * 2. Act: Construct the results using the constructor or factory under test.
+     * 3. Expect: The resulting objects report the intended value or error state.
+     */
+    TEST_P(AP_R3_CORE_005_ResultHasExactlyOneState_MoveConstructionPreservesState, MoveConstructionPreservesState)
+    {
+      /* Arrange */
+      const ResultStateCase_MoveConstructionPreservesState& parameter{GetParam()};
+      auto source = parameter.has_value ? Result<int>::FromValue(parameter.value)
+                                        : Result<int>::FromError(MakeErrorCode(parameter.error));
+
+      /* Act */
+      /* Explicitly exercise move construction even when the payload is trivial. */
+      /* NOLINTNEXTLINE(performance-move-const-arg) */
+      const Result<int> destination{std::move(source)};
+
+      /* Expect */
+      EXPECT_EQ(destination.HasValue(), parameter.has_value);
+    }
+
+    std::string ResultStateCaseName_MoveConstructionPreservesState(
+      const ::testing::TestParamInfo<ResultStateCase_MoveConstructionPreservesState>& information)
+    {
+      return std::string{information.param.test_name};
+    }
+
+    INSTANTIATE_TEST_SUITE_P(
+      ResultStates, AP_R3_CORE_005_ResultHasExactlyOneState_MoveConstructionPreservesState,
+      ::testing::Values(ResultStateCase_MoveConstructionPreservesState{true, 0, AdaptivePiErrc::kInvalidArgument,
+                                                                       "ZeroValue", "Zero is a successful value"},
+                        ResultStateCase_MoveConstructionPreservesState{true, 42, AdaptivePiErrc::kInvalidState,
+                                                                       "PositiveValue", "Positive integer success"},
+                        ResultStateCase_MoveConstructionPreservesState{true, -1, AdaptivePiErrc::kOperationFailed,
+                                                                       "NegativeValue", "Negative integer success"},
+                        ResultStateCase_MoveConstructionPreservesState{false, 0, AdaptivePiErrc::kInvalidArgument,
+                                                                       "InvalidArgument", "Invalid argument failure"},
+                        ResultStateCase_MoveConstructionPreservesState{false, 42, AdaptivePiErrc::kInvalidState,
+                                                                       "InvalidState", "Invalid state failure"},
+                        ResultStateCase_MoveConstructionPreservesState{false, -1, AdaptivePiErrc::kOperationFailed,
+                                                                       "OperationFailed", "Operation failed"}),
+      ResultStateCaseName_MoveConstructionPreservesState);
+
+    /* ----------------------------------------------------------------------------------- */
+
+    struct ResultStateCase_SameTypesAndPayloadsKeepAlternativesDistinct
+    {
+        bool has_value;
+        int value;
+        AdaptivePiErrc error;
+        std::string_view test_name;
+        const char* description;
+    };
+
+    std::ostream& operator<<(std::ostream& output,
+                             const ResultStateCase_SameTypesAndPayloadsKeepAlternativesDistinct& parameter)
+    {
+      return output << parameter.description;
+    }
+
+    /* Provides the case data for this check: Verify that identical value and error types still have distinct states.
+     * GetParam() supplies this test's inputs and expected results.
+     */
+    class AP_R3_CORE_005_ResultHasExactlyOneState_SameTypesAndPayloadsKeepAlternativesDistinct
+        : public ::testing::TestWithParam<ResultStateCase_SameTypesAndPayloadsKeepAlternativesDistinct>
+    {
+    };
+
+    /* Verify that identical value and error types still have distinct states.
+     * 1. Arrange: Read the selected alternative and the integer used for either payload.
+     * 2. Act: Construct the results using the constructor or factory under test.
+     * 3. Expect: The resulting objects report the intended value or error state.
+     */
+    TEST_P(AP_R3_CORE_005_ResultHasExactlyOneState_SameTypesAndPayloadsKeepAlternativesDistinct,
+           SameTypesAndPayloadsKeepAlternativesDistinct)
+    {
+      /* Arrange */
+      const ResultStateCase_SameTypesAndPayloadsKeepAlternativesDistinct& parameter{GetParam()};
+
+      /* Act */
+      const auto result = parameter.has_value ? Result<int, int>::FromValue(parameter.value)
+                                              : Result<int, int>::FromError(parameter.value);
+
+      /* Expect */
+      EXPECT_EQ(result.HasValue(), parameter.has_value);
+    }
+
+    std::string ResultStateCaseName_SameTypesAndPayloadsKeepAlternativesDistinct(
+      const ::testing::TestParamInfo<ResultStateCase_SameTypesAndPayloadsKeepAlternativesDistinct>& information)
+    {
+      return std::string{information.param.test_name};
+    }
+
+    INSTANTIATE_TEST_SUITE_P(
+      ResultStates, AP_R3_CORE_005_ResultHasExactlyOneState_SameTypesAndPayloadsKeepAlternativesDistinct,
+      ::testing::Values(
+        ResultStateCase_SameTypesAndPayloadsKeepAlternativesDistinct{true, 0, AdaptivePiErrc::kInvalidArgument,
+                                                                     "ZeroValue", "Zero is a successful value"},
+        ResultStateCase_SameTypesAndPayloadsKeepAlternativesDistinct{true, 42, AdaptivePiErrc::kInvalidState,
+                                                                     "PositiveValue", "Positive integer success"},
+        ResultStateCase_SameTypesAndPayloadsKeepAlternativesDistinct{true, -1, AdaptivePiErrc::kOperationFailed,
+                                                                     "NegativeValue", "Negative integer success"},
+        ResultStateCase_SameTypesAndPayloadsKeepAlternativesDistinct{false, 0, AdaptivePiErrc::kInvalidArgument,
+                                                                     "InvalidArgument", "Invalid argument failure"},
+        ResultStateCase_SameTypesAndPayloadsKeepAlternativesDistinct{false, 42, AdaptivePiErrc::kInvalidState,
+                                                                     "InvalidState", "Invalid state failure"},
+        ResultStateCase_SameTypesAndPayloadsKeepAlternativesDistinct{false, -1, AdaptivePiErrc::kOperationFailed,
+                                                                     "OperationFailed", "Operation failed"}),
+      ResultStateCaseName_SameTypesAndPayloadsKeepAlternativesDistinct);
+
+    /* ----------------------------------------------------------------------------------- */
+
+    struct ResultStateCase_ConstructsAndDestroysOnlySelectedAlternative
+    {
+        bool has_value;
+        int value;
+        AdaptivePiErrc error;
+        std::string_view test_name;
+        const char* description;
+    };
+
+    std::ostream& operator<<(std::ostream& output,
+                             const ResultStateCase_ConstructsAndDestroysOnlySelectedAlternative& parameter)
+    {
+      return output << parameter.description;
+    }
+
+    class TrackedObject_ConstructsAndDestroysOnlySelectedAlternative final
+    {
+      public:
+        explicit TrackedObject_ConstructsAndDestroysOnlySelectedAlternative(int& live_count) : live_count_{live_count}
+        {
+          ++live_count_;
+        }
+
+        TrackedObject_ConstructsAndDestroysOnlySelectedAlternative(
+          const TrackedObject_ConstructsAndDestroysOnlySelectedAlternative&) = delete;
+        TrackedObject_ConstructsAndDestroysOnlySelectedAlternative(
+          TrackedObject_ConstructsAndDestroysOnlySelectedAlternative&& other) noexcept
+            : TrackedObject_ConstructsAndDestroysOnlySelectedAlternative{other.live_count_}
+        {
+        }
+        TrackedObject_ConstructsAndDestroysOnlySelectedAlternative&
+        operator=(const TrackedObject_ConstructsAndDestroysOnlySelectedAlternative&) = delete;
+        TrackedObject_ConstructsAndDestroysOnlySelectedAlternative&
+        operator=(TrackedObject_ConstructsAndDestroysOnlySelectedAlternative&&) = delete;
+
+        ~TrackedObject_ConstructsAndDestroysOnlySelectedAlternative()
+        {
+          --live_count_;
+        }
+
+      private:
+        int& live_count_;
+    };
+
+    /* Provides the case data for this check: Verify construction and destruction of only the selected alternatives.
+     * GetParam() supplies this test's inputs and expected results.
+     */
+    class AP_R3_CORE_005_ResultHasExactlyOneState_ConstructsAndDestroysOnlySelectedAlternative
+        : public ::testing::TestWithParam<ResultStateCase_ConstructsAndDestroysOnlySelectedAlternative>
+    {
+    };
+
+    /* Verify construction and destruction of only the selected alternatives.
+     * 1. Arrange: Initialize the lifetime counters and storage for observations.
+     * 2. Act: Construct scoped results and record their state and live payload counts before destruction.
+     * 3. Expect: Only selected payloads were alive and all live counts return to zero after scope exit.
+     */
+    TEST_P(AP_R3_CORE_005_ResultHasExactlyOneState_ConstructsAndDestroysOnlySelectedAlternative,
+           ConstructsAndDestroysOnlySelectedAlternative)
+    {
+      /* Arrange */
+      const ResultStateCase_ConstructsAndDestroysOnlySelectedAlternative& parameter{GetParam()};
+      int live_values{0};
+      int live_errors{0};
+      bool selected_has_value{};
+      int values_while_alive{};
+      int errors_while_alive{};
+
+      /* Act */
+      {
+        const auto result = parameter.has_value
+                              ? Result<TrackedObject_ConstructsAndDestroysOnlySelectedAlternative,
+                                       TrackedObject_ConstructsAndDestroysOnlySelectedAlternative>::
+                                  FromValue(TrackedObject_ConstructsAndDestroysOnlySelectedAlternative{live_values})
+                              : Result<TrackedObject_ConstructsAndDestroysOnlySelectedAlternative,
+                                       TrackedObject_ConstructsAndDestroysOnlySelectedAlternative>::
+                                  FromError(TrackedObject_ConstructsAndDestroysOnlySelectedAlternative{live_errors});
+
+        selected_has_value = result.HasValue();
+        values_while_alive = live_values;
+        errors_while_alive = live_errors;
+      }
+
+      /* Expect */
+      EXPECT_EQ(selected_has_value, parameter.has_value);
+      EXPECT_EQ(values_while_alive, parameter.has_value ? 1 : 0);
+      EXPECT_EQ(errors_while_alive, parameter.has_value ? 0 : 1);
+
+      EXPECT_EQ(live_values, 0);
+      EXPECT_EQ(live_errors, 0);
+    }
+
+    std::string ResultStateCaseName_ConstructsAndDestroysOnlySelectedAlternative(
+      const ::testing::TestParamInfo<ResultStateCase_ConstructsAndDestroysOnlySelectedAlternative>& information)
+    {
+      return std::string{information.param.test_name};
+    }
+
+    INSTANTIATE_TEST_SUITE_P(
+      ResultStates, AP_R3_CORE_005_ResultHasExactlyOneState_ConstructsAndDestroysOnlySelectedAlternative,
+      ::testing::Values(
+        ResultStateCase_ConstructsAndDestroysOnlySelectedAlternative{true, 0, AdaptivePiErrc::kInvalidArgument,
+                                                                     "ZeroValue", "Zero is a successful value"},
+        ResultStateCase_ConstructsAndDestroysOnlySelectedAlternative{true, 42, AdaptivePiErrc::kInvalidState,
+                                                                     "PositiveValue", "Positive integer success"},
+        ResultStateCase_ConstructsAndDestroysOnlySelectedAlternative{true, -1, AdaptivePiErrc::kOperationFailed,
+                                                                     "NegativeValue", "Negative integer success"},
+        ResultStateCase_ConstructsAndDestroysOnlySelectedAlternative{false, 0, AdaptivePiErrc::kInvalidArgument,
+                                                                     "InvalidArgument", "Invalid argument failure"},
+        ResultStateCase_ConstructsAndDestroysOnlySelectedAlternative{false, 42, AdaptivePiErrc::kInvalidState,
+                                                                     "InvalidState", "Invalid state failure"},
+        ResultStateCase_ConstructsAndDestroysOnlySelectedAlternative{false, -1, AdaptivePiErrc::kOperationFailed,
+                                                                     "OperationFailed", "Operation failed"}),
+      ResultStateCaseName_ConstructsAndDestroysOnlySelectedAlternative);
+
+    /* ----------------------------------------------------------------------------------- */
+
+    struct ResultVoidStateCase_ReportsSelectedState
     {
         bool has_value;
         AdaptivePiErrc error;
@@ -165,98 +406,654 @@ namespace ara::core
         const char* description;
     };
 
-    std::ostream& operator<<(std::ostream& output, const ResultVoidStateCase& parameter)
+    std::ostream& operator<<(std::ostream& output, const ResultVoidStateCase_ReportsSelectedState& parameter)
     {
       return output << parameter.description;
     }
 
-    class AP_R3_CORE_005_ResultVoidHasExactlyOneState : public ::testing::TestWithParam<ResultVoidStateCase>
+    /* Provides the case data for this check: Verify that the selected result state is reported correctly.
+     * GetParam() supplies this test's inputs and expected results.
+     */
+    class AP_R3_CORE_005_ResultVoidHasExactlyOneState
+        : public ::testing::TestWithParam<ResultVoidStateCase_ReportsSelectedState>
     {
     };
 
+    /* Verify that the selected result state is reported correctly.
+     * 1. Arrange: Read the case parameters and prepare the selected result state.
+     * 2. Act: Construct the results using the constructor or factory under test.
+     * 3. Expect: The resulting objects report the intended value or error state.
+     */
     TEST_P(AP_R3_CORE_005_ResultVoidHasExactlyOneState, ReportsSelectedState)
     {
-      const ResultVoidStateCase& parameter{GetParam()};
+      /* Arrange */
+      const ResultVoidStateCase_ReportsSelectedState& parameter{GetParam()};
+
+      /* Act */
       const auto result =
         parameter.has_value ? Result<void>::FromValue() : Result<void>::FromError(MakeErrorCode(parameter.error));
 
+      /* Expect */
       EXPECT_EQ(result.HasValue(), parameter.has_value);
     }
 
-    TEST_P(AP_R3_CORE_005_ResultVoidHasExactlyOneState, CopyConstructionPreservesState)
-    {
-      const ResultVoidStateCase& parameter{GetParam()};
-      const auto source =
-        parameter.has_value ? Result<void>::FromValue() : Result<void>::FromError(MakeErrorCode(parameter.error));
-      const Result<void> destination{source};
-
-      EXPECT_EQ(destination.HasValue(), parameter.has_value);
-      EXPECT_EQ(source.HasValue(), parameter.has_value);
-    }
-
-    // Also exercises AP-R3-CORE-010. Do not observe the moved-from result.
-    TEST_P(AP_R3_CORE_005_ResultVoidHasExactlyOneState, MoveConstructionPreservesState)
-    {
-      const ResultVoidStateCase& parameter{GetParam()};
-      auto source =
-        parameter.has_value ? Result<void>::FromValue() : Result<void>::FromError(MakeErrorCode(parameter.error));
-      // Explicitly exercise move construction even when the payload is trivial.
-      // NOLINTNEXTLINE(performance-move-const-arg)
-      const Result<void> destination{std::move(source)};
-
-      EXPECT_EQ(destination.HasValue(), parameter.has_value);
-    }
-
-    TEST_P(AP_R3_CORE_005_ResultVoidHasExactlyOneState, ConstructsAnErrorOnlyOnFailure)
-    {
-      const ResultVoidStateCase& parameter{GetParam()};
-      int live_errors{0};
-
-      {
-        const auto result = parameter.has_value ? Result<void, TrackedObject>::FromValue()
-                                                : Result<void, TrackedObject>::FromError(TrackedObject{live_errors});
-
-        EXPECT_EQ(result.HasValue(), parameter.has_value);
-        EXPECT_EQ(live_errors, parameter.has_value ? 0 : 1);
-      }
-
-      EXPECT_EQ(live_errors, 0);
-    }
-
-    std::string ResultVoidStateCaseName(const ::testing::TestParamInfo<ResultVoidStateCase>& information)
+    std::string ResultVoidStateCaseName_ReportsSelectedState(
+      const ::testing::TestParamInfo<ResultVoidStateCase_ReportsSelectedState>& information)
     {
       return std::string{information.param.test_name};
     }
 
     INSTANTIATE_TEST_SUITE_P(
       ResultVoidStates, AP_R3_CORE_005_ResultVoidHasExactlyOneState,
-      ::testing::Values(
-        ResultVoidStateCase{true, AdaptivePiErrc::kInvalidArgument, "Success", "Successful completion without a value"},
-        ResultVoidStateCase{false, AdaptivePiErrc::kInvalidArgument, "InvalidArgument", "Invalid argument failure"},
-        ResultVoidStateCase{false, AdaptivePiErrc::kInvalidState, "InvalidState", "Invalid state failure"},
-        ResultVoidStateCase{false, AdaptivePiErrc::kOperationFailed, "OperationFailed", "Operation failed"}),
-      ResultVoidStateCaseName);
+      ::testing::Values(ResultVoidStateCase_ReportsSelectedState{true, AdaptivePiErrc::kInvalidArgument, "Success",
+                                                                 "Successful completion without a value"},
+                        ResultVoidStateCase_ReportsSelectedState{false, AdaptivePiErrc::kInvalidArgument,
+                                                                 "InvalidArgument", "Invalid argument failure"},
+                        ResultVoidStateCase_ReportsSelectedState{false, AdaptivePiErrc::kInvalidState, "InvalidState",
+                                                                 "Invalid state failure"},
+                        ResultVoidStateCase_ReportsSelectedState{false, AdaptivePiErrc::kOperationFailed,
+                                                                 "OperationFailed", "Operation failed"}),
+      ResultVoidStateCaseName_ReportsSelectedState);
 
-    /* ========================== Test_AP_R3_CORE_005 ==================================== */
+    /* ----------------------------------------------------------------------------------- */
+
+    struct ResultVoidStateCase_CopyConstructionPreservesState
+    {
+        bool has_value;
+        AdaptivePiErrc error;
+        std::string_view test_name;
+        const char* description;
+    };
+
+    std::ostream& operator<<(std::ostream& output, const ResultVoidStateCase_CopyConstructionPreservesState& parameter)
+    {
+      return output << parameter.description;
+    }
+
+    /* Provides the case data for this check: Verify that copying preserves both source and destination states.
+     * GetParam() supplies this test's inputs and expected results.
+     */
+    class AP_R3_CORE_005_ResultVoidHasExactlyOneState_CopyConstructionPreservesState
+        : public ::testing::TestWithParam<ResultVoidStateCase_CopyConstructionPreservesState>
+    {
+    };
+
+    /* Verify that copying preserves both source and destination states.
+     * 1. Arrange: Read the case parameters and construct the source result.
+     * 2. Act: Construct the results using the constructor or factory under test.
+     * 3. Expect: The resulting objects report the intended value or error state.
+     */
+    TEST_P(AP_R3_CORE_005_ResultVoidHasExactlyOneState_CopyConstructionPreservesState, CopyConstructionPreservesState)
+    {
+      /* Arrange */
+      const ResultVoidStateCase_CopyConstructionPreservesState& parameter{GetParam()};
+      const auto source =
+        parameter.has_value ? Result<void>::FromValue() : Result<void>::FromError(MakeErrorCode(parameter.error));
+
+      /* Act */
+      const Result<void> destination{source};
+
+      /* Expect */
+      EXPECT_EQ(destination.HasValue(), parameter.has_value);
+      EXPECT_EQ(source.HasValue(), parameter.has_value);
+    }
+
+    std::string ResultVoidStateCaseName_CopyConstructionPreservesState(
+      const ::testing::TestParamInfo<ResultVoidStateCase_CopyConstructionPreservesState>& information)
+    {
+      return std::string{information.param.test_name};
+    }
+
+    INSTANTIATE_TEST_SUITE_P(
+      ResultVoidStates, AP_R3_CORE_005_ResultVoidHasExactlyOneState_CopyConstructionPreservesState,
+      ::testing::Values(ResultVoidStateCase_CopyConstructionPreservesState{true, AdaptivePiErrc::kInvalidArgument,
+                                                                           "Success",
+                                                                           "Successful completion without a value"},
+                        ResultVoidStateCase_CopyConstructionPreservesState{
+                          false, AdaptivePiErrc::kInvalidArgument, "InvalidArgument", "Invalid argument failure"},
+                        ResultVoidStateCase_CopyConstructionPreservesState{false, AdaptivePiErrc::kInvalidState,
+                                                                           "InvalidState", "Invalid state failure"},
+                        ResultVoidStateCase_CopyConstructionPreservesState{false, AdaptivePiErrc::kOperationFailed,
+                                                                           "OperationFailed", "Operation failed"}),
+      ResultVoidStateCaseName_CopyConstructionPreservesState);
+
+    /* ----------------------------------------------------------------------------------- */
+
+    /* Also exercises AP-R3-CORE-010. Do not observe the moved-from result. */
+    struct ResultVoidStateCase_MoveConstructionPreservesState
+    {
+        bool has_value;
+        AdaptivePiErrc error;
+        std::string_view test_name;
+        const char* description;
+    };
+
+    std::ostream& operator<<(std::ostream& output, const ResultVoidStateCase_MoveConstructionPreservesState& parameter)
+    {
+      return output << parameter.description;
+    }
+
+    /* Provides the case data for this check: Verify that moving preserves the destination state without inspecting the
+     * moved-from object. GetParam() supplies this test's inputs and expected results.
+     */
+    class AP_R3_CORE_005_ResultVoidHasExactlyOneState_MoveConstructionPreservesState
+        : public ::testing::TestWithParam<ResultVoidStateCase_MoveConstructionPreservesState>
+    {
+    };
+
+    /* Verify that moving preserves the destination state without inspecting the moved-from object.
+     * 1. Arrange: Read the case parameters and construct the source result.
+     * 2. Act: Construct the results using the constructor or factory under test.
+     * 3. Expect: The resulting objects report the intended value or error state.
+     */
+    TEST_P(AP_R3_CORE_005_ResultVoidHasExactlyOneState_MoveConstructionPreservesState, MoveConstructionPreservesState)
+    {
+      /* Arrange */
+      const ResultVoidStateCase_MoveConstructionPreservesState& parameter{GetParam()};
+      auto source =
+        parameter.has_value ? Result<void>::FromValue() : Result<void>::FromError(MakeErrorCode(parameter.error));
+
+      /* Act */
+      /* Explicitly exercise move construction even when the payload is trivial. */
+      /* NOLINTNEXTLINE(performance-move-const-arg) */
+      const Result<void> destination{std::move(source)};
+
+      /* Expect */
+      EXPECT_EQ(destination.HasValue(), parameter.has_value);
+    }
+
+    std::string ResultVoidStateCaseName_MoveConstructionPreservesState(
+      const ::testing::TestParamInfo<ResultVoidStateCase_MoveConstructionPreservesState>& information)
+    {
+      return std::string{information.param.test_name};
+    }
+
+    INSTANTIATE_TEST_SUITE_P(
+      ResultVoidStates, AP_R3_CORE_005_ResultVoidHasExactlyOneState_MoveConstructionPreservesState,
+      ::testing::Values(ResultVoidStateCase_MoveConstructionPreservesState{true, AdaptivePiErrc::kInvalidArgument,
+                                                                           "Success",
+                                                                           "Successful completion without a value"},
+                        ResultVoidStateCase_MoveConstructionPreservesState{
+                          false, AdaptivePiErrc::kInvalidArgument, "InvalidArgument", "Invalid argument failure"},
+                        ResultVoidStateCase_MoveConstructionPreservesState{false, AdaptivePiErrc::kInvalidState,
+                                                                           "InvalidState", "Invalid state failure"},
+                        ResultVoidStateCase_MoveConstructionPreservesState{false, AdaptivePiErrc::kOperationFailed,
+                                                                           "OperationFailed", "Operation failed"}),
+      ResultVoidStateCaseName_MoveConstructionPreservesState);
+
+    /* ----------------------------------------------------------------------------------- */
+
+    struct ResultVoidStateCase_ConstructsAnErrorOnlyOnFailure
+    {
+        bool has_value;
+        AdaptivePiErrc error;
+        std::string_view test_name;
+        const char* description;
+    };
+
+    std::ostream& operator<<(std::ostream& output, const ResultVoidStateCase_ConstructsAnErrorOnlyOnFailure& parameter)
+    {
+      return output << parameter.description;
+    }
+
+    class VoidStateTrackedObject_ConstructsAnErrorOnlyOnFailure final
+    {
+      public:
+        explicit VoidStateTrackedObject_ConstructsAnErrorOnlyOnFailure(int& live_count) : live_count_{live_count}
+        {
+          ++live_count_;
+        }
+
+        VoidStateTrackedObject_ConstructsAnErrorOnlyOnFailure(
+          const VoidStateTrackedObject_ConstructsAnErrorOnlyOnFailure&) = delete;
+        VoidStateTrackedObject_ConstructsAnErrorOnlyOnFailure(
+          VoidStateTrackedObject_ConstructsAnErrorOnlyOnFailure&& other) noexcept
+            : VoidStateTrackedObject_ConstructsAnErrorOnlyOnFailure{other.live_count_}
+        {
+        }
+        VoidStateTrackedObject_ConstructsAnErrorOnlyOnFailure&
+        operator=(const VoidStateTrackedObject_ConstructsAnErrorOnlyOnFailure&) = delete;
+        VoidStateTrackedObject_ConstructsAnErrorOnlyOnFailure&
+        operator=(VoidStateTrackedObject_ConstructsAnErrorOnlyOnFailure&&) = delete;
+
+        ~VoidStateTrackedObject_ConstructsAnErrorOnlyOnFailure()
+        {
+          --live_count_;
+        }
+
+      private:
+        int& live_count_;
+    };
+
+    /* Provides the case data for this check: Verify construction and destruction of only the selected alternatives.
+     * GetParam() supplies this test's inputs and expected results.
+     */
+    class AP_R3_CORE_005_ResultVoidHasExactlyOneState_ConstructsAnErrorOnlyOnFailure
+        : public ::testing::TestWithParam<ResultVoidStateCase_ConstructsAnErrorOnlyOnFailure>
+    {
+    };
+
+    /* Verify construction and destruction of only the selected alternatives.
+     * 1. Arrange: Initialize the lifetime counters and storage for observations.
+     * 2. Act: Construct scoped results and record their state and live payload counts before destruction.
+     * 3. Expect: Only selected payloads were alive and all live counts return to zero after scope exit.
+     */
+    TEST_P(AP_R3_CORE_005_ResultVoidHasExactlyOneState_ConstructsAnErrorOnlyOnFailure, ConstructsAnErrorOnlyOnFailure)
+    {
+      /* Arrange */
+      const ResultVoidStateCase_ConstructsAnErrorOnlyOnFailure& parameter{GetParam()};
+      int live_errors{0};
+      bool selected_has_value{};
+      int errors_while_alive{};
+
+      /* Act */
+      {
+        const auto result = parameter.has_value
+                              ? Result<void, VoidStateTrackedObject_ConstructsAnErrorOnlyOnFailure>::FromValue()
+                              : Result<void, VoidStateTrackedObject_ConstructsAnErrorOnlyOnFailure>::FromError(
+                                  VoidStateTrackedObject_ConstructsAnErrorOnlyOnFailure{live_errors});
+
+        selected_has_value = result.HasValue();
+        errors_while_alive = live_errors;
+      }
+
+      /* Expect */
+      EXPECT_EQ(selected_has_value, parameter.has_value);
+      EXPECT_EQ(errors_while_alive, parameter.has_value ? 0 : 1);
+
+      EXPECT_EQ(live_errors, 0);
+    }
+
+    std::string ResultVoidStateCaseName_ConstructsAnErrorOnlyOnFailure(
+      const ::testing::TestParamInfo<ResultVoidStateCase_ConstructsAnErrorOnlyOnFailure>& information)
+    {
+      return std::string{information.param.test_name};
+    }
+
+    INSTANTIATE_TEST_SUITE_P(
+      ResultVoidStates, AP_R3_CORE_005_ResultVoidHasExactlyOneState_ConstructsAnErrorOnlyOnFailure,
+      ::testing::Values(ResultVoidStateCase_ConstructsAnErrorOnlyOnFailure{true, AdaptivePiErrc::kInvalidArgument,
+                                                                           "Success",
+                                                                           "Successful completion without a value"},
+                        ResultVoidStateCase_ConstructsAnErrorOnlyOnFailure{
+                          false, AdaptivePiErrc::kInvalidArgument, "InvalidArgument", "Invalid argument failure"},
+                        ResultVoidStateCase_ConstructsAnErrorOnlyOnFailure{false, AdaptivePiErrc::kInvalidState,
+                                                                           "InvalidState", "Invalid state failure"},
+                        ResultVoidStateCase_ConstructsAnErrorOnlyOnFailure{false, AdaptivePiErrc::kOperationFailed,
+                                                                           "OperationFailed", "Operation failed"}),
+      ResultVoidStateCaseName_ConstructsAnErrorOnlyOnFailure);
+
+    /* ======================== End Test_AP_R3_CORE_005 ================================== */
     /* ========================== Test_AP_R3_CORE_006 ==================================== */
 
-    struct ObservedPayload;
+    using ConstructorResult = Result<int, AdaptivePiErrc>;
 
-    struct PayloadObserver
+    /* Values may convert implicitly; errors require explicit construction. */
+    static_assert(std::is_convertible_v<int, ConstructorResult>);
+    static_assert(std::is_constructible_v<ConstructorResult, const int&>);
+    static_assert(std::is_constructible_v<ConstructorResult, const AdaptivePiErrc&>);
+    static_assert(std::is_constructible_v<ConstructorResult, AdaptivePiErrc&&>);
+    static_assert(!std::is_convertible_v<AdaptivePiErrc, ConstructorResult>);
+
+    static_assert(std::is_constructible_v<Result<void, AdaptivePiErrc>, AdaptivePiErrc>);
+    static_assert(!std::is_convertible_v<AdaptivePiErrc, Result<void, AdaptivePiErrc>>);
+
+    /* ----------------------------------------------------------------------------------- */
+
+    /* Verify direct construction from lvalue and rvalue value and error inputs.
+     * 1. Arrange: Prepare an integer value and an AdaptivePi error enumeration.
+     * 2. Act: Construct the results using the constructor or factory under test.
+     * 3. Expect: The resulting objects report the intended value or error state.
+     */
+    TEST(AP_R3_CORE_006_ResultCreationAndEmplacement, DirectConstructionSelectsValueOrError)
     {
-        const ObservedPayload* current{nullptr};
+      /* Arrange */
+      const int value{42};
+      const AdaptivePiErrc error{AdaptivePiErrc::kInvalidArgument};
+
+      /* Act */
+      const ConstructorResult copied_value{value};
+      const ConstructorResult moved_value{42};
+      const ConstructorResult copied_error{error};
+      const ConstructorResult moved_error{AdaptivePiErrc::kOperationFailed};
+
+      /* Expect */
+      EXPECT_TRUE(copied_value.HasValue());
+      EXPECT_TRUE(moved_value.HasValue());
+      EXPECT_FALSE(copied_error.HasValue());
+      EXPECT_FALSE(moved_error.HasValue());
+    }
+
+    /* ----------------------------------------------------------------------------------- */
+
+    class ConstructionTrackedObject_DirectConstructionSupportsMoveOnlyAlternatives final
+    {
+      public:
+        explicit ConstructionTrackedObject_DirectConstructionSupportsMoveOnlyAlternatives(int& live_count)
+            : live_count_{live_count}
+        {
+          ++live_count_;
+        }
+
+        ConstructionTrackedObject_DirectConstructionSupportsMoveOnlyAlternatives(
+          const ConstructionTrackedObject_DirectConstructionSupportsMoveOnlyAlternatives&) = delete;
+        ConstructionTrackedObject_DirectConstructionSupportsMoveOnlyAlternatives(
+          ConstructionTrackedObject_DirectConstructionSupportsMoveOnlyAlternatives&& other) noexcept
+            : ConstructionTrackedObject_DirectConstructionSupportsMoveOnlyAlternatives{other.live_count_}
+        {
+        }
+        ConstructionTrackedObject_DirectConstructionSupportsMoveOnlyAlternatives&
+        operator=(const ConstructionTrackedObject_DirectConstructionSupportsMoveOnlyAlternatives&) = delete;
+        ConstructionTrackedObject_DirectConstructionSupportsMoveOnlyAlternatives&
+        operator=(ConstructionTrackedObject_DirectConstructionSupportsMoveOnlyAlternatives&&) = delete;
+
+        ~ConstructionTrackedObject_DirectConstructionSupportsMoveOnlyAlternatives()
+        {
+          --live_count_;
+        }
+
+      private:
+        int& live_count_;
+    };
+
+    class TrackedError_DirectConstructionSupportsMoveOnlyAlternatives final
+    {
+      public:
+        explicit TrackedError_DirectConstructionSupportsMoveOnlyAlternatives(int& live_count) : live_count_{live_count}
+        {
+          ++live_count_;
+        }
+
+        TrackedError_DirectConstructionSupportsMoveOnlyAlternatives(
+          const TrackedError_DirectConstructionSupportsMoveOnlyAlternatives&) = delete;
+        TrackedError_DirectConstructionSupportsMoveOnlyAlternatives(
+          TrackedError_DirectConstructionSupportsMoveOnlyAlternatives&& other) noexcept
+            : TrackedError_DirectConstructionSupportsMoveOnlyAlternatives{other.live_count_}
+        {
+        }
+        TrackedError_DirectConstructionSupportsMoveOnlyAlternatives&
+        operator=(const TrackedError_DirectConstructionSupportsMoveOnlyAlternatives&) = delete;
+        TrackedError_DirectConstructionSupportsMoveOnlyAlternatives&
+        operator=(TrackedError_DirectConstructionSupportsMoveOnlyAlternatives&&) = delete;
+
+        ~TrackedError_DirectConstructionSupportsMoveOnlyAlternatives()
+        {
+          --live_count_;
+        }
+
+      private:
+        int& live_count_;
+    };
+
+    /* Verify construction and destruction of only the selected alternatives.
+     * 1. Arrange: Initialize the lifetime counters and storage for observations.
+     * 2. Act: Construct scoped results and record their state and live payload counts before destruction.
+     * 3. Expect: Only selected payloads were alive and all live counts return to zero after scope exit.
+     */
+    TEST(AP_R3_CORE_006_ResultCreationAndEmplacement, DirectConstructionSupportsMoveOnlyAlternatives)
+    {
+      /* Arrange */
+      int live_values{0};
+      int live_errors{0};
+      bool value_has_value{};
+      bool error_has_value{};
+      int values_while_alive{};
+      int errors_while_alive{};
+
+      /* Act */
+      {
+        const Result<ConstructionTrackedObject_DirectConstructionSupportsMoveOnlyAlternatives,
+                     TrackedError_DirectConstructionSupportsMoveOnlyAlternatives>
+          value_result{ConstructionTrackedObject_DirectConstructionSupportsMoveOnlyAlternatives{live_values}};
+        const Result<ConstructionTrackedObject_DirectConstructionSupportsMoveOnlyAlternatives,
+                     TrackedError_DirectConstructionSupportsMoveOnlyAlternatives>
+          error_result{TrackedError_DirectConstructionSupportsMoveOnlyAlternatives{live_errors}};
+
+        value_has_value = value_result.HasValue();
+        error_has_value = error_result.HasValue();
+        values_while_alive = live_values;
+        errors_while_alive = live_errors;
+      }
+
+      /* Expect */
+      EXPECT_TRUE(value_has_value);
+      EXPECT_FALSE(error_has_value);
+      EXPECT_EQ(values_while_alive, 1);
+      EXPECT_EQ(errors_while_alive, 1);
+
+      EXPECT_EQ(live_values, 0);
+      EXPECT_EQ(live_errors, 0);
+    }
+
+    /* ----------------------------------------------------------------------------------- */
+
+    /* Verify direct value construction and explicit error creation with identical types.
+     * 1. Arrange: Prepare the integer payload shared by the value and error alternatives.
+     * 2. Act: Construct the results using the constructor or factory under test.
+     * 3. Expect: The resulting objects report the intended value or error state.
+     */
+    TEST(AP_R3_CORE_006_ResultCreationAndEmplacement, SameTypesUseDirectConstructionForValue)
+    {
+      /* Arrange */
+      const int payload{42};
+
+      /* Act */
+      const Result<int, int> value{payload};
+      const auto error = Result<int, int>::FromError(payload);
+
+      /* Expect */
+      EXPECT_TRUE(value.HasValue());
+      EXPECT_FALSE(error.HasValue());
+    }
+
+    /* ----------------------------------------------------------------------------------- */
+
+    /* Verify direct error construction of a void Result.
+     * 1. Arrange: Prepare the error enumeration used for lvalue construction.
+     * 2. Act: Construct the results using the constructor or factory under test.
+     * 3. Expect: The resulting objects report the intended value or error state.
+     */
+    TEST(AP_R3_CORE_006_ResultCreationAndEmplacement, VoidResultSupportsDirectErrorConstruction)
+    {
+      /* Arrange */
+      const AdaptivePiErrc error{AdaptivePiErrc::kInvalidArgument};
+
+      /* Act */
+      const Result<void, AdaptivePiErrc> copied_error{error};
+      const Result<void, AdaptivePiErrc> moved_error{AdaptivePiErrc::kOperationFailed};
+
+      /* Expect */
+      EXPECT_FALSE(copied_error.HasValue());
+      EXPECT_FALSE(moved_error.HasValue());
+    }
+
+    /* ----------------------------------------------------------------------------------- */
+
+    struct ResultConstructionValueCase_FactoryFunctionsSupportInPlaceConstruction
+    {
+        std::string text;
+        int value;
+
+        ResultConstructionValueCase_FactoryFunctionsSupportInPlaceConstruction(std::string text_in, int value_in)
+            : text{std::move(text_in)}, value{value_in}
+        {
+        }
+    };
+
+    /* Verify that factories construct the selected alternative from constructor arguments.
+     * 1. Arrange: Prepare the text and integer arguments for the value payload.
+     * 2. Act: Construct the results using the constructor or factory under test.
+     * 3. Expect: The resulting objects report the intended value or error state.
+     */
+    TEST(AP_R3_CORE_006_ResultCreationAndEmplacement, FactoryFunctionsSupportInPlaceConstruction)
+    {
+      /* Arrange */
+      const std::string text{"created-value"};
+      const int value{42};
+
+      /* Act */
+      Result<ResultConstructionValueCase_FactoryFunctionsSupportInPlaceConstruction, AdaptivePiErrc> value_result =
+        Result<ResultConstructionValueCase_FactoryFunctionsSupportInPlaceConstruction, AdaptivePiErrc>::FromValue(
+          text, value);
+      Result<ResultConstructionValueCase_FactoryFunctionsSupportInPlaceConstruction, AdaptivePiErrc> error_result =
+        Result<ResultConstructionValueCase_FactoryFunctionsSupportInPlaceConstruction, AdaptivePiErrc>::FromError(
+          AdaptivePiErrc::kInvalidArgument);
+
+      /* Expect */
+      EXPECT_TRUE(value_result.HasValue());
+      EXPECT_FALSE(error_result.HasValue());
+    }
+
+    /* ----------------------------------------------------------------------------------- */
+
+    class ConstructionTrackedObject_EmplaceValueAndErrorReplaceActiveAlternative final
+    {
+      public:
+        explicit ConstructionTrackedObject_EmplaceValueAndErrorReplaceActiveAlternative(int& live_count)
+            : live_count_{live_count}
+        {
+          ++live_count_;
+        }
+
+        ConstructionTrackedObject_EmplaceValueAndErrorReplaceActiveAlternative(
+          const ConstructionTrackedObject_EmplaceValueAndErrorReplaceActiveAlternative&) = delete;
+        ConstructionTrackedObject_EmplaceValueAndErrorReplaceActiveAlternative(
+          ConstructionTrackedObject_EmplaceValueAndErrorReplaceActiveAlternative&& other) noexcept
+            : ConstructionTrackedObject_EmplaceValueAndErrorReplaceActiveAlternative{other.live_count_}
+        {
+        }
+        ConstructionTrackedObject_EmplaceValueAndErrorReplaceActiveAlternative&
+        operator=(const ConstructionTrackedObject_EmplaceValueAndErrorReplaceActiveAlternative&) = delete;
+        ConstructionTrackedObject_EmplaceValueAndErrorReplaceActiveAlternative&
+        operator=(ConstructionTrackedObject_EmplaceValueAndErrorReplaceActiveAlternative&&) = delete;
+
+        ~ConstructionTrackedObject_EmplaceValueAndErrorReplaceActiveAlternative()
+        {
+          --live_count_;
+        }
+
+      private:
+        int& live_count_;
+    };
+
+    class TrackedError_EmplaceValueAndErrorReplaceActiveAlternative final
+    {
+      public:
+        explicit TrackedError_EmplaceValueAndErrorReplaceActiveAlternative(int& live_count) : live_count_{live_count}
+        {
+          ++live_count_;
+        }
+
+        TrackedError_EmplaceValueAndErrorReplaceActiveAlternative(
+          const TrackedError_EmplaceValueAndErrorReplaceActiveAlternative&) = delete;
+        TrackedError_EmplaceValueAndErrorReplaceActiveAlternative(
+          TrackedError_EmplaceValueAndErrorReplaceActiveAlternative&& other) noexcept
+            : TrackedError_EmplaceValueAndErrorReplaceActiveAlternative{other.live_count_}
+        {
+        }
+        TrackedError_EmplaceValueAndErrorReplaceActiveAlternative&
+        operator=(const TrackedError_EmplaceValueAndErrorReplaceActiveAlternative&) = delete;
+        TrackedError_EmplaceValueAndErrorReplaceActiveAlternative&
+        operator=(TrackedError_EmplaceValueAndErrorReplaceActiveAlternative&&) = delete;
+
+        ~TrackedError_EmplaceValueAndErrorReplaceActiveAlternative()
+        {
+          --live_count_;
+        }
+
+      private:
+        int& live_count_;
+    };
+
+    /* Verify that emplacement replaces the active alternative.
+     * 1. Arrange: Construct an initial successful result and any lifetime counters.
+     * 2. Act: Emplace an error and then a value, recording the state and live counts at each transition.
+     * 3. Expect: Each replacement selects the requested state and destroys the previous payload.
+     */
+    TEST(AP_R3_CORE_006_ResultCreationAndEmplacement, EmplaceValueAndErrorReplaceActiveAlternative)
+    {
+      /* Arrange */
+      int live_values{0};
+      int live_errors{0};
+
+      Result<ConstructionTrackedObject_EmplaceValueAndErrorReplaceActiveAlternative,
+             TrackedError_EmplaceValueAndErrorReplaceActiveAlternative>
+        result = Result<ConstructionTrackedObject_EmplaceValueAndErrorReplaceActiveAlternative,
+                        TrackedError_EmplaceValueAndErrorReplaceActiveAlternative>::
+          FromValue(ConstructionTrackedObject_EmplaceValueAndErrorReplaceActiveAlternative{live_values});
+
+      /* Act */
+      const bool initially_has_value = result.HasValue();
+
+      result.EmplaceError(live_errors);
+      const auto has_value_after_error = result.HasValue();
+      const auto values_after_error = live_values;
+      const auto errors_after_error = live_errors;
+
+      result.EmplaceValue(live_values);
+      const auto has_value_after_value = result.HasValue();
+      const auto values_after_value = live_values;
+      const auto errors_after_value = live_errors;
+
+      /* Expect */
+      EXPECT_TRUE(initially_has_value);
+      EXPECT_FALSE(has_value_after_error);
+      EXPECT_EQ(values_after_error, 0);
+      EXPECT_EQ(errors_after_error, 1);
+      EXPECT_TRUE(has_value_after_value);
+      EXPECT_EQ(values_after_value, 1);
+      EXPECT_EQ(errors_after_value, 0);
+    }
+
+    /* ----------------------------------------------------------------------------------- */
+
+    /* Verify that emplacement replaces the active alternative.
+     * 1. Arrange: Construct an initial successful result and any lifetime counters.
+     * 2. Act: Emplace an error and then a value, recording the state and live counts at each transition.
+     * 3. Expect: Each replacement selects the requested state and destroys the previous payload.
+     */
+    TEST(AP_R3_CORE_006_ResultCreationAndEmplacement, VoidResultSupportsEmplacement)
+    {
+      /* Arrange */
+      Result<void, AdaptivePiErrc> result = Result<void, AdaptivePiErrc>::FromValue();
+
+      /* Act */
+      const bool initially_has_value = result.HasValue();
+
+      result.EmplaceError(AdaptivePiErrc::kOperationFailed);
+      const auto has_value_after_error = result.HasValue();
+
+      result.EmplaceValue();
+      const auto has_value_after_success = result.HasValue();
+
+      /* Expect */
+      EXPECT_TRUE(initially_has_value);
+      EXPECT_FALSE(has_value_after_error);
+      EXPECT_TRUE(has_value_after_success);
+    }
+
+    /* ----------------------------------------------------------------------------------- */
+
+    /* All initial/replacement states, with and without an initial failed attempt. */
+    /* Failed replacement must preserve CORE-005; our chosen policy also retains */
+    /* the original payload and allows a subsequent retry. */
+    struct ObservedPayload_PreservesPayloadOnFailureAndReplacesOnSuccess;
+
+    struct PayloadObserver_PreservesPayloadOnFailureAndReplacesOnSuccess
+    {
+        const ObservedPayload_PreservesPayloadOnFailureAndReplacesOnSuccess* current{nullptr};
         int live{0};
     };
 
-    // Observe contents and lifetime without exposing Result storage. Disallowing
-    // copies and moves verifies genuine in-place construction.
-    struct ObservedPayload
+    struct ObservedPayload_PreservesPayloadOnFailureAndReplacesOnSuccess
     {
-        PayloadObserver& observer;
+        PayloadObserver_PreservesPayloadOnFailureAndReplacesOnSuccess& observer;
         std::string text;
         int number;
 
-        ObservedPayload(PayloadObserver& observer_in, std::string text_in, int number_in, bool fail)
+        ObservedPayload_PreservesPayloadOnFailureAndReplacesOnSuccess(
+          PayloadObserver_PreservesPayloadOnFailureAndReplacesOnSuccess& observer_in, std::string text_in,
+          int number_in, bool fail)
             : observer{observer_in}, text{std::move(text_in)}, number{number_in}
         {
           if (fail)
@@ -267,12 +1064,16 @@ namespace ara::core
           ++observer.live;
         }
 
-        ObservedPayload(const ObservedPayload&) = delete;
-        ObservedPayload(ObservedPayload&&) = delete;
-        ObservedPayload& operator=(const ObservedPayload&) = delete;
-        ObservedPayload& operator=(ObservedPayload&&) = delete;
+        ObservedPayload_PreservesPayloadOnFailureAndReplacesOnSuccess(
+          const ObservedPayload_PreservesPayloadOnFailureAndReplacesOnSuccess&) = delete;
+        ObservedPayload_PreservesPayloadOnFailureAndReplacesOnSuccess(
+          ObservedPayload_PreservesPayloadOnFailureAndReplacesOnSuccess&&) = delete;
+        ObservedPayload_PreservesPayloadOnFailureAndReplacesOnSuccess&
+        operator=(const ObservedPayload_PreservesPayloadOnFailureAndReplacesOnSuccess&) = delete;
+        ObservedPayload_PreservesPayloadOnFailureAndReplacesOnSuccess&
+        operator=(ObservedPayload_PreservesPayloadOnFailureAndReplacesOnSuccess&&) = delete;
 
-        ~ObservedPayload() noexcept
+        ~ObservedPayload_PreservesPayloadOnFailureAndReplacesOnSuccess() noexcept
         {
           if (observer.current == this)
           {
@@ -282,173 +1083,109 @@ namespace ara::core
         }
     };
 
-    struct ResultConstructionValueCase
+    struct ReplacementCase_PreservesPayloadOnFailureAndReplacesOnSuccess
     {
-        std::string text;
-        int value;
-
-        ResultConstructionValueCase(std::string text_in, int value_in) : text{std::move(text_in)}, value{value_in} {}
+        bool starts_with_value;
+        bool replaces_with_value;
+        bool fail_first;
+        std::string_view test_name;
+        const char* description;
     };
 
-    class AP_R3_CORE_006_ResultCreationAndEmplacement : public ::testing::Test
+    std::ostream& operator<<(std::ostream& output,
+                             const ReplacementCase_PreservesPayloadOnFailureAndReplacesOnSuccess& parameter)
     {
+      return output << parameter.description;
+    }
+
+    struct ReplacementSnapshot_PreservesPayloadOnFailureAndReplacesOnSuccess
+    {
+        bool has_value{false};
+        bool as_bool{false};
+        bool original_present{false};
+        bool original_unchanged{false};
+        int original_live{0};
+        std::string original_text;
+        int original_number{0};
+        bool replacement_present{false};
+        int replacement_live{0};
+        std::string replacement_text;
+        int replacement_number{0};
     };
 
-    using ConstructorResult = Result<int, AdaptivePiErrc>;
-
-    // Values may convert implicitly; errors require explicit construction.
-    static_assert(std::is_convertible_v<int, ConstructorResult>);
-    static_assert(std::is_constructible_v<ConstructorResult, const int&>);
-    static_assert(std::is_constructible_v<ConstructorResult, const AdaptivePiErrc&>);
-    static_assert(std::is_constructible_v<ConstructorResult, AdaptivePiErrc&&>);
-    static_assert(!std::is_convertible_v<AdaptivePiErrc, ConstructorResult>);
-
-    static_assert(std::is_constructible_v<Result<void, AdaptivePiErrc>, AdaptivePiErrc>);
-    static_assert(!std::is_convertible_v<AdaptivePiErrc, Result<void, AdaptivePiErrc>>);
-
-    TEST_F(AP_R3_CORE_006_ResultCreationAndEmplacement, DirectConstructionSelectsValueOrError)
-    {
-      const int value{42};
-      const AdaptivePiErrc error{AdaptivePiErrc::kInvalidArgument};
-
-      const ConstructorResult copied_value{value};
-      const ConstructorResult moved_value{42};
-      const ConstructorResult copied_error{error};
-      const ConstructorResult moved_error{AdaptivePiErrc::kOperationFailed};
-
-      EXPECT_TRUE(copied_value.HasValue());
-      EXPECT_TRUE(moved_value.HasValue());
-      EXPECT_FALSE(copied_error.HasValue());
-      EXPECT_FALSE(moved_error.HasValue());
-    }
-
-    TEST_F(AP_R3_CORE_006_ResultCreationAndEmplacement, DirectConstructionSupportsMoveOnlyAlternatives)
-    {
-      int live_values{0};
-      int live_errors{0};
-
-      {
-        const Result<TrackedObject, TrackedError> value_result{TrackedObject{live_values}};
-        const Result<TrackedObject, TrackedError> error_result{TrackedError{live_errors}};
-
-        EXPECT_TRUE(value_result.HasValue());
-        EXPECT_FALSE(error_result.HasValue());
-        EXPECT_EQ(live_values, 1);
-        EXPECT_EQ(live_errors, 1);
-      }
-
-      EXPECT_EQ(live_values, 0);
-      EXPECT_EQ(live_errors, 0);
-    }
-
-    TEST_F(AP_R3_CORE_006_ResultCreationAndEmplacement, SameTypesUseDirectConstructionForValue)
-    {
-      const Result<int, int> value{42};
-      const auto error = Result<int, int>::FromError(42);
-
-      EXPECT_TRUE(value.HasValue());
-      EXPECT_FALSE(error.HasValue());
-    }
-
-    TEST_F(AP_R3_CORE_006_ResultCreationAndEmplacement, VoidResultSupportsDirectErrorConstruction)
-    {
-      const AdaptivePiErrc error{AdaptivePiErrc::kInvalidArgument};
-
-      const Result<void, AdaptivePiErrc> copied_error{error};
-      const Result<void, AdaptivePiErrc> moved_error{AdaptivePiErrc::kOperationFailed};
-
-      EXPECT_FALSE(copied_error.HasValue());
-      EXPECT_FALSE(moved_error.HasValue());
-    }
-
-    TEST_F(AP_R3_CORE_006_ResultCreationAndEmplacement, FactoryFunctionsSupportInPlaceConstruction)
-    {
-      Result<ResultConstructionValueCase, AdaptivePiErrc> value_result =
-        Result<ResultConstructionValueCase, AdaptivePiErrc>::FromValue("created-value", 42);
-      EXPECT_TRUE(value_result.HasValue());
-
-      Result<ResultConstructionValueCase, AdaptivePiErrc> error_result =
-        Result<ResultConstructionValueCase, AdaptivePiErrc>::FromError(AdaptivePiErrc::kInvalidArgument);
-      EXPECT_FALSE(error_result.HasValue());
-    }
-
-    TEST_F(AP_R3_CORE_006_ResultCreationAndEmplacement, EmplaceValueAndErrorReplaceActiveAlternative)
-    {
-      int live_values{0};
-      int live_errors{0};
-
-      Result<TrackedObject, TrackedError> result =
-        Result<TrackedObject, TrackedError>::FromValue(TrackedObject{live_values});
-      EXPECT_TRUE(result.HasValue());
-
-      result.EmplaceError(live_errors);
-      EXPECT_FALSE(result.HasValue());
-      EXPECT_EQ(live_values, 0);
-      EXPECT_EQ(live_errors, 1);
-
-      result.EmplaceValue(live_values);
-      EXPECT_TRUE(result.HasValue());
-      EXPECT_EQ(live_values, 1);
-      EXPECT_EQ(live_errors, 0);
-    }
-
-    TEST_F(AP_R3_CORE_006_ResultCreationAndEmplacement, VoidResultSupportsEmplacement)
-    {
-      Result<void, AdaptivePiErrc> result = Result<void, AdaptivePiErrc>::FromValue();
-      EXPECT_TRUE(result.HasValue());
-
-      result.EmplaceError(AdaptivePiErrc::kOperationFailed);
-      EXPECT_FALSE(result.HasValue());
-
-      result.EmplaceValue();
-      EXPECT_TRUE(result.HasValue());
-    }
-
-    class AP_R3_CORE_006_ReplacementTransitions : public ::testing::TestWithParam<std::tuple<bool, bool, bool>>
+    /* Provides the case data for this check: Verify replacement, failure preservation, retry, and destruction across
+     * the selected states. GetParam() supplies this test's inputs and expected results.
+     */
+    class AP_R3_CORE_006_ReplacementTransitions
+        : public ::testing::TestWithParam<ReplacementCase_PreservesPayloadOnFailureAndReplacesOnSuccess>
     {
     };
 
-    // All initial/replacement states, with and without an initial failed attempt.
-    // Failed replacement must preserve CORE-005; our chosen policy also retains
-    // the original payload and allows a subsequent retry.
+    /* Verify replacement, failure preservation, retry, and destruction across the selected states.
+     * 1. Arrange: Create payload observers and storage for each state, content, identity, and lifetime checkpoint.
+     * 2. Act: Construct the initial result, attempt the configured replacements, and record each checkpoint.
+     * 3. Expect: The expected exception occurs, failure preserves the original payload, and success replaces and cleans
+     * up payloads.
+     */
     TEST_P(AP_R3_CORE_006_ReplacementTransitions, PreservesPayloadOnFailureAndReplacesOnSuccess)
     {
-      const auto [starts_with_value, replaces_with_value, fail_first] = GetParam();
-      using ObservedResult = Result<ObservedPayload, ObservedPayload>;
-      PayloadObserver original;
-      PayloadObserver replacement;
+      /* Arrange */
+      const ReplacementCase_PreservesPayloadOnFailureAndReplacesOnSuccess& parameter{GetParam()};
+      using ObservedResult = Result<ObservedPayload_PreservesPayloadOnFailureAndReplacesOnSuccess,
+                                    ObservedPayload_PreservesPayloadOnFailureAndReplacesOnSuccess>;
+      PayloadObserver_PreservesPayloadOnFailureAndReplacesOnSuccess original;
+      PayloadObserver_PreservesPayloadOnFailureAndReplacesOnSuccess replacement;
+      ReplacementSnapshot_PreservesPayloadOnFailureAndReplacesOnSuccess initial;
+      ReplacementSnapshot_PreservesPayloadOnFailureAndReplacesOnSuccess failed;
+      ReplacementSnapshot_PreservesPayloadOnFailureAndReplacesOnSuccess replaced;
+      bool caught_failure{false};
+
+      /* Act */
       {
-        auto result = starts_with_value ? ObservedResult::FromValue(original, "original", 17, false)
-                                        : ObservedResult::FromError(original, "original", 17, false);
-        EXPECT_EQ(result.HasValue(), starts_with_value);
-        ASSERT_NE(original.current, nullptr);
-        EXPECT_EQ(original.current->text, "original");
-        EXPECT_EQ(original.current->number, 17);
-        EXPECT_EQ(original.live, 1);
-        const ObservedPayload* original_address{original.current};
-
-        if (fail_first)
+        auto result = parameter.starts_with_value ? ObservedResult::FromValue(original, "original", 17, false)
+                                                  : ObservedResult::FromError(original, "original", 17, false);
+        const ObservedPayload_PreservesPayloadOnFailureAndReplacesOnSuccess* original_address{original.current};
+        initial.has_value = result.HasValue();
+        initial.as_bool = static_cast<bool>(result);
+        initial.original_present = original.current != nullptr;
+        initial.original_unchanged = original.current == original_address;
+        initial.original_live = original.live;
+        initial.original_text = original.current != nullptr ? original.current->text : std::string{};
+        initial.original_number = original.current != nullptr ? original.current->number : 0;
+        initial.replacement_present = replacement.current != nullptr;
+        initial.replacement_live = replacement.live;
+        initial.replacement_text = replacement.current != nullptr ? replacement.current->text : std::string{};
+        initial.replacement_number = replacement.current != nullptr ? replacement.current->number : 0;
+        if (parameter.fail_first)
         {
-          if (replaces_with_value)
+          try
           {
-            EXPECT_THROW(result.EmplaceValue(replacement, "replacement", 42, true), std::runtime_error);
+            if (parameter.replaces_with_value)
+            {
+              result.EmplaceValue(replacement, "replacement", 42, true);
+            }
+            else
+            {
+              result.EmplaceError(replacement, "replacement", 42, true);
+            }
           }
-          else
+          catch (const std::runtime_error&)
           {
-            EXPECT_THROW(result.EmplaceError(replacement, "replacement", 42, true), std::runtime_error);
+            caught_failure = true;
           }
-          EXPECT_EQ(result.HasValue(), starts_with_value);
-          EXPECT_EQ(original.current, original_address);
-          EXPECT_EQ(original.live, 1);
-          EXPECT_EQ(replacement.current, nullptr);
-          EXPECT_EQ(replacement.live, 0);
-          // Guard dereferences when testing an implementation that destroys the old object.
-          ASSERT_NE(original.current, nullptr);
-          EXPECT_EQ(original.current->text, "original");
-          EXPECT_EQ(original.current->number, 17);
+          failed.has_value = result.HasValue();
+          failed.as_bool = static_cast<bool>(result);
+          failed.original_present = original.current != nullptr;
+          failed.original_unchanged = original.current == original_address;
+          failed.original_live = original.live;
+          failed.original_text = original.current != nullptr ? original.current->text : std::string{};
+          failed.original_number = original.current != nullptr ? original.current->number : 0;
+          failed.replacement_present = replacement.current != nullptr;
+          failed.replacement_live = replacement.live;
+          failed.replacement_text = replacement.current != nullptr ? replacement.current->text : std::string{};
+          failed.replacement_number = replacement.current != nullptr ? replacement.current->number : 0;
         }
-
-        if (replaces_with_value)
+        if (parameter.replaces_with_value)
         {
           result.EmplaceValue(replacement, "replacement", 42, false);
         }
@@ -456,97 +1193,746 @@ namespace ara::core
         {
           result.EmplaceError(replacement, "replacement", 42, false);
         }
-        EXPECT_EQ(result.HasValue(), replaces_with_value);
-        EXPECT_EQ(original.current, nullptr);
-        EXPECT_EQ(original.live, 0);
-        ASSERT_NE(replacement.current, nullptr);
-        EXPECT_EQ(replacement.current->text, "replacement");
-        EXPECT_EQ(replacement.current->number, 42);
-        EXPECT_EQ(replacement.live, 1);
+        replaced.has_value = result.HasValue();
+        replaced.as_bool = static_cast<bool>(result);
+        replaced.original_present = original.current != nullptr;
+        replaced.original_unchanged = original.current == original_address;
+        replaced.original_live = original.live;
+        replaced.original_text = original.current != nullptr ? original.current->text : std::string{};
+        replaced.original_number = original.current != nullptr ? original.current->number : 0;
+        replaced.replacement_present = replacement.current != nullptr;
+        replaced.replacement_live = replacement.live;
+        replaced.replacement_text = replacement.current != nullptr ? replacement.current->text : std::string{};
+        replaced.replacement_number = replacement.current != nullptr ? replacement.current->number : 0;
       }
+
+      /* Expect */
+      EXPECT_EQ(initial.has_value, parameter.starts_with_value);
+      EXPECT_TRUE(initial.original_present);
+      EXPECT_EQ(initial.original_text, "original");
+      EXPECT_EQ(initial.original_number, 17);
+      EXPECT_EQ(initial.original_live, 1);
+      EXPECT_EQ(caught_failure, parameter.fail_first);
+      if (parameter.fail_first)
+      {
+        EXPECT_EQ(failed.has_value, parameter.starts_with_value);
+        /* AP-R3-CORE-007 also holds after failed replacement. */
+        EXPECT_EQ(failed.as_bool, parameter.starts_with_value);
+        EXPECT_TRUE(failed.original_unchanged);
+        EXPECT_TRUE(failed.original_present);
+        EXPECT_EQ(failed.original_live, 1);
+        EXPECT_EQ(failed.original_text, "original");
+        EXPECT_EQ(failed.original_number, 17);
+        EXPECT_FALSE(failed.replacement_present);
+        EXPECT_EQ(failed.replacement_live, 0);
+      }
+      EXPECT_EQ(replaced.has_value, parameter.replaces_with_value);
+      EXPECT_FALSE(replaced.original_present);
+      EXPECT_EQ(replaced.original_live, 0);
+      EXPECT_TRUE(replaced.replacement_present);
+      EXPECT_EQ(replaced.replacement_text, "replacement");
+      EXPECT_EQ(replaced.replacement_number, 42);
+      EXPECT_EQ(replaced.replacement_live, 1);
       EXPECT_EQ(original.live, 0);
       EXPECT_EQ(replacement.live, 0);
       EXPECT_EQ(replacement.current, nullptr);
     }
 
-    std::string ReplacementCaseName(const ::testing::TestParamInfo<std::tuple<bool, bool, bool>>& information)
+    std::string ReplacementCaseName_PreservesPayloadOnFailureAndReplacesOnSuccess(
+      const ::testing::TestParamInfo<ReplacementCase_PreservesPayloadOnFailureAndReplacesOnSuccess>& information)
     {
-      const auto [starts_with_value, replaces_with_value, fail_first] = information.param;
-      return std::string{starts_with_value ? "ValueTo" : "ErrorTo"} + (replaces_with_value ? "Value" : "Error") +
-             (fail_first ? "AfterFailure" : "Success");
+      return std::string{information.param.test_name};
     }
 
-    INSTANTIATE_TEST_SUITE_P(AllStates, AP_R3_CORE_006_ReplacementTransitions,
-                             ::testing::Combine(::testing::Bool(), ::testing::Bool(), ::testing::Bool()),
-                             ReplacementCaseName);
+    INSTANTIATE_TEST_SUITE_P(
+      AllStates, AP_R3_CORE_006_ReplacementTransitions,
+      ::testing::Values(
+        ReplacementCase_PreservesPayloadOnFailureAndReplacesOnSuccess{false, false, false, "ErrorToErrorSuccess",
+                                                                      "error to error with immediate success"},
+        ReplacementCase_PreservesPayloadOnFailureAndReplacesOnSuccess{false, false, true, "ErrorToErrorAfterFailure",
+                                                                      "error to error after a failed replacement"},
+        ReplacementCase_PreservesPayloadOnFailureAndReplacesOnSuccess{false, true, false, "ErrorToValueSuccess",
+                                                                      "error to value with immediate success"},
+        ReplacementCase_PreservesPayloadOnFailureAndReplacesOnSuccess{false, true, true, "ErrorToValueAfterFailure",
+                                                                      "error to value after a failed replacement"},
+        ReplacementCase_PreservesPayloadOnFailureAndReplacesOnSuccess{true, false, false, "ValueToErrorSuccess",
+                                                                      "value to error with immediate success"},
+        ReplacementCase_PreservesPayloadOnFailureAndReplacesOnSuccess{true, false, true, "ValueToErrorAfterFailure",
+                                                                      "value to error after a failed replacement"},
+        ReplacementCase_PreservesPayloadOnFailureAndReplacesOnSuccess{true, true, false, "ValueToValueSuccess",
+                                                                      "value to value with immediate success"},
+        ReplacementCase_PreservesPayloadOnFailureAndReplacesOnSuccess{true, true, true, "ValueToValueAfterFailure",
+                                                                      "value to value after a failed replacement"}),
+      ReplacementCaseName_PreservesPayloadOnFailureAndReplacesOnSuccess);
 
-    class AP_R3_CORE_006_VoidReplacement : public ::testing::TestWithParam<std::tuple<bool, bool>>
+    /* ----------------------------------------------------------------------------------- */
+
+    struct VoidObservedPayload_PreservesStateOnFailureAndReplacesOnSuccess;
+
+    struct VoidPayloadObserver_PreservesStateOnFailureAndReplacesOnSuccess
+    {
+        const VoidObservedPayload_PreservesStateOnFailureAndReplacesOnSuccess* current{nullptr};
+        int live{0};
+    };
+
+    struct VoidObservedPayload_PreservesStateOnFailureAndReplacesOnSuccess
+    {
+        VoidPayloadObserver_PreservesStateOnFailureAndReplacesOnSuccess& observer;
+        std::string text;
+        int number;
+
+        VoidObservedPayload_PreservesStateOnFailureAndReplacesOnSuccess(
+          VoidPayloadObserver_PreservesStateOnFailureAndReplacesOnSuccess& observer_in, std::string text_in,
+          int number_in, bool fail)
+            : observer{observer_in}, text{std::move(text_in)}, number{number_in}
+        {
+          if (fail)
+          {
+            throw std::runtime_error{"payload construction failed"};
+          }
+          observer.current = this;
+          ++observer.live;
+        }
+
+        VoidObservedPayload_PreservesStateOnFailureAndReplacesOnSuccess(
+          const VoidObservedPayload_PreservesStateOnFailureAndReplacesOnSuccess&) = delete;
+        VoidObservedPayload_PreservesStateOnFailureAndReplacesOnSuccess(
+          VoidObservedPayload_PreservesStateOnFailureAndReplacesOnSuccess&&) = delete;
+        VoidObservedPayload_PreservesStateOnFailureAndReplacesOnSuccess&
+        operator=(const VoidObservedPayload_PreservesStateOnFailureAndReplacesOnSuccess&) = delete;
+        VoidObservedPayload_PreservesStateOnFailureAndReplacesOnSuccess&
+        operator=(VoidObservedPayload_PreservesStateOnFailureAndReplacesOnSuccess&&) = delete;
+
+        ~VoidObservedPayload_PreservesStateOnFailureAndReplacesOnSuccess() noexcept
+        {
+          if (observer.current == this)
+          {
+            observer.current = nullptr;
+          }
+          --observer.live;
+        }
+    };
+
+    struct VoidReplacementCase_PreservesStateOnFailureAndReplacesOnSuccess
+    {
+        bool starts_with_value;
+        bool fail_first;
+        std::string_view test_name;
+        const char* description;
+    };
+
+    std::ostream& operator<<(std::ostream& output,
+                             const VoidReplacementCase_PreservesStateOnFailureAndReplacesOnSuccess& parameter)
+    {
+      return output << parameter.description;
+    }
+
+    struct VoidReplacementSnapshot_PreservesStateOnFailureAndReplacesOnSuccess
+    {
+        bool has_value{false};
+        bool as_bool{false};
+        bool original_present{false};
+        bool original_unchanged{false};
+        int original_live{0};
+        std::string original_text;
+        int original_number{0};
+        bool replacement_present{false};
+        int replacement_live{0};
+        std::string replacement_text;
+        int replacement_number{0};
+    };
+
+    /* Provides the case data for this check: Verify replacement, failure preservation, retry, and destruction across
+     * the selected states. GetParam() supplies this test's inputs and expected results.
+     */
+    class AP_R3_CORE_006_VoidReplacement
+        : public ::testing::TestWithParam<VoidReplacementCase_PreservesStateOnFailureAndReplacesOnSuccess>
     {
     };
 
+    /* Verify replacement, failure preservation, retry, and destruction across the selected states.
+     * 1. Arrange: Create payload observers and storage for each state, content, identity, and lifetime checkpoint.
+     * 2. Act: Construct the initial result, attempt the configured replacements, and record each checkpoint.
+     * 3. Expect: The expected exception occurs, failure preserves the original payload, and success replaces and cleans
+     * up payloads.
+     */
     TEST_P(AP_R3_CORE_006_VoidReplacement, PreservesStateOnFailureAndReplacesOnSuccess)
     {
-      const auto [starts_with_value, fail_first] = GetParam();
-      using ObservedResult = Result<void, ObservedPayload>;
-      PayloadObserver original;
-      PayloadObserver replacement;
+      /* Arrange */
+      const VoidReplacementCase_PreservesStateOnFailureAndReplacesOnSuccess& parameter{GetParam()};
+      using ObservedResult = Result<void, VoidObservedPayload_PreservesStateOnFailureAndReplacesOnSuccess>;
+      VoidPayloadObserver_PreservesStateOnFailureAndReplacesOnSuccess original;
+      VoidPayloadObserver_PreservesStateOnFailureAndReplacesOnSuccess replacement;
+      VoidReplacementSnapshot_PreservesStateOnFailureAndReplacesOnSuccess initial;
+      VoidReplacementSnapshot_PreservesStateOnFailureAndReplacesOnSuccess failed;
+      VoidReplacementSnapshot_PreservesStateOnFailureAndReplacesOnSuccess replaced;
+      bool caught_failure{false};
+      bool success_after_error{false};
+      bool repeated_success{false};
+      int live_after_success{0};
+      bool payload_after_success{false};
+
+      /* Act */
       {
-        auto result =
-          starts_with_value ? ObservedResult::FromValue() : ObservedResult::FromError(original, "original", 17, false);
-        EXPECT_EQ(result.HasValue(), starts_with_value);
-        if (!starts_with_value)
+        auto result = parameter.starts_with_value ? ObservedResult::FromValue()
+                                                  : ObservedResult::FromError(original, "original", 17, false);
+        const VoidObservedPayload_PreservesStateOnFailureAndReplacesOnSuccess* original_address{original.current};
+        initial.has_value = result.HasValue();
+        initial.as_bool = static_cast<bool>(result);
+        initial.original_present = original.current != nullptr;
+        initial.original_unchanged = original.current == original_address;
+        initial.original_live = original.live;
+        initial.original_text = original.current != nullptr ? original.current->text : std::string{};
+        initial.original_number = original.current != nullptr ? original.current->number : 0;
+        initial.replacement_present = replacement.current != nullptr;
+        initial.replacement_live = replacement.live;
+        initial.replacement_text = replacement.current != nullptr ? replacement.current->text : std::string{};
+        initial.replacement_number = replacement.current != nullptr ? replacement.current->number : 0;
+        if (parameter.fail_first)
         {
-          ASSERT_NE(original.current, nullptr);
-          EXPECT_EQ(original.current->text, "original");
-          EXPECT_EQ(original.current->number, 17);
-        }
-        const ObservedPayload* original_address{original.current};
-        if (fail_first)
-        {
-          EXPECT_THROW(result.EmplaceError(replacement, "replacement", 42, true), std::runtime_error);
-          EXPECT_EQ(result.HasValue(), starts_with_value);
-          EXPECT_EQ(original.current, original_address);
-          EXPECT_EQ(original.live, starts_with_value ? 0 : 1);
-          EXPECT_EQ(replacement.live, 0);
-          EXPECT_EQ(replacement.current, nullptr);
-          if (!starts_with_value)
+          try
           {
-            ASSERT_NE(original.current, nullptr);
-            EXPECT_EQ(original.current->text, "original");
-            EXPECT_EQ(original.current->number, 17);
+            result.EmplaceError(replacement, "replacement", 42, true);
           }
+          catch (const std::runtime_error&)
+          {
+            caught_failure = true;
+          }
+          failed.has_value = result.HasValue();
+          failed.as_bool = static_cast<bool>(result);
+          failed.original_present = original.current != nullptr;
+          failed.original_unchanged = original.current == original_address;
+          failed.original_live = original.live;
+          failed.original_text = original.current != nullptr ? original.current->text : std::string{};
+          failed.original_number = original.current != nullptr ? original.current->number : 0;
+          failed.replacement_present = replacement.current != nullptr;
+          failed.replacement_live = replacement.live;
+          failed.replacement_text = replacement.current != nullptr ? replacement.current->text : std::string{};
+          failed.replacement_number = replacement.current != nullptr ? replacement.current->number : 0;
         }
-
         result.EmplaceError(replacement, "replacement", 42, false);
-        EXPECT_FALSE(result.HasValue());
-        EXPECT_EQ(original.live, 0);
-        EXPECT_EQ(original.current, nullptr);
-        ASSERT_NE(replacement.current, nullptr);
-        EXPECT_EQ(replacement.current->text, "replacement");
-        EXPECT_EQ(replacement.current->number, 42);
-        EXPECT_EQ(replacement.live, 1);
-
+        replaced.has_value = result.HasValue();
+        replaced.as_bool = static_cast<bool>(result);
+        replaced.original_present = original.current != nullptr;
+        replaced.original_unchanged = original.current == original_address;
+        replaced.original_live = original.live;
+        replaced.original_text = original.current != nullptr ? original.current->text : std::string{};
+        replaced.original_number = original.current != nullptr ? original.current->number : 0;
+        replaced.replacement_present = replacement.current != nullptr;
+        replaced.replacement_live = replacement.live;
+        replaced.replacement_text = replacement.current != nullptr ? replacement.current->text : std::string{};
+        replaced.replacement_number = replacement.current != nullptr ? replacement.current->number : 0;
         result.EmplaceValue();
-        EXPECT_TRUE(result.HasValue());
-        EXPECT_EQ(replacement.live, 0);
-        EXPECT_EQ(replacement.current, nullptr);
+        success_after_error = result.HasValue();
+        live_after_success = replacement.live;
+        payload_after_success = replacement.current != nullptr;
         result.EmplaceValue();
-        EXPECT_TRUE(result.HasValue());
+        repeated_success = result.HasValue();
       }
+
+      /* Expect */
+      EXPECT_EQ(initial.has_value, parameter.starts_with_value);
+      EXPECT_EQ(initial.original_present, !parameter.starts_with_value);
+      if (!parameter.starts_with_value)
+      {
+        EXPECT_EQ(initial.original_text, "original");
+        EXPECT_EQ(initial.original_number, 17);
+      }
+      EXPECT_EQ(caught_failure, parameter.fail_first);
+      if (parameter.fail_first)
+      {
+        EXPECT_EQ(failed.has_value, parameter.starts_with_value);
+        /* AP-R3-CORE-007 also holds after failed replacement. */
+        EXPECT_EQ(failed.as_bool, parameter.starts_with_value);
+        EXPECT_TRUE(failed.original_unchanged);
+        EXPECT_EQ(failed.original_live, parameter.starts_with_value ? 0 : 1);
+        EXPECT_EQ(failed.original_present, !parameter.starts_with_value);
+        if (!parameter.starts_with_value)
+        {
+          EXPECT_EQ(failed.original_text, "original");
+          EXPECT_EQ(failed.original_number, 17);
+        }
+        EXPECT_FALSE(failed.replacement_present);
+        EXPECT_EQ(failed.replacement_live, 0);
+      }
+      EXPECT_FALSE(replaced.has_value);
+      EXPECT_FALSE(replaced.original_present);
+      EXPECT_EQ(replaced.original_live, 0);
+      EXPECT_TRUE(replaced.replacement_present);
+      EXPECT_EQ(replaced.replacement_text, "replacement");
+      EXPECT_EQ(replaced.replacement_number, 42);
+      EXPECT_EQ(replaced.replacement_live, 1);
+      EXPECT_TRUE(success_after_error);
+      EXPECT_EQ(live_after_success, 0);
+      EXPECT_FALSE(payload_after_success);
+      EXPECT_TRUE(repeated_success);
       EXPECT_EQ(original.live, 0);
       EXPECT_EQ(replacement.live, 0);
+      EXPECT_EQ(replacement.current, nullptr);
     }
 
-    std::string VoidReplacementCaseName(const ::testing::TestParamInfo<std::tuple<bool, bool>>& information)
+    std::string VoidReplacementCaseName_PreservesStateOnFailureAndReplacesOnSuccess(
+      const ::testing::TestParamInfo<VoidReplacementCase_PreservesStateOnFailureAndReplacesOnSuccess>& information)
     {
-      const auto [starts_with_value, fail_first] = information.param;
-      return std::string{starts_with_value ? "SuccessToError" : "ErrorToError"} +
-             (fail_first ? "AfterFailure" : "Success");
+      return std::string{information.param.test_name};
     }
 
-    INSTANTIATE_TEST_SUITE_P(AllStates, AP_R3_CORE_006_VoidReplacement,
-                             ::testing::Combine(::testing::Bool(), ::testing::Bool()), VoidReplacementCaseName);
+    INSTANTIATE_TEST_SUITE_P(
+      AllStates, AP_R3_CORE_006_VoidReplacement,
+      ::testing::Values(
+        VoidReplacementCase_PreservesStateOnFailureAndReplacesOnSuccess{false, false, "ErrorToErrorSuccess",
+                                                                        "error to error with immediate success"},
+        VoidReplacementCase_PreservesStateOnFailureAndReplacesOnSuccess{false, true, "ErrorToErrorAfterFailure",
+                                                                        "error to error after a failed replacement"},
+        VoidReplacementCase_PreservesStateOnFailureAndReplacesOnSuccess{true, false, "SuccessToErrorSuccess",
+                                                                        "success to error with immediate success"},
+        VoidReplacementCase_PreservesStateOnFailureAndReplacesOnSuccess{true, true, "SuccessToErrorAfterFailure",
+                                                                        "success to error after a failed replacement"}),
+      VoidReplacementCaseName_PreservesStateOnFailureAndReplacesOnSuccess);
 
     /* ======================== End Test_AP_R3_CORE_006 ================================== */
-  } // namespace
-} // namespace ara::core
+
+    /* ========================== Test_AP_R3_CORE_007 ==================================== */
+
+    /* ----------------------------------------------------------------------------------- */
+
+    struct ResultQueryCase_ReportsSelectedState
+    {
+        bool has_value;
+        int value;
+        AdaptivePiErrc error;
+        std::string_view test_name;
+        const char* description;
+    };
+
+    std::ostream& operator<<(std::ostream& output, const ResultQueryCase_ReportsSelectedState& parameter)
+    {
+      return output << parameter.description;
+    }
+
+    /* Provides the case data for this check: Verify that the selected result state is reported correctly.
+     * GetParam() supplies this test's inputs and expected results.
+     */
+    class AP_R3_CORE_007_HasValueAndBoolReportState_ValueStates
+        : public ::testing::TestWithParam<ResultQueryCase_ReportsSelectedState>
+    {
+    };
+
+    /* Verify that the selected result state is reported correctly.
+     * 1. Arrange: Read the case parameters and prepare the selected result state.
+     * 2. Act: Query HasValue, bool conversion, and conditional branching, including after any replacements.
+     * 3. Expect: Every observation and repeated query matches the active alternative, regardless of payload.
+     */
+    TEST_P(AP_R3_CORE_007_HasValueAndBoolReportState_ValueStates, ReportsSelectedState)
+    {
+      /* Arrange */
+      const auto& parameter = GetParam();
+      const auto result = parameter.has_value ? Result<int>::FromValue(parameter.value)
+                                              : Result<int>::FromError(MakeErrorCode(parameter.error));
+
+      /* Act */
+      const bool state_1_has_value = result.HasValue();
+      const bool state_1_as_bool = static_cast<bool>(result);
+      bool state_1_entered_success{false};
+      if (result)
+      {
+        state_1_entered_success = true;
+      }
+      const bool state_1_repeated_has_value = result.HasValue();
+      const bool state_1_repeated_as_bool = static_cast<bool>(result);
+
+      /* Expect */
+      EXPECT_EQ(state_1_has_value, parameter.has_value);
+      EXPECT_EQ(state_1_as_bool, parameter.has_value);
+      EXPECT_EQ(state_1_entered_success, parameter.has_value);
+      EXPECT_EQ(state_1_repeated_has_value, parameter.has_value);
+      EXPECT_EQ(state_1_repeated_as_bool, parameter.has_value);
+    }
+
+    std::string ResultQueryCaseName_ReportsSelectedState(
+      const ::testing::TestParamInfo<ResultQueryCase_ReportsSelectedState>& information)
+    {
+      return std::string{information.param.test_name};
+    }
+
+    INSTANTIATE_TEST_SUITE_P(
+      ResultStates, AP_R3_CORE_007_HasValueAndBoolReportState_ValueStates,
+      ::testing::Values(ResultQueryCase_ReportsSelectedState{true, 0, AdaptivePiErrc::kInvalidArgument, "ZeroValue",
+                                                             "Zero is a successful value"},
+                        ResultQueryCase_ReportsSelectedState{true, 42, AdaptivePiErrc::kInvalidState, "PositiveValue",
+                                                             "Positive integer success"},
+                        ResultQueryCase_ReportsSelectedState{true, -1, AdaptivePiErrc::kOperationFailed,
+                                                             "NegativeValue", "Negative integer success"},
+                        ResultQueryCase_ReportsSelectedState{false, 0, AdaptivePiErrc::kInvalidArgument,
+                                                             "InvalidArgument", "Invalid argument failure"},
+                        ResultQueryCase_ReportsSelectedState{false, 0, AdaptivePiErrc::kInvalidState, "InvalidState",
+                                                             "Invalid state failure"},
+                        ResultQueryCase_ReportsSelectedState{false, 0, AdaptivePiErrc::kOperationFailed,
+                                                             "OperationFailed", "Operation failed"}),
+      ResultQueryCaseName_ReportsSelectedState);
+
+    /* ----------------------------------------------------------------------------------- */
+
+    struct ResultVoidQueryCase_ReportsSelectedState
+    {
+        bool has_value;
+        AdaptivePiErrc error;
+        std::string_view test_name;
+        const char* description;
+    };
+
+    std::ostream& operator<<(std::ostream& output, const ResultVoidQueryCase_ReportsSelectedState& parameter)
+    {
+      return output << parameter.description;
+    }
+
+    /* Provides the case data for this check: Verify that the selected result state is reported correctly.
+     * GetParam() supplies this test's inputs and expected results.
+     */
+    class AP_R3_CORE_007_HasValueAndBoolReportState_VoidStates
+        : public ::testing::TestWithParam<ResultVoidQueryCase_ReportsSelectedState>
+    {
+    };
+
+    /* Verify that the selected result state is reported correctly.
+     * 1. Arrange: Read the case parameters and prepare the selected result state.
+     * 2. Act: Query HasValue, bool conversion, and conditional branching, including after any replacements.
+     * 3. Expect: Every observation and repeated query matches the active alternative, regardless of payload.
+     */
+    TEST_P(AP_R3_CORE_007_HasValueAndBoolReportState_VoidStates, ReportsSelectedState)
+    {
+      /* Arrange */
+      const auto& parameter = GetParam();
+      const auto result =
+        parameter.has_value ? Result<void>::FromValue() : Result<void>::FromError(MakeErrorCode(parameter.error));
+
+      /* Act */
+      const bool state_1_has_value = result.HasValue();
+      const bool state_1_as_bool = static_cast<bool>(result);
+      bool state_1_entered_success{false};
+      if (result)
+      {
+        state_1_entered_success = true;
+      }
+      const bool state_1_repeated_has_value = result.HasValue();
+      const bool state_1_repeated_as_bool = static_cast<bool>(result);
+
+      /* Expect */
+      EXPECT_EQ(state_1_has_value, parameter.has_value);
+      EXPECT_EQ(state_1_as_bool, parameter.has_value);
+      EXPECT_EQ(state_1_entered_success, parameter.has_value);
+      EXPECT_EQ(state_1_repeated_has_value, parameter.has_value);
+      EXPECT_EQ(state_1_repeated_as_bool, parameter.has_value);
+    }
+
+    std::string ResultVoidQueryCaseName_ReportsSelectedState(
+      const ::testing::TestParamInfo<ResultVoidQueryCase_ReportsSelectedState>& information)
+    {
+      return std::string{information.param.test_name};
+    }
+
+    INSTANTIATE_TEST_SUITE_P(
+      ResultVoidStates, AP_R3_CORE_007_HasValueAndBoolReportState_VoidStates,
+      ::testing::Values(ResultVoidQueryCase_ReportsSelectedState{true, AdaptivePiErrc::kInvalidArgument, "Success",
+                                                                 "Successful completion without a value"},
+                        ResultVoidQueryCase_ReportsSelectedState{false, AdaptivePiErrc::kInvalidArgument,
+                                                                 "InvalidArgument", "Invalid argument failure"},
+                        ResultVoidQueryCase_ReportsSelectedState{false, AdaptivePiErrc::kInvalidState, "InvalidState",
+                                                                 "Invalid state failure"},
+                        ResultVoidQueryCase_ReportsSelectedState{false, AdaptivePiErrc::kOperationFailed,
+                                                                 "OperationFailed", "Operation failed"}),
+      ResultVoidQueryCaseName_ReportsSelectedState);
+
+    /* ----------------------------------------------------------------------------------- */
+
+    /* Verify that a false boolean payload still represents success.
+     * 1. Arrange: Create a successful Result<bool> containing false.
+     * 2. Act: Query HasValue, bool conversion, and conditional branching, including after any replacements.
+     * 3. Expect: Every observation and repeated query matches the active alternative, regardless of payload.
+     */
+    TEST(AP_R3_CORE_007_HasValueAndBoolReportState, FalsePayloadReportsSuccess)
+    {
+      /* Arrange */
+      const auto result = Result<bool>::FromValue(false);
+
+      /* Act */
+      const bool state_1_has_value = result.HasValue();
+      const bool state_1_as_bool = static_cast<bool>(result);
+      bool state_1_entered_success{false};
+      if (result)
+      {
+        state_1_entered_success = true;
+      }
+      const bool state_1_repeated_has_value = result.HasValue();
+      const bool state_1_repeated_as_bool = static_cast<bool>(result);
+
+      /* Expect */
+      EXPECT_EQ(state_1_has_value, true);
+      EXPECT_EQ(state_1_as_bool, true);
+      EXPECT_EQ(state_1_entered_success, true);
+      EXPECT_EQ(state_1_repeated_has_value, true);
+      EXPECT_EQ(state_1_repeated_as_bool, true);
+    }
+
+    /* ----------------------------------------------------------------------------------- */
+
+    /* Verify that equal integer payloads retain distinct value and error states.
+     * 1. Arrange: Create a value result and an error result, both containing zero.
+     * 2. Act: Query HasValue, bool conversion, and conditional branching, including after any replacements.
+     * 3. Expect: Every observation and repeated query matches the active alternative, regardless of payload.
+     */
+    TEST(AP_R3_CORE_007_HasValueAndBoolReportState, IdenticalPayloadsReportDifferentStates)
+    {
+      /* Arrange */
+      const auto value = Result<int, int>::FromValue(0);
+      const auto error = Result<int, int>::FromError(0);
+
+      /* Act */
+      const bool state_1_has_value = value.HasValue();
+      const bool state_1_as_bool = static_cast<bool>(value);
+      bool state_1_entered_success{false};
+      if (value)
+      {
+        state_1_entered_success = true;
+      }
+      const bool state_1_repeated_has_value = value.HasValue();
+      const bool state_1_repeated_as_bool = static_cast<bool>(value);
+      const bool state_2_has_value = error.HasValue();
+      const bool state_2_as_bool = static_cast<bool>(error);
+      bool state_2_entered_success{false};
+      if (error)
+      {
+        state_2_entered_success = true;
+      }
+      const bool state_2_repeated_has_value = error.HasValue();
+      const bool state_2_repeated_as_bool = static_cast<bool>(error);
+
+      /* Expect */
+      EXPECT_EQ(state_1_has_value, true);
+      EXPECT_EQ(state_1_as_bool, true);
+      EXPECT_EQ(state_1_entered_success, true);
+      EXPECT_EQ(state_1_repeated_has_value, true);
+      EXPECT_EQ(state_1_repeated_as_bool, true);
+      EXPECT_EQ(state_2_has_value, false);
+      EXPECT_EQ(state_2_as_bool, false);
+      EXPECT_EQ(state_2_entered_success, false);
+      EXPECT_EQ(state_2_repeated_has_value, false);
+      EXPECT_EQ(state_2_repeated_as_bool, false);
+    }
+
+    /* ----------------------------------------------------------------------------------- */
+
+    /* Verify that a void result containing a zero error still represents failure.
+     * 1. Arrange: Create a Result<void, int> containing error zero.
+     * 2. Act: Query HasValue, bool conversion, and conditional branching, including after any replacements.
+     * 3. Expect: Every observation and repeated query matches the active alternative, regardless of payload.
+     */
+    TEST(AP_R3_CORE_007_HasValueAndBoolReportState, VoidZeroErrorReportsFailure)
+    {
+      /* Arrange */
+      const auto result = Result<void, int>::FromError(0);
+
+      /* Act */
+      const bool state_1_has_value = result.HasValue();
+      const bool state_1_as_bool = static_cast<bool>(result);
+      bool state_1_entered_success{false};
+      if (result)
+      {
+        state_1_entered_success = true;
+      }
+      const bool state_1_repeated_has_value = result.HasValue();
+      const bool state_1_repeated_as_bool = static_cast<bool>(result);
+
+      /* Expect */
+      EXPECT_EQ(state_1_has_value, false);
+      EXPECT_EQ(state_1_as_bool, false);
+      EXPECT_EQ(state_1_entered_success, false);
+      EXPECT_EQ(state_1_repeated_has_value, false);
+      EXPECT_EQ(state_1_repeated_as_bool, false);
+    }
+
+    /* ----------------------------------------------------------------------------------- */
+
+    /* Verify state queries after repeated value and error replacements.
+     * 1. Arrange: Create an integer result initially containing value zero.
+     * 2. Act: Query HasValue, bool conversion, and conditional branching, including after any replacements.
+     * 3. Expect: Every observation and repeated query matches the active alternative, regardless of payload.
+     */
+    TEST(AP_R3_CORE_007_HasValueAndBoolReportState, QueriesFollowValueReplacement)
+    {
+      /* Arrange */
+      auto result = Result<int, int>::FromValue(0);
+
+      /* Act */
+      const bool state_1_has_value = result.HasValue();
+      const bool state_1_as_bool = static_cast<bool>(result);
+      bool state_1_entered_success{false};
+      if (result)
+      {
+        state_1_entered_success = true;
+      }
+      const bool state_1_repeated_has_value = result.HasValue();
+      const bool state_1_repeated_as_bool = static_cast<bool>(result);
+      result.EmplaceValue(-1);
+      const bool state_2_has_value = result.HasValue();
+      const bool state_2_as_bool = static_cast<bool>(result);
+      bool state_2_entered_success{false};
+      if (result)
+      {
+        state_2_entered_success = true;
+      }
+      const bool state_2_repeated_has_value = result.HasValue();
+      const bool state_2_repeated_as_bool = static_cast<bool>(result);
+      result.EmplaceError(0);
+      const bool state_3_has_value = result.HasValue();
+      const bool state_3_as_bool = static_cast<bool>(result);
+      bool state_3_entered_success{false};
+      if (result)
+      {
+        state_3_entered_success = true;
+      }
+      const bool state_3_repeated_has_value = result.HasValue();
+      const bool state_3_repeated_as_bool = static_cast<bool>(result);
+      result.EmplaceError(42);
+      const bool state_4_has_value = result.HasValue();
+      const bool state_4_as_bool = static_cast<bool>(result);
+      bool state_4_entered_success{false};
+      if (result)
+      {
+        state_4_entered_success = true;
+      }
+      const bool state_4_repeated_has_value = result.HasValue();
+      const bool state_4_repeated_as_bool = static_cast<bool>(result);
+      result.EmplaceValue(0);
+      const bool state_5_has_value = result.HasValue();
+      const bool state_5_as_bool = static_cast<bool>(result);
+      bool state_5_entered_success{false};
+      if (result)
+      {
+        state_5_entered_success = true;
+      }
+      const bool state_5_repeated_has_value = result.HasValue();
+      const bool state_5_repeated_as_bool = static_cast<bool>(result);
+
+      /* Expect */
+      EXPECT_EQ(state_1_has_value, true);
+      EXPECT_EQ(state_1_as_bool, true);
+      EXPECT_EQ(state_1_entered_success, true);
+      EXPECT_EQ(state_1_repeated_has_value, true);
+      EXPECT_EQ(state_1_repeated_as_bool, true);
+      EXPECT_EQ(state_2_has_value, true);
+      EXPECT_EQ(state_2_as_bool, true);
+      EXPECT_EQ(state_2_entered_success, true);
+      EXPECT_EQ(state_2_repeated_has_value, true);
+      EXPECT_EQ(state_2_repeated_as_bool, true);
+      EXPECT_EQ(state_3_has_value, false);
+      EXPECT_EQ(state_3_as_bool, false);
+      EXPECT_EQ(state_3_entered_success, false);
+      EXPECT_EQ(state_3_repeated_has_value, false);
+      EXPECT_EQ(state_3_repeated_as_bool, false);
+      EXPECT_EQ(state_4_has_value, false);
+      EXPECT_EQ(state_4_as_bool, false);
+      EXPECT_EQ(state_4_entered_success, false);
+      EXPECT_EQ(state_4_repeated_has_value, false);
+      EXPECT_EQ(state_4_repeated_as_bool, false);
+      EXPECT_EQ(state_5_has_value, true);
+      EXPECT_EQ(state_5_as_bool, true);
+      EXPECT_EQ(state_5_entered_success, true);
+      EXPECT_EQ(state_5_repeated_has_value, true);
+      EXPECT_EQ(state_5_repeated_as_bool, true);
+    }
+
+    /* ----------------------------------------------------------------------------------- */
+
+    /* Verify void state queries after repeated success and error replacements.
+     * 1. Arrange: Create a void result initially representing success.
+     * 2. Act: Query HasValue, bool conversion, and conditional branching, including after any replacements.
+     * 3. Expect: Every observation and repeated query matches the active alternative, regardless of payload.
+     */
+    TEST(AP_R3_CORE_007_HasValueAndBoolReportState, QueriesFollowVoidReplacement)
+    {
+      /* Arrange */
+      auto result = Result<void, int>::FromValue();
+
+      /* Act */
+      const bool state_1_has_value = result.HasValue();
+      const bool state_1_as_bool = static_cast<bool>(result);
+      bool state_1_entered_success{false};
+      if (result)
+      {
+        state_1_entered_success = true;
+      }
+      const bool state_1_repeated_has_value = result.HasValue();
+      const bool state_1_repeated_as_bool = static_cast<bool>(result);
+      result.EmplaceValue();
+      const bool state_2_has_value = result.HasValue();
+      const bool state_2_as_bool = static_cast<bool>(result);
+      bool state_2_entered_success{false};
+      if (result)
+      {
+        state_2_entered_success = true;
+      }
+      const bool state_2_repeated_has_value = result.HasValue();
+      const bool state_2_repeated_as_bool = static_cast<bool>(result);
+      result.EmplaceError(0);
+      const bool state_3_has_value = result.HasValue();
+      const bool state_3_as_bool = static_cast<bool>(result);
+      bool state_3_entered_success{false};
+      if (result)
+      {
+        state_3_entered_success = true;
+      }
+      const bool state_3_repeated_has_value = result.HasValue();
+      const bool state_3_repeated_as_bool = static_cast<bool>(result);
+      result.EmplaceError(42);
+      const bool state_4_has_value = result.HasValue();
+      const bool state_4_as_bool = static_cast<bool>(result);
+      bool state_4_entered_success{false};
+      if (result)
+      {
+        state_4_entered_success = true;
+      }
+      const bool state_4_repeated_has_value = result.HasValue();
+      const bool state_4_repeated_as_bool = static_cast<bool>(result);
+      result.EmplaceValue();
+      const bool state_5_has_value = result.HasValue();
+      const bool state_5_as_bool = static_cast<bool>(result);
+      bool state_5_entered_success{false};
+      if (result)
+      {
+        state_5_entered_success = true;
+      }
+      const bool state_5_repeated_has_value = result.HasValue();
+      const bool state_5_repeated_as_bool = static_cast<bool>(result);
+
+      /* Expect */
+      EXPECT_EQ(state_1_has_value, true);
+      EXPECT_EQ(state_1_as_bool, true);
+      EXPECT_EQ(state_1_entered_success, true);
+      EXPECT_EQ(state_1_repeated_has_value, true);
+      EXPECT_EQ(state_1_repeated_as_bool, true);
+      EXPECT_EQ(state_2_has_value, true);
+      EXPECT_EQ(state_2_as_bool, true);
+      EXPECT_EQ(state_2_entered_success, true);
+      EXPECT_EQ(state_2_repeated_has_value, true);
+      EXPECT_EQ(state_2_repeated_as_bool, true);
+      EXPECT_EQ(state_3_has_value, false);
+      EXPECT_EQ(state_3_as_bool, false);
+      EXPECT_EQ(state_3_entered_success, false);
+      EXPECT_EQ(state_3_repeated_has_value, false);
+      EXPECT_EQ(state_3_repeated_as_bool, false);
+      EXPECT_EQ(state_4_has_value, false);
+      EXPECT_EQ(state_4_as_bool, false);
+      EXPECT_EQ(state_4_entered_success, false);
+      EXPECT_EQ(state_4_repeated_has_value, false);
+      EXPECT_EQ(state_4_repeated_as_bool, false);
+      EXPECT_EQ(state_5_has_value, true);
+      EXPECT_EQ(state_5_as_bool, true);
+      EXPECT_EQ(state_5_entered_success, true);
+      EXPECT_EQ(state_5_repeated_has_value, true);
+      EXPECT_EQ(state_5_repeated_as_bool, true);
+    }
+
+    /* ======================== End Test_AP_R3_CORE_007 ================================== */
+  } /* namespace */
+} /* namespace ara::core */

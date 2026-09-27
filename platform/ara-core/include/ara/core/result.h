@@ -136,6 +136,11 @@ namespace ara::core
         return storage_.index() == c_resultIdx;
       }
 
+      [[nodiscard]] explicit operator bool() const noexcept
+      {
+        return HasValue();
+      }
+
       Result(const Result&) = default;
       Result(Result&&) = default;
 
@@ -212,6 +217,11 @@ namespace ara::core
       [[nodiscard]] bool HasValue() const noexcept
       {
         return storage_.index() == c_resultIdx;
+      }
+
+      [[nodiscard]] explicit operator bool() const noexcept
+      {
+        return HasValue();
       }
 
       Result(const Result&) = default;
