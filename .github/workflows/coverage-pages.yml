@@ -83,7 +83,14 @@ jobs:
           summary = json.loads(Path("site/coverage/summary.json").read_text())
           files = summary.get("files", [])
           production = re.compile(r"^(apps|platform)/.*\.(c|cpp|cxx|h|hpp|hxx)$")
-          reported = [entry for entry in files if production.fullmatch(entry.get("filename", ""))]
+          test_dir = re.compile(r"^(apps|platform)/(.*/)?tests?/")
+          test_file = re.compile(r"^(apps|platform)/(.*/)?(test_[^/]*|[^/]*_(test|tests|spec))\.(c|cpp|cxx|h|hpp|hxx)$")
+          reported = [
+              entry for entry in files
+              if production.fullmatch(entry.get("filename", ""))
+              and not test_dir.match(entry["filename"])
+              and not test_file.fullmatch(entry["filename"])
+          ]
           lines = sum(entry.get("line_total", 0) for entry in reported)
           if len(reported) != len(files) or not reported or lines <= 0:
               print("Coverage report has no valid production source results", file=sys.stderr)
