@@ -10,6 +10,10 @@ function(adaptive_pi_configure_target target_name)
                 -Wsign-conversion
                 -Wshadow
         )
+        target_link_libraries(
+            ${target_name}
+            PUBLIC adaptive_pi_exception_policy
+        )
 
         if(ADAPTIVE_PI_WARNINGS_AS_ERRORS)
             target_compile_options(${target_name} PRIVATE -Werror)

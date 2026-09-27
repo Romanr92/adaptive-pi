@@ -6,9 +6,15 @@ Release 3 provides a project-owned error domain, error code, and `Result`
 template for returning either a value or a recoverable error from synchronous
 operations.
 
-The implementation shall support exception-free handling through `Result` and,
-where the toolchain supports C++ exceptions, exception-based retrieval through
-`ValueOrThrow()`.
+The implementation shall support both exception-disabled and exception-enabled
+builds. Repository builds shall disable exceptions by default using
+`-fno-exceptions` on GCC/Clang. An explicit build option shall enable exceptions
+without source edits. This default is an AdaptivePi decision, not an AUTOSAR
+requirement; see [ADR 0006](../adr/0006-exception-build-policy.md).
+
+Both configurations shall support exception-free handling through `Result`.
+Exception-based retrieval through `ValueOrThrow()` shall be available only when
+C++ exceptions are enabled in the compiler toolchain.
 
 ## AP-R3-CORE-001 - ErrorDomain
 
@@ -143,11 +149,16 @@ where the toolchain supports C++ exceptions, exception-based retrieval through
 - Requirement: `Value()` shall provide access to the stored value only when
   `HasValue()` is `true`. Calling `Value()` on an error result shall be treated
   as a violation and shall terminate the process.
-- Requirement: `ValueOrThrow()` shall return the stored value when the result
-  contains a value. When the result contains an `ErrorCode`, it shall invoke the
+- Requirement: When C++ exceptions are enabled, `ValueOrThrow()` shall return
+  the stored value when the result contains a value. When the result contains an `ErrorCode`, it shall invoke the
   associated `ErrorDomain` exception conversion.
-- Requirement: Every concrete `ErrorDomain` shall define an exception type and
-  shall convert its own `ErrorCode` objects to that exception type.
+- Requirement: When C++ exceptions are enabled, every concrete `ErrorDomain`
+  shall define an exception type and shall convert its own `ErrorCode` objects
+  to that exception type.
+- Requirement: When C++ exceptions are disabled, `ValueOrThrow()` shall not
+  participate in overload resolution, for both `Result<T, E>` and
+  `Result<void, E>`. Throwing conversion implementations shall be excluded
+  from exception-disabled compilation.
 - AUTOSAR source:
   [Specification of Adaptive Platform Core, R23-11, §7.2.1.3, p. 25,
   SWS_CORE_00003; §7.2.1.5, pp. 30-31; §7.2.1.7.2-7.2.1.7.3,
@@ -155,10 +166,13 @@ where the toolchain supports C++ exceptions, exception-based retrieval through
   SWS_CORE_00154; §8.1.4, pp. 67-68 and 73-74,
   SWS_CORE_00755 to SWS_CORE_00756 and SWS_CORE_00766 to
   SWS_CORE_00769](https://www.autosar.org/fileadmin/standards/R23-11/AP/AUTOSAR_AP_SWS_Core.pdf).
-- Verification: Death test
-  `AP_R3_CORE_008_ValueOnErrorTerminates` and unit test
-  `AP_R3_CORE_008_ValueOrThrowConvertsDomainError`.
-- Unit Tests:
+- Verification: Build and run common value-access tests and death test
+  `AP_R3_CORE_008_ValueOnErrorTerminates` in both configurations. Run unit test
+  `AP_R3_CORE_008_ValueOrThrowConvertsDomainError` with exceptions enabled.
+  Compile-time checks shall verify absence of `ValueOrThrow()` with exceptions
+  disabled and presence with exceptions enabled, for ordinary and void results.
+  Inspect compiler commands to verify the selected mode.
+- Unit Tests: `AP_R3_CORE_008_ValueAccess.ReferencesStoredValue`; `AP_R3_CORE_008_ValueAccess.MovesPayload`; `AP_R3_CORE_008_ValueAccess.VoidSuccess`; `AP_R3_CORE_008_ValueOnErrorTerminates.Terminates`; `AP_R3_CORE_008_ValueOnErrorTerminates_Const.Terminates`; `AP_R3_CORE_008_ValueOnErrorTerminates_Rvalue.Terminates`; `AP_R3_CORE_008_ValueOnErrorTerminates_Void.Terminates`; `AP_R3_CORE_008_ValueOrThrowConvertsDomainError.ConvertsError`; `AP_R3_CORE_008_ValueOrThrowConvertsDomainError_Const.ConvertsError`; `AP_R3_CORE_008_ValueOrThrowConvertsDomainError_Rvalue.ConvertsError`; `AP_R3_CORE_008_ValueOrThrowConvertsDomainError_Void.ConvertsError`; `AP_R3_CORE_008_ThrowSuccess.PreservesReferences`; `AP_R3_CORE_008_ThrowSuccess.MovesPayload`; `AP_R3_CORE_008_ThrowSuccess.VoidSuccess`
 - Deviation: None.
 
 ## AP-R3-CORE-009 - Error access

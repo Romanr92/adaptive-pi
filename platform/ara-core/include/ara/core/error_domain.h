@@ -1,6 +1,9 @@
 #ifndef ARA_CORE_ERROR_DOMAIN_H_
 #define ARA_CORE_ERROR_DOMAIN_H_
 
+#include "ara/core/config.h"
+#include "ara/core/core_fwd.h"
+
 #include <cstdint>
 #include <exception>
 #include <string_view>
@@ -13,7 +16,17 @@ namespace ara::core
     public:
       using IdType = std::uint64_t;
 
+      using ExceptionConverter = void (*)(const ErrorCode&);
+
+      #if ADAPTIVE_PI_EXCEPTIONS_ENABLED
+      constexpr ErrorDomain(IdType id, std::string_view name, ExceptionConverter converter = nullptr) noexcept
+          : id_{id}, name_{name}, converter_
+      {
+        converter
+      }
+      #else  // ADAPTIVE_PI_EXCEPTIONS_ENABLED
       constexpr ErrorDomain(IdType id, std::string_view name) noexcept : id_{id}, name_{name}
+      #endif // ADAPTIVE_PI_EXCEPTIONS_ENABLED
       {
         if (name_.empty())
         {
@@ -41,9 +54,25 @@ namespace ara::core
         return !(*this == other);
       }
 
+      #if ADAPTIVE_PI_EXCEPTIONS_ENABLED
+      [[noreturn]] void ThrowAsException(const ErrorCode& error) const
+      {
+        if (converter_ != nullptr)
+        {
+          converter_(error);
+        }
+
+        /* Missing coversion or a converter that unexpectedly returned. */
+        std::terminate();
+      }
+      #endif // ADAPTIVE_PI_EXCEPTIONS_ENABLED
+
     private:
       IdType id_;
       std::string_view name_;
+      #if ADAPTIVE_PI_EXCEPTIONS_ENABLED
+      ExceptionConverter converter_;
+      #endif // ADAPTIVE_PI_EXCEPTIONS_ENABLED
   };
 
 } // namespace ara::core

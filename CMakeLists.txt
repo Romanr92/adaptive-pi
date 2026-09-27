@@ -23,6 +23,39 @@ option(
     OFF
 )
 
+option(
+    ADAPTIVE_PI_ENABLE_EXCEPTIONS
+    "Enable C++ exceptions and exception-conversion APIs"
+    OFF
+)
+
+
+if(NOT CMAKE_CXX_COMPILER_ID MATCHES "^(GNU|Clang|AppleClang)$")
+    message(FATAL_ERROR "Exception policy requires GCC or Clang")
+endif()
+
+add_library(adaptive_pi_exception_policy INTERFACE)
+
+if(ADAPTIVE_PI_ENABLE_EXCEPTIONS)
+    target_compile_options(
+        adaptive_pi_exception_policy INTERFACE
+        $<$<COMPILE_LANGUAGE:CXX>:-fexceptions>
+    )
+    target_compile_definitions(
+        adaptive_pi_exception_policy INTERFACE
+        ADAPTIVE_PI_EXCEPTIONS_ENABLED=1
+    )
+else()
+    target_compile_options(
+        adaptive_pi_exception_policy INTERFACE
+        $<$<COMPILE_LANGUAGE:CXX>:-fno-exceptions>
+    )
+    target_compile_definitions(
+        adaptive_pi_exception_policy INTERFACE
+        ADAPTIVE_PI_EXCEPTIONS_ENABLED=0
+    )
+endif()
+
 function(adaptive_pi_add_application source_directory target_compatible)
     if(ADAPTIVE_PI_TARGET_BUILD AND NOT target_compatible)
         message(STATUS "Skipping host-only application: ${source_directory}")

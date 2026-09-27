@@ -1,6 +1,7 @@
 #ifndef ARA_CORE_RESULT_H_
 #define ARA_CORE_RESULT_H_
 
+#include "ara/core/config.h"
 #include "ara/core/core_fwd.h"
 #include "ara/core/error_code.h"
 
@@ -57,6 +58,57 @@ namespace ara::core
           }
 
           return active_slot->index();
+        }
+
+        template <std::size_t Index>
+        decltype(auto) get() & noexcept
+        {
+          if (index() != Index)
+          {
+            std::terminate();
+          }
+
+          auto& active_slot = slots_[active_];
+          if (!active_slot.has_value())
+          {
+            std::terminate();
+          }
+
+          return std::get<Index>(*active_slot);
+        }
+
+        template <std::size_t Index>
+        decltype(auto) get() const& noexcept
+        {
+          if (index() != Index)
+          {
+            std::terminate();
+          }
+
+          const auto& active_slot = slots_[active_];
+          if (!active_slot.has_value())
+          {
+            std::terminate();
+          }
+
+          return std::get<Index>(*active_slot);
+        }
+
+        template <std::size_t Index>
+        decltype(auto) get() && noexcept
+        {
+          if (index() != Index)
+          {
+            std::terminate();
+          }
+
+          auto&& active_slot = std::move(slots_[active_]);
+          if (!active_slot.has_value())
+          {
+            std::terminate();
+          }
+
+          return std::get<Index>(std::move(*active_slot));
         }
 
         ResultStorage(const ResultStorage&) = default;
@@ -141,6 +193,41 @@ namespace ara::core
         return HasValue();
       }
 
+      T& Value() & noexcept
+      {
+        return storage_.template get<c_resultIdx>();
+      }
+
+      const T& Value() const& noexcept
+      {
+        return storage_.template get<c_resultIdx>();
+      }
+
+      T&& Value() && noexcept
+      {
+        return std::move(storage_).template get<c_resultIdx>();
+      }
+
+      #if ADAPTIVE_PI_EXCEPTIONS_ENABLED
+      T& ValueOrThrow() &
+      {
+        ThrowIfError();
+        return Value();
+      }
+
+      const T& ValueOrThrow() const&
+      {
+        ThrowIfError();
+        return Value();
+      }
+
+      T&& ValueOrThrow() &&
+      {
+        ThrowIfError();
+        return std::move(*this).Value();
+      }
+      #endif // ADAPTIVE_PI_EXCEPTIONS_ENABLED
+
       Result(const Result&) = default;
       Result(Result&&) = default;
 
@@ -150,6 +237,19 @@ namespace ara::core
       /* Deferred until we design safe state replacement */
 
     private:
+      #if ADAPTIVE_PI_EXCEPTIONS_ENABLED
+      void ThrowIfError() const
+      {
+        static_assert(std::is_same_v<E, ErrorCode>, "ValueOrThrow requires ErrorCode");
+
+        if (!HasValue())
+        {
+          const auto& error = storage_.template get<c_errorIdx>();
+          error.Domain().ThrowAsException(error);
+        }
+      }
+      #endif // ADAPTIVE_PI_EXCEPTIONS_ENABLED
+
       template <typename... Args>
       Result(std::in_place_index_t<c_resultIdx>, Args&&... args)
           : storage_{std::in_place_index<c_resultIdx>, std::forward<Args>(args)...}
@@ -224,6 +324,21 @@ namespace ara::core
         return HasValue();
       }
 
+      void Value() const noexcept
+      {
+        if (!HasValue())
+        {
+          std::terminate();
+        }
+      }
+
+      #if ADAPTIVE_PI_EXCEPTIONS_ENABLED
+      void ValueOrThrow() const
+      {
+        ThrowIfError();
+      }
+      #endif // ADAPTIVE_PI_EXCEPTIONS_ENABLED
+
       Result(const Result&) = default;
       Result(Result&&) = default;
 
@@ -231,6 +346,19 @@ namespace ara::core
       Result& operator=(Result&&) = delete;
 
     private:
+      #if ADAPTIVE_PI_EXCEPTIONS_ENABLED
+      void ThrowIfError() const
+      {
+        static_assert(std::is_same_v<E, ErrorCode>, "ValueOrThrow requires ErrorCode");
+
+        if (!HasValue())
+        {
+          const auto& error = storage_.template get<c_errorIdx>();
+          error.Domain().ThrowAsException(error);
+        }
+      }
+      #endif // ADAPTIVE_PI_EXCEPTIONS_ENABLED
+
       Result() : storage_{std::in_place_index<c_resultIdx>} {}
 
       template <typename... Args>

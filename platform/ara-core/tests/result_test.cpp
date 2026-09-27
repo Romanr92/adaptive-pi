@@ -2,10 +2,12 @@
 #include "ara/core/result.h"
 
 #include <gtest/gtest.h>
+#include <memory>
 #include <ostream>
 #include <stdexcept>
 #include <string>
 #include <string_view>
+#include <type_traits>
 #include <utility>
 
 namespace ara::core
@@ -1058,7 +1060,11 @@ namespace ara::core
         {
           if (fail)
           {
+            #if ADAPTIVE_PI_EXCEPTIONS_ENABLED
             throw std::runtime_error{"payload construction failed"};
+            #else
+            std::terminate();
+            #endif
           }
           observer.current = this;
           ++observer.live;
@@ -1158,6 +1164,7 @@ namespace ara::core
         initial.replacement_number = replacement.current != nullptr ? replacement.current->number : 0;
         if (parameter.fail_first)
         {
+          #if ADAPTIVE_PI_EXCEPTIONS_ENABLED
           try
           {
             if (parameter.replaces_with_value)
@@ -1173,6 +1180,7 @@ namespace ara::core
           {
             caught_failure = true;
           }
+          #endif
           failed.has_value = result.HasValue();
           failed.as_bool = static_cast<bool>(result);
           failed.original_present = original.current != nullptr;
@@ -1244,26 +1252,40 @@ namespace ara::core
       return std::string{information.param.test_name};
     }
 
+#if ADAPTIVE_PI_EXCEPTIONS_ENABLED
     INSTANTIATE_TEST_SUITE_P(
       AllStates, AP_R3_CORE_006_ReplacementTransitions,
       ::testing::Values(
         ReplacementCase_PreservesPayloadOnFailureAndReplacesOnSuccess{false, false, false, "ErrorToErrorSuccess",
                                                                       "error to error with immediate success"},
-        ReplacementCase_PreservesPayloadOnFailureAndReplacesOnSuccess{false, false, true, "ErrorToErrorAfterFailure",
-                                                                      "error to error after a failed replacement"},
         ReplacementCase_PreservesPayloadOnFailureAndReplacesOnSuccess{false, true, false, "ErrorToValueSuccess",
                                                                       "error to value with immediate success"},
-        ReplacementCase_PreservesPayloadOnFailureAndReplacesOnSuccess{false, true, true, "ErrorToValueAfterFailure",
-                                                                      "error to value after a failed replacement"},
         ReplacementCase_PreservesPayloadOnFailureAndReplacesOnSuccess{true, false, false, "ValueToErrorSuccess",
                                                                       "value to error with immediate success"},
-        ReplacementCase_PreservesPayloadOnFailureAndReplacesOnSuccess{true, false, true, "ValueToErrorAfterFailure",
-                                                                      "value to error after a failed replacement"},
         ReplacementCase_PreservesPayloadOnFailureAndReplacesOnSuccess{true, true, false, "ValueToValueSuccess",
                                                                       "value to value with immediate success"},
+        ReplacementCase_PreservesPayloadOnFailureAndReplacesOnSuccess{false, false, true, "ErrorToErrorAfterFailure",
+                                                                      "error to error after a failed replacement"},
+        ReplacementCase_PreservesPayloadOnFailureAndReplacesOnSuccess{false, true, true, "ErrorToValueAfterFailure",
+                                                                      "error to value after a failed replacement"},
+        ReplacementCase_PreservesPayloadOnFailureAndReplacesOnSuccess{true, false, true, "ValueToErrorAfterFailure",
+                                                                      "value to error after a failed replacement"},
         ReplacementCase_PreservesPayloadOnFailureAndReplacesOnSuccess{true, true, true, "ValueToValueAfterFailure",
                                                                       "value to value after a failed replacement"}),
       ReplacementCaseName_PreservesPayloadOnFailureAndReplacesOnSuccess);
+#else
+    INSTANTIATE_TEST_SUITE_P(AllStates, AP_R3_CORE_006_ReplacementTransitions,
+                             ::testing::Values(
+                               ReplacementCase_PreservesPayloadOnFailureAndReplacesOnSuccess{
+                                 false, false, false, "ErrorToErrorSuccess", "error to error with immediate success"},
+                               ReplacementCase_PreservesPayloadOnFailureAndReplacesOnSuccess{
+                                 false, true, false, "ErrorToValueSuccess", "error to value with immediate success"},
+                               ReplacementCase_PreservesPayloadOnFailureAndReplacesOnSuccess{
+                                 true, false, false, "ValueToErrorSuccess", "value to error with immediate success"},
+                               ReplacementCase_PreservesPayloadOnFailureAndReplacesOnSuccess{
+                                 true, true, false, "ValueToValueSuccess", "value to value with immediate success"}),
+                             ReplacementCaseName_PreservesPayloadOnFailureAndReplacesOnSuccess);
+#endif
 
     /* ----------------------------------------------------------------------------------- */
 
@@ -1288,7 +1310,11 @@ namespace ara::core
         {
           if (fail)
           {
+            #if ADAPTIVE_PI_EXCEPTIONS_ENABLED
             throw std::runtime_error{"payload construction failed"};
+            #else
+            std::terminate();
+            #endif
           }
           observer.current = this;
           ++observer.live;
@@ -1390,6 +1416,7 @@ namespace ara::core
         initial.replacement_number = replacement.current != nullptr ? replacement.current->number : 0;
         if (parameter.fail_first)
         {
+          #if ADAPTIVE_PI_EXCEPTIONS_ENABLED
           try
           {
             result.EmplaceError(replacement, "replacement", 42, true);
@@ -1398,6 +1425,7 @@ namespace ara::core
           {
             caught_failure = true;
           }
+          #endif
           failed.has_value = result.HasValue();
           failed.as_bool = static_cast<bool>(result);
           failed.original_present = original.current != nullptr;
@@ -1477,18 +1505,28 @@ namespace ara::core
       return std::string{information.param.test_name};
     }
 
+#if ADAPTIVE_PI_EXCEPTIONS_ENABLED
     INSTANTIATE_TEST_SUITE_P(
       AllStates, AP_R3_CORE_006_VoidReplacement,
       ::testing::Values(
         VoidReplacementCase_PreservesStateOnFailureAndReplacesOnSuccess{false, false, "ErrorToErrorSuccess",
                                                                         "error to error with immediate success"},
-        VoidReplacementCase_PreservesStateOnFailureAndReplacesOnSuccess{false, true, "ErrorToErrorAfterFailure",
-                                                                        "error to error after a failed replacement"},
         VoidReplacementCase_PreservesStateOnFailureAndReplacesOnSuccess{true, false, "SuccessToErrorSuccess",
                                                                         "success to error with immediate success"},
+        VoidReplacementCase_PreservesStateOnFailureAndReplacesOnSuccess{false, true, "ErrorToErrorAfterFailure",
+                                                                        "error to error after a failed replacement"},
         VoidReplacementCase_PreservesStateOnFailureAndReplacesOnSuccess{true, true, "SuccessToErrorAfterFailure",
                                                                         "success to error after a failed replacement"}),
       VoidReplacementCaseName_PreservesStateOnFailureAndReplacesOnSuccess);
+#else
+    INSTANTIATE_TEST_SUITE_P(AllStates, AP_R3_CORE_006_VoidReplacement,
+                             ::testing::Values(
+                               VoidReplacementCase_PreservesStateOnFailureAndReplacesOnSuccess{
+                                 false, false, "ErrorToErrorSuccess", "error to error with immediate success"},
+                               VoidReplacementCase_PreservesStateOnFailureAndReplacesOnSuccess{
+                                 true, false, "SuccessToErrorSuccess", "success to error with immediate success"}),
+                             VoidReplacementCaseName_PreservesStateOnFailureAndReplacesOnSuccess);
+#endif
 
     /* ======================== End Test_AP_R3_CORE_006 ================================== */
 
@@ -1934,5 +1972,516 @@ namespace ara::core
     }
 
     /* ======================== End Test_AP_R3_CORE_007 ================================== */
+    /* =============================== Test_AP_R3_CORE_008 =============================== */
+
+    template <typename R, typename = void>
+    struct HasValueOrThrow008 : std::false_type
+    {
+    };
+    template <typename R>
+    struct HasValueOrThrow008<R, std::void_t<decltype(std::declval<R>().ValueOrThrow())>> : std::true_type
+    {
+    };
+    static_assert(static_cast<int>(HasValueOrThrow008<Result<int>&>::value) == ADAPTIVE_PI_EXCEPTIONS_ENABLED);
+    static_assert(static_cast<int>(HasValueOrThrow008<const Result<int>&>::value) == ADAPTIVE_PI_EXCEPTIONS_ENABLED);
+    static_assert(static_cast<int>(HasValueOrThrow008<Result<int>&&>::value) == ADAPTIVE_PI_EXCEPTIONS_ENABLED);
+    static_assert(static_cast<int>(HasValueOrThrow008<const Result<void>&>::value) == ADAPTIVE_PI_EXCEPTIONS_ENABLED);
+    static_assert(std::is_same_v<decltype(std::declval<Result<int>&>().Value()), int&>);
+    static_assert(std::is_same_v<decltype(std::declval<const Result<int>&>().Value()), const int&>);
+    static_assert(std::is_same_v<decltype(std::declval<Result<int>&&>().Value()), int&&>);
+
+    /* ----------------------------------------------------------------------------------- */
+    /* Verify mutable and const access reference the same value.
+     * 1. Arrange: Prepare the result and expected payload.
+     * 2. Act: Exercise value access.
+     * 3. Expect: Verify the payload and state.
+     */
+    TEST(AP_R3_CORE_008_ValueAccess, ReferencesStoredValue)
+    {
+      /* Arrange */
+      auto r = Result<int>::FromValue(0);
+      const auto& c = r;
+      /* Act */
+      auto& v = r.Value();
+      v = 42;
+      const auto& observed = c.Value();
+      /* Expect */
+      EXPECT_EQ(observed, 42);
+      EXPECT_EQ(&v, &observed);
+    }
+
+    /* ----------------------------------------------------------------------------------- */
+    /* Verify ownership can be moved out.
+     * 1. Arrange: Prepare the result and expected payload.
+     * 2. Act: Exercise value access.
+     * 3. Expect: Verify the payload and state.
+     */
+    TEST(AP_R3_CORE_008_ValueAccess, MovesPayload)
+    {
+      /* Arrange */
+      auto r = Result<std::unique_ptr<int>>::FromValue(std::make_unique<int>(42));
+      /* Act */
+      auto v = std::move(r).Value();
+      /* Expect */
+      ASSERT_NE(v, nullptr);
+      EXPECT_EQ(*v, 42);
+    }
+
+    /* ----------------------------------------------------------------------------------- */
+    /* Verify successful void access returns normally.
+     * 1. Arrange: Prepare the result and expected payload.
+     * 2. Act: Exercise value access.
+     * 3. Expect: Verify the payload and state.
+     */
+    TEST(AP_R3_CORE_008_ValueAccess, VoidSuccess)
+    {
+      /* Arrange */
+      const auto r = Result<void>::FromValue();
+      /* Act */
+      r.Value();
+      /* Expect */
+      EXPECT_TRUE(r.HasValue());
+    }
+
+    /* ----------------------------------------------------------------------------------- */
+
+    struct Case008ValueMutable
+    {
+        AdaptivePiErrc error;
+        const char* name;
+    };
+    std::ostream& operator<<(std::ostream& stream, const Case008ValueMutable& parameter)
+    {
+      return stream << parameter.name;
+    }
+    /* GetParam supplies each error to exercise Value through mutable access. */
+    class AP_R3_CORE_008_ValueOnErrorTerminates : public ::testing::TestWithParam<Case008ValueMutable>
+    {
+    };
+    /* ----------------------------------------------------------------------------------- */
+    /* Verify the required error behavior of Value.
+     * 1. Arrange: Construct an error result using the selected domain error.
+     * 2. Act: Prepare invalid access for the child process.
+     * 3. Expect: The invalid access terminates the child process.
+     */
+    TEST_P(AP_R3_CORE_008_ValueOnErrorTerminates, Terminates)
+    {
+      /* Arrange */
+      auto r = Result<int>::FromError(MakeErrorCode(GetParam().error));
+      /* Act */
+      const auto access = [&r]()
+      {
+        (void)r.Value();
+      };
+      /* Expect */
+      EXPECT_DEATH(access(), "");
+    }
+    std::string NameCase008ValueMutable(const ::testing::TestParamInfo<Case008ValueMutable>& info)
+    {
+      return info.param.name;
+    }
+    INSTANTIATE_TEST_SUITE_P(AllErrors, AP_R3_CORE_008_ValueOnErrorTerminates,
+                             ::testing::Values(Case008ValueMutable{AdaptivePiErrc::kInvalidArgument, "InvalidArgument"},
+                                               Case008ValueMutable{AdaptivePiErrc::kInvalidState, "InvalidState"},
+                                               Case008ValueMutable{AdaptivePiErrc::kOperationFailed,
+                                                                   "OperationFailed"}),
+                             NameCase008ValueMutable);
+
+    /* ----------------------------------------------------------------------------------- */
+
+    struct Case008ValueConst
+    {
+        AdaptivePiErrc error;
+        const char* name;
+    };
+    std::ostream& operator<<(std::ostream& stream, const Case008ValueConst& parameter)
+    {
+      return stream << parameter.name;
+    }
+    /* GetParam supplies each error to exercise Value through const access. */
+    class AP_R3_CORE_008_ValueOnErrorTerminates_Const : public ::testing::TestWithParam<Case008ValueConst>
+    {
+    };
+    /* ----------------------------------------------------------------------------------- */
+    /* Verify the required error behavior of Value.
+     * 1. Arrange: Construct an error result using the selected domain error.
+     * 2. Act: Prepare invalid access for the child process.
+     * 3. Expect: The invalid access terminates the child process.
+     */
+    TEST_P(AP_R3_CORE_008_ValueOnErrorTerminates_Const, Terminates)
+    {
+      /* Arrange */
+      auto r = Result<int>::FromError(MakeErrorCode(GetParam().error));
+      /* Act */
+      const auto access = [&r]()
+      {
+        (void)std::as_const(r).Value();
+      };
+      /* Expect */
+      EXPECT_DEATH(access(), "");
+    }
+    std::string NameCase008ValueConst(const ::testing::TestParamInfo<Case008ValueConst>& info)
+    {
+      return info.param.name;
+    }
+    INSTANTIATE_TEST_SUITE_P(AllErrors, AP_R3_CORE_008_ValueOnErrorTerminates_Const,
+                             ::testing::Values(Case008ValueConst{AdaptivePiErrc::kInvalidArgument, "InvalidArgument"},
+                                               Case008ValueConst{AdaptivePiErrc::kInvalidState, "InvalidState"},
+                                               Case008ValueConst{AdaptivePiErrc::kOperationFailed, "OperationFailed"}),
+                             NameCase008ValueConst);
+
+    /* ----------------------------------------------------------------------------------- */
+
+    struct Case008ValueRvalue
+    {
+        AdaptivePiErrc error;
+        const char* name;
+    };
+    std::ostream& operator<<(std::ostream& stream, const Case008ValueRvalue& parameter)
+    {
+      return stream << parameter.name;
+    }
+    /* GetParam supplies each error to exercise Value through rvalue access. */
+    class AP_R3_CORE_008_ValueOnErrorTerminates_Rvalue : public ::testing::TestWithParam<Case008ValueRvalue>
+    {
+    };
+    /* ----------------------------------------------------------------------------------- */
+    /* Verify the required error behavior of Value.
+     * 1. Arrange: Construct an error result using the selected domain error.
+     * 2. Act: Prepare invalid access for the child process.
+     * 3. Expect: The invalid access terminates the child process.
+     */
+    TEST_P(AP_R3_CORE_008_ValueOnErrorTerminates_Rvalue, Terminates)
+    {
+      /* Arrange */
+      auto r = Result<int>::FromError(MakeErrorCode(GetParam().error));
+      /* Act */
+      const auto access = [&r]()
+      {
+        (void)std::move(r).Value();
+      };
+      /* Expect */
+      EXPECT_DEATH(access(), "");
+    }
+    std::string NameCase008ValueRvalue(const ::testing::TestParamInfo<Case008ValueRvalue>& info)
+    {
+      return info.param.name;
+    }
+    INSTANTIATE_TEST_SUITE_P(AllErrors, AP_R3_CORE_008_ValueOnErrorTerminates_Rvalue,
+                             ::testing::Values(Case008ValueRvalue{AdaptivePiErrc::kInvalidArgument, "InvalidArgument"},
+                                               Case008ValueRvalue{AdaptivePiErrc::kInvalidState, "InvalidState"},
+                                               Case008ValueRvalue{AdaptivePiErrc::kOperationFailed, "OperationFailed"}),
+                             NameCase008ValueRvalue);
+
+    /* ----------------------------------------------------------------------------------- */
+
+    struct Case008ValueVoid
+    {
+        AdaptivePiErrc error;
+        const char* name;
+    };
+    std::ostream& operator<<(std::ostream& stream, const Case008ValueVoid& parameter)
+    {
+      return stream << parameter.name;
+    }
+    /* GetParam supplies each error to exercise Value through void access. */
+    class AP_R3_CORE_008_ValueOnErrorTerminates_Void : public ::testing::TestWithParam<Case008ValueVoid>
+    {
+    };
+    /* ----------------------------------------------------------------------------------- */
+    /* Verify the required error behavior of Value.
+     * 1. Arrange: Construct an error result using the selected domain error.
+     * 2. Act: Prepare invalid access for the child process.
+     * 3. Expect: The invalid access terminates the child process.
+     */
+    TEST_P(AP_R3_CORE_008_ValueOnErrorTerminates_Void, Terminates)
+    {
+      /* Arrange */
+      auto r = Result<void>::FromError(MakeErrorCode(GetParam().error));
+      /* Act */
+      const auto access = [&r]()
+      {
+        (void)r.Value();
+      };
+      /* Expect */
+      EXPECT_DEATH(access(), "");
+    }
+    std::string NameCase008ValueVoid(const ::testing::TestParamInfo<Case008ValueVoid>& info)
+    {
+      return info.param.name;
+    }
+    INSTANTIATE_TEST_SUITE_P(AllErrors, AP_R3_CORE_008_ValueOnErrorTerminates_Void,
+                             ::testing::Values(Case008ValueVoid{AdaptivePiErrc::kInvalidArgument, "InvalidArgument"},
+                                               Case008ValueVoid{AdaptivePiErrc::kInvalidState, "InvalidState"},
+                                               Case008ValueVoid{AdaptivePiErrc::kOperationFailed, "OperationFailed"}),
+                             NameCase008ValueVoid);
+
+#if ADAPTIVE_PI_EXCEPTIONS_ENABLED
+    /* ----------------------------------------------------------------------------------- */
+
+    struct Case008ValueOrThrowMutable
+    {
+        AdaptivePiErrc error;
+        const char* name;
+    };
+    std::ostream& operator<<(std::ostream& stream, const Case008ValueOrThrowMutable& parameter)
+    {
+      return stream << parameter.name;
+    }
+    /* GetParam supplies each error to exercise ValueOrThrow through mutable access. */
+    class AP_R3_CORE_008_ValueOrThrowConvertsDomainError : public ::testing::TestWithParam<Case008ValueOrThrowMutable>
+    {
+    };
+    /* ----------------------------------------------------------------------------------- */
+    /* Verify the required error behavior of ValueOrThrow.
+     * 1. Arrange: Construct an error result using the selected domain error.
+     * 2. Act: Invoke conversion and capture the domain exception.
+     * 3. Expect: The exception preserves its original error and domain.
+     */
+    TEST_P(AP_R3_CORE_008_ValueOrThrowConvertsDomainError, ConvertsError)
+    {
+      /* Arrange */
+      const auto error = MakeErrorCode(GetParam().error);
+      auto r = Result<int>::FromError(error);
+      std::optional<ErrorCode> observed;
+      /* Act */
+      try
+      {
+        (void)r.ValueOrThrow();
+      }
+      catch (const AdaptivePiException& exception)
+      {
+        observed = exception.Error();
+      }
+      /* Expect */
+      ASSERT_TRUE(observed.has_value());
+      EXPECT_EQ(*observed, error);
+      EXPECT_EQ(&observed->Domain(), &error.Domain());
+    }
+    std::string NameCase008ValueOrThrowMutable(const ::testing::TestParamInfo<Case008ValueOrThrowMutable>& info)
+    {
+      return info.param.name;
+    }
+    INSTANTIATE_TEST_SUITE_P(
+      AllErrors, AP_R3_CORE_008_ValueOrThrowConvertsDomainError,
+      ::testing::Values(Case008ValueOrThrowMutable{AdaptivePiErrc::kInvalidArgument, "InvalidArgument"},
+                        Case008ValueOrThrowMutable{AdaptivePiErrc::kInvalidState, "InvalidState"},
+                        Case008ValueOrThrowMutable{AdaptivePiErrc::kOperationFailed, "OperationFailed"}),
+      NameCase008ValueOrThrowMutable);
+
+    /* ----------------------------------------------------------------------------------- */
+
+    struct Case008ValueOrThrowConst
+    {
+        AdaptivePiErrc error;
+        const char* name;
+    };
+    std::ostream& operator<<(std::ostream& stream, const Case008ValueOrThrowConst& parameter)
+    {
+      return stream << parameter.name;
+    }
+    /* GetParam supplies each error to exercise ValueOrThrow through const access. */
+    class AP_R3_CORE_008_ValueOrThrowConvertsDomainError_Const
+        : public ::testing::TestWithParam<Case008ValueOrThrowConst>
+    {
+    };
+    /* ----------------------------------------------------------------------------------- */
+    /* Verify the required error behavior of ValueOrThrow.
+     * 1. Arrange: Construct an error result using the selected domain error.
+     * 2. Act: Invoke conversion and capture the domain exception.
+     * 3. Expect: The exception preserves its original error and domain.
+     */
+    TEST_P(AP_R3_CORE_008_ValueOrThrowConvertsDomainError_Const, ConvertsError)
+    {
+      /* Arrange */
+      const auto error = MakeErrorCode(GetParam().error);
+      auto r = Result<int>::FromError(error);
+      std::optional<ErrorCode> observed;
+      /* Act */
+      try
+      {
+        (void)std::as_const(r).ValueOrThrow();
+      }
+      catch (const AdaptivePiException& exception)
+      {
+        observed = exception.Error();
+      }
+      /* Expect */
+      ASSERT_TRUE(observed.has_value());
+      EXPECT_EQ(*observed, error);
+      EXPECT_EQ(&observed->Domain(), &error.Domain());
+    }
+    std::string NameCase008ValueOrThrowConst(const ::testing::TestParamInfo<Case008ValueOrThrowConst>& info)
+    {
+      return info.param.name;
+    }
+    INSTANTIATE_TEST_SUITE_P(
+      AllErrors, AP_R3_CORE_008_ValueOrThrowConvertsDomainError_Const,
+      ::testing::Values(Case008ValueOrThrowConst{AdaptivePiErrc::kInvalidArgument, "InvalidArgument"},
+                        Case008ValueOrThrowConst{AdaptivePiErrc::kInvalidState, "InvalidState"},
+                        Case008ValueOrThrowConst{AdaptivePiErrc::kOperationFailed, "OperationFailed"}),
+      NameCase008ValueOrThrowConst);
+
+    /* ----------------------------------------------------------------------------------- */
+
+    struct Case008ValueOrThrowRvalue
+    {
+        AdaptivePiErrc error;
+        const char* name;
+    };
+    std::ostream& operator<<(std::ostream& stream, const Case008ValueOrThrowRvalue& parameter)
+    {
+      return stream << parameter.name;
+    }
+    /* GetParam supplies each error to exercise ValueOrThrow through rvalue access. */
+    class AP_R3_CORE_008_ValueOrThrowConvertsDomainError_Rvalue
+        : public ::testing::TestWithParam<Case008ValueOrThrowRvalue>
+    {
+    };
+    /* ----------------------------------------------------------------------------------- */
+    /* Verify the required error behavior of ValueOrThrow.
+     * 1. Arrange: Construct an error result using the selected domain error.
+     * 2. Act: Invoke conversion and capture the domain exception.
+     * 3. Expect: The exception preserves its original error and domain.
+     */
+    TEST_P(AP_R3_CORE_008_ValueOrThrowConvertsDomainError_Rvalue, ConvertsError)
+    {
+      /* Arrange */
+      const auto error = MakeErrorCode(GetParam().error);
+      auto r = Result<int>::FromError(error);
+      std::optional<ErrorCode> observed;
+      /* Act */
+      try
+      {
+        (void)std::move(r).ValueOrThrow();
+      }
+      catch (const AdaptivePiException& exception)
+      {
+        observed = exception.Error();
+      }
+      /* Expect */
+      ASSERT_TRUE(observed.has_value());
+      EXPECT_EQ(*observed, error);
+      EXPECT_EQ(&observed->Domain(), &error.Domain());
+    }
+    std::string NameCase008ValueOrThrowRvalue(const ::testing::TestParamInfo<Case008ValueOrThrowRvalue>& info)
+    {
+      return info.param.name;
+    }
+    INSTANTIATE_TEST_SUITE_P(
+      AllErrors, AP_R3_CORE_008_ValueOrThrowConvertsDomainError_Rvalue,
+      ::testing::Values(Case008ValueOrThrowRvalue{AdaptivePiErrc::kInvalidArgument, "InvalidArgument"},
+                        Case008ValueOrThrowRvalue{AdaptivePiErrc::kInvalidState, "InvalidState"},
+                        Case008ValueOrThrowRvalue{AdaptivePiErrc::kOperationFailed, "OperationFailed"}),
+      NameCase008ValueOrThrowRvalue);
+
+    /* ----------------------------------------------------------------------------------- */
+
+    struct Case008ValueOrThrowVoid
+    {
+        AdaptivePiErrc error;
+        const char* name;
+    };
+    std::ostream& operator<<(std::ostream& stream, const Case008ValueOrThrowVoid& parameter)
+    {
+      return stream << parameter.name;
+    }
+    /* GetParam supplies each error to exercise ValueOrThrow through void access. */
+    class AP_R3_CORE_008_ValueOrThrowConvertsDomainError_Void : public ::testing::TestWithParam<Case008ValueOrThrowVoid>
+    {
+    };
+    /* ----------------------------------------------------------------------------------- */
+    /* Verify the required error behavior of ValueOrThrow.
+     * 1. Arrange: Construct an error result using the selected domain error.
+     * 2. Act: Invoke conversion and capture the domain exception.
+     * 3. Expect: The exception preserves its original error and domain.
+     */
+    TEST_P(AP_R3_CORE_008_ValueOrThrowConvertsDomainError_Void, ConvertsError)
+    {
+      /* Arrange */
+      const auto error = MakeErrorCode(GetParam().error);
+      auto r = Result<void>::FromError(error);
+      std::optional<ErrorCode> observed;
+      /* Act */
+      try
+      {
+        (void)r.ValueOrThrow();
+      }
+      catch (const AdaptivePiException& exception)
+      {
+        observed = exception.Error();
+      }
+      /* Expect */
+      ASSERT_TRUE(observed.has_value());
+      EXPECT_EQ(*observed, error);
+      EXPECT_EQ(&observed->Domain(), &error.Domain());
+    }
+    std::string NameCase008ValueOrThrowVoid(const ::testing::TestParamInfo<Case008ValueOrThrowVoid>& info)
+    {
+      return info.param.name;
+    }
+    INSTANTIATE_TEST_SUITE_P(
+      AllErrors, AP_R3_CORE_008_ValueOrThrowConvertsDomainError_Void,
+      ::testing::Values(Case008ValueOrThrowVoid{AdaptivePiErrc::kInvalidArgument, "InvalidArgument"},
+                        Case008ValueOrThrowVoid{AdaptivePiErrc::kInvalidState, "InvalidState"},
+                        Case008ValueOrThrowVoid{AdaptivePiErrc::kOperationFailed, "OperationFailed"}),
+      NameCase008ValueOrThrowVoid);
+
+    /* ----------------------------------------------------------------------------------- */
+    /* Verify all value-returning conversion overloads on success.
+     * 1. Arrange: Prepare the result and expected payload.
+     * 2. Act: Exercise value access.
+     * 3. Expect: Verify the payload and state.
+     */
+    TEST(AP_R3_CORE_008_ThrowSuccess, PreservesReferences)
+    {
+      /* Arrange */
+      auto r = Result<int>::FromValue(42);
+      const auto& c = r;
+      /* Act */
+      auto& v = r.ValueOrThrow();
+      const auto& cv = c.ValueOrThrow();
+      auto&& mv = std::move(r).ValueOrThrow();
+      /* Expect */
+      EXPECT_EQ(v, 42);
+      EXPECT_EQ(&v, &cv);
+      EXPECT_EQ(&v, &mv);
+    }
+
+    /* ----------------------------------------------------------------------------------- */
+    /* Verify conversion access supports move-only payloads.
+     * 1. Arrange: Prepare the result and expected payload.
+     * 2. Act: Exercise value access.
+     * 3. Expect: Verify the payload and state.
+     */
+    TEST(AP_R3_CORE_008_ThrowSuccess, MovesPayload)
+    {
+      /* Arrange */
+      auto r = Result<std::unique_ptr<int>>::FromValue(std::make_unique<int>(42));
+      /* Act */
+      auto v = std::move(r).ValueOrThrow();
+      /* Expect */
+      ASSERT_NE(v, nullptr);
+      EXPECT_EQ(*v, 42);
+    }
+
+    /* ----------------------------------------------------------------------------------- */
+    /* Verify successful void conversion returns normally.
+     * 1. Arrange: Prepare the result and expected payload.
+     * 2. Act: Exercise value access.
+     * 3. Expect: Verify the payload and state.
+     */
+    TEST(AP_R3_CORE_008_ThrowSuccess, VoidSuccess)
+    {
+      /* Arrange */
+      const auto r = Result<void>::FromValue();
+      /* Act */
+      r.ValueOrThrow();
+      /* Expect */
+      EXPECT_TRUE(r.HasValue());
+    }
+
+#endif
+    /* ============================= End Test_AP_R3_CORE_008 ============================= */
   } /* namespace */
 } /* namespace ara::core */
