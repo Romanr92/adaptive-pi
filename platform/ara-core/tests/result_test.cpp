@@ -2583,8 +2583,8 @@ namespace ara::core
       auto error_result = Result<void>::FromError(MakeErrorCode(AdaptivePiErrc::kOperationFailed));
 
       /* Act */
-      const Result<void> moved_value{value_result};
-      const Result<void> moved_error{error_result};
+      const Result<void> moved_value{std::move(value_result)};
+      const Result<void> moved_error{std::move(error_result)};
 
       /* Expect */
       EXPECT_TRUE(moved_value.HasValue());

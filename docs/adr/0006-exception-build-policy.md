@@ -2,8 +2,9 @@
 
 ## Status
 
-Accepted. Build integration and implementation changes are pending; the current
-targets are not yet verified to compile with exceptions disabled.
+Accepted. The default exception-disabled configuration is in place and verified
+locally, but full dual-mode verification remains pending until the
+exception-enabled build and CI checks are executed and confirmed.
 
 ## Context
 

@@ -396,7 +396,7 @@ namespace ara::core
       /* Implements AP-R3-CORE-010 */
       Result(const Result&) = default;
       /* Implements AP-R3-CORE-010 */
-      Result(Result&&) = default;
+      Result(Result&& other) noexcept : storage_{std::move(other.storage_)} {}
 
       Result& operator=(const Result&) = delete;
       Result& operator=(Result&&) = delete;
