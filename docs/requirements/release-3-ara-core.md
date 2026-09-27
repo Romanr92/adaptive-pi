@@ -217,7 +217,7 @@ C++ exceptions are enabled in the compiler toolchain.
   SWS_CORE_00002](https://www.autosar.org/fileadmin/standards/R23-11/AP/AUTOSAR_AP_SWS_Core.pdf).
 - Verification: Unit tests for every Release 3 public operation that has a
   recoverable failure path.
-- Unit Tests:
+- Unit Tests: `AP_R3_CORE_011_ExceptionFreeResultUse.PublicFailureUsesResultState`; `AP_R3_CORE_011_ExceptionFreeResultUse.ConversionIsOptionalBoundary`
 - Deviation: `ara::log` follows its specific AUTOSAR-inspired policy in
   AP-R3-LOG-008: internal logging failures are discarded rather than reported.
 

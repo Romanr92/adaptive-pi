@@ -2593,5 +2593,85 @@ namespace ara::core
     }
 
     /* ============================= End Test_AP_R3_CORE_010 ============================= */
+
+    /* =============================== Test_AP_R3_CORE_011 =============================== */
+
+    template <typename R, typename = void>
+    struct HasValueOrThrow011 : std::false_type
+    {
+    };
+    template <typename R>
+    struct HasValueOrThrow011<R, std::void_t<decltype(std::declval<R>().ValueOrThrow())>> : std::true_type
+    {
+    };
+    static_assert(static_cast<int>(HasValueOrThrow011<Result<int>&>::value) == ADAPTIVE_PI_EXCEPTIONS_ENABLED);
+    static_assert(static_cast<int>(HasValueOrThrow011<const Result<int>&>::value) == ADAPTIVE_PI_EXCEPTIONS_ENABLED);
+    static_assert(static_cast<int>(HasValueOrThrow011<Result<int>&&>::value) == ADAPTIVE_PI_EXCEPTIONS_ENABLED);
+    static_assert(static_cast<int>(HasValueOrThrow011<const Result<void>&>::value) == ADAPTIVE_PI_EXCEPTIONS_ENABLED);
+
+    /* ----------------------------------------------------------------------------------- */
+    /* Verify recoverable failures remain explicit Result states instead of direct throws.
+     * 1. Arrange: Prepare one successful result and one error result.
+     * 2. Act: Query the result states and error access for the failing case.
+     * 3. Expect: The public failure path stays in Result form and invalid value access still terminates.
+     */
+    TEST(AP_R3_CORE_011_ExceptionFreeResultUse, PublicFailureUsesResultState)
+    {
+      /* Arrange */
+      const auto error = MakeErrorCode(AdaptivePiErrc::kInvalidArgument);
+      auto value_result = Result<int>::FromValue(42);
+      auto error_result = Result<int>::FromError(error);
+      /* Act */
+      const bool value_has_value = value_result.HasValue();
+      const bool error_has_value = error_result.HasValue();
+      const auto& observed = error_result.Error();
+      const auto value = value_result.Value();
+      const auto access = [&value_result]()
+      {
+        (void)value_result.Error();
+      };
+      /* Expect */
+      EXPECT_TRUE(value_has_value);
+      EXPECT_FALSE(error_has_value);
+      EXPECT_EQ(value, 42);
+      EXPECT_EQ(observed, error);
+      EXPECT_DEATH(access(), "");
+    }
+
+    /* ----------------------------------------------------------------------------------- */
+    /* Verify exception conversion remains an opt-in boundary rather than the default API contract.
+     * 1. Arrange: Prepare an error result and test the build-specific API presence.
+     * 2. Act: Invoke the conversion boundary only when exceptions are enabled.
+     * 3. Expect: Result-based failure handling stays available in all builds, while direct throw conversion remains
+     * guarded.
+     */
+    TEST(AP_R3_CORE_011_ExceptionFreeResultUse, ConversionIsOptionalBoundary)
+    {
+#if ADAPTIVE_PI_EXCEPTIONS_ENABLED
+      /* Arrange */
+      const auto error = MakeErrorCode(AdaptivePiErrc::kOperationFailed);
+      auto result = Result<int>::FromError(error);
+      std::optional<ErrorCode> observed;
+      /* Act */
+      try
+      {
+        (void)result.ValueOrThrow();
+      }
+      catch (const AdaptivePiException& exception)
+      {
+        observed = exception.Error();
+      }
+      /* Expect */
+      ASSERT_TRUE(observed.has_value());
+      EXPECT_EQ(*observed, error);
+#else
+      /* Arrange */
+      constexpr bool has_value_or_throw = HasValueOrThrow011<Result<int>&>::value;
+      /* Expect */
+      EXPECT_FALSE(has_value_or_throw);
+#endif
+    }
+
+    /* ============================= End Test_AP_R3_CORE_011 ============================= */
   } /* namespace */
 } /* namespace ara::core */
