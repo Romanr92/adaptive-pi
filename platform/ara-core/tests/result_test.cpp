@@ -2254,7 +2254,10 @@ namespace ara::core
         observed = exception.Error();
       }
       /* Expect */
-      ASSERT_TRUE(observed.has_value());
+      if (!observed.has_value())
+      {
+        FAIL() << "Expected the domain exception to preserve its ErrorCode";
+      }
       const auto& observed_error = observed.value();
       EXPECT_EQ(observed_error, error);
       EXPECT_EQ(observed_error.Domain(), error.Domain());
@@ -2308,7 +2311,10 @@ namespace ara::core
         observed = exception.Error();
       }
       /* Expect */
-      ASSERT_TRUE(observed.has_value());
+      if (!observed.has_value())
+      {
+        FAIL() << "Expected the domain exception to preserve its ErrorCode";
+      }
       const auto& observed_error = observed.value();
       EXPECT_EQ(observed_error, error);
       EXPECT_EQ(observed_error.Domain(), error.Domain());
@@ -2362,7 +2368,10 @@ namespace ara::core
         observed = exception.Error();
       }
       /* Expect */
-      ASSERT_TRUE(observed.has_value());
+      if (!observed.has_value())
+      {
+        FAIL() << "Expected the domain exception to preserve its ErrorCode";
+      }
       const auto& observed_error = observed.value();
       EXPECT_EQ(observed_error, error);
       EXPECT_EQ(observed_error.Domain(), error.Domain());
@@ -2415,7 +2424,10 @@ namespace ara::core
         observed = exception.Error();
       }
       /* Expect */
-      ASSERT_TRUE(observed.has_value());
+      if (!observed.has_value())
+      {
+        FAIL() << "Expected the domain exception to preserve its ErrorCode";
+      }
       const auto& observed_error = observed.value();
       EXPECT_EQ(observed_error, error);
       EXPECT_EQ(observed_error.Domain(), error.Domain());
@@ -2671,7 +2683,10 @@ namespace ara::core
         observed = exception.Error();
       }
       /* Expect */
-      ASSERT_TRUE(observed.has_value());
+      if (!observed.has_value())
+      {
+        FAIL() << "Expected the domain exception to preserve its ErrorCode";
+      }
       const auto& observed_error = observed.value();
       EXPECT_EQ(observed_error, error);
 #else

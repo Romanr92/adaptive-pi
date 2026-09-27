@@ -63,52 +63,55 @@ namespace ara::core
         template <std::size_t Index>
         decltype(auto) get() & noexcept
         {
-          if (index() != Index)
-          {
-            std::terminate();
-          }
-
           auto& active_slot = slots_[active_];
           if (!active_slot.has_value())
           {
             std::terminate();
           }
 
-          return std::get<Index>(*active_slot);
+          auto* value = std::get_if<Index>(&*active_slot);
+          if (value == nullptr)
+          {
+            std::terminate();
+          }
+
+          return (*value);
         }
 
         template <std::size_t Index>
         decltype(auto) get() const& noexcept
         {
-          if (index() != Index)
-          {
-            std::terminate();
-          }
-
           const auto& active_slot = slots_[active_];
           if (!active_slot.has_value())
           {
             std::terminate();
           }
 
-          return std::get<Index>(*active_slot);
+          const auto* value = std::get_if<Index>(&*active_slot);
+          if (value == nullptr)
+          {
+            std::terminate();
+          }
+
+          return (*value);
         }
 
         template <std::size_t Index>
         decltype(auto) get() && noexcept
         {
-          if (index() != Index)
-          {
-            std::terminate();
-          }
-
-          auto&& active_slot = std::move(slots_[active_]);
+          auto& active_slot = slots_[active_];
           if (!active_slot.has_value())
           {
             std::terminate();
           }
 
-          return std::get<Index>(std::move(*active_slot));
+          auto* value = std::get_if<Index>(&*active_slot);
+          if (value == nullptr)
+          {
+            std::terminate();
+          }
+
+          return std::move(*value);
         }
 
         /* Implements AP-R3-CORE-010 */
