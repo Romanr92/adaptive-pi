@@ -76,20 +76,45 @@ jobs:
           test -s site/coverage/index.html
           python3 - <<'PY'
           import json
+          import posixpath
           import re
           import sys
           from pathlib import Path
+
+          def normalize_filename(filename: str) -> str:
+              normalized = posixpath.normpath(filename.replace("\\", "/"))
+              while normalized.startswith("./"):
+                  normalized = normalized[2:]
+              return "" if normalized == "." else normalized
 
           summary = json.loads(Path("site/coverage/summary.json").read_text())
           files = summary.get("files", [])
           production = re.compile(r"^(apps|platform)/.*\.(c|cpp|cxx|h|hpp|hxx)$")
           test_dir = re.compile(r"^(apps|platform)/(.*/)?tests?/")
           test_file = re.compile(r"^(apps|platform)/(.*/)?(test_[^/]*|[^/]*_(test|tests|spec))\.(c|cpp|cxx|h|hpp|hxx)$")
+          for raw, expected in {
+              "apps/example/src/main.cpp": "apps/example/src/main.cpp",
+              "./apps/example/src/main.cpp": "apps/example/src/main.cpp",
+              "platform/example/include/lib.hpp": "platform/example/include/lib.hpp",
+              "./platform/example/include/lib.hpp": "platform/example/include/lib.hpp",
+          }.items():
+              normalized = normalize_filename(raw)
+              if normalized != expected:
+                  print(
+                      f"Coverage path normalization failed for {raw!r}: {normalized!r} != {expected!r}",
+                      file=sys.stderr,
+                  )
+                  sys.exit(1)
+          normalized_files = [
+              (entry, normalize_filename(entry.get("filename", "")))
+              for entry in files
+          ]
           reported = [
-              entry for entry in files
-              if production.fullmatch(entry.get("filename", ""))
-              and not test_dir.match(entry["filename"])
-              and not test_file.fullmatch(entry["filename"])
+              entry
+              for entry, filename in normalized_files
+              if production.fullmatch(filename)
+              and not test_dir.match(filename)
+              and not test_file.fullmatch(filename)
           ]
           lines = sum(entry.get("line_total", 0) for entry in reported)
           if len(reported) != len(files) or not reported or lines <= 0:
