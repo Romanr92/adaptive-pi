@@ -25,7 +25,7 @@ C++ exceptions are enabled in the compiler toolchain.
   [Specification of Adaptive Platform Core, R23-11, §7.2.1.4.2, p. 27,
   SWS_CORE_10303](https://www.autosar.org/fileadmin/standards/R23-11/AP/AUTOSAR_AP_SWS_Core.pdf)
 - Verification: Unit test
-  `AP_R3_CORE_001_ErrorDomainProvidesErrorContext`.
+  `AP_R3_CORE_001_ErrorDomainProvidesErrorContext` ✅.
 - Unit Tests: `AP_R3_CORE_001_ErrorDomainProvidesErrorContext.ReturnsConfiguredIdentifier`; `AP_R3_CORE_001_ErrorDomainProvidesErrorContext_ReturnsConfiguredName.ReturnsConfiguredName`
 - Deviation: Release 3 delivers one concrete project-owned error domain.
   `ErrorDomain` and `ErrorCode` shall support additional project-owned error
@@ -48,7 +48,7 @@ C++ exceptions are enabled in the compiler toolchain.
   SWS_CORE_00121, SWS_CORE_00135, SWS_CORE_00137, SWS_CORE_00151, and
   SWS_CORE_00152](https://www.autosar.org/fileadmin/standards/R23-11/AP/AUTOSAR_AP_SWS_Core.pdf)
 - Verification: Compile-time verification using `static_assert`, plus unit test
-  `AP_R3_CORE_002_ErrorDomainHasStableIdentityAndName`.
+  `AP_R3_CORE_002_ErrorDomainHasStableIdentityAndName` ✅.
 - Unit Tests: `AP_R3_CORE_002_ErrorDomainHasStableIdentityAndName.PreservesConfiguredIdentifier`; `AP_R3_CORE_002_ErrorDomainHasStableIdentityAndName_ProvidesNonEmptyName.ProvidesNonEmptyName`; `AP_R3_CORE_002_ErrorDomainHasStableIdentityAndName_SameIdentifiersCompareEqual.SameIdentifiersCompareEqual`; `AP_R3_CORE_002_ErrorDomainHasStableIdentityAndName_DifferentIdentifiersCompareUnequal.DifferentIdentifiersCompareUnequal`; `AP_R3_CORE_002_ErrorDomainHasStableIdentityAndName_EmptyNameTerminates.EmptyNameTerminates`
 - Deviation: The Release 3 concrete domain is project-owned rather than
   ARXML-generated.
@@ -64,7 +64,7 @@ C++ exceptions are enabled in the compiler toolchain.
   SWS_CORE_00515](https://www.autosar.org/fileadmin/standards/R23-11/AP/AUTOSAR_AP_SWS_Core.pdf).
   [Guidelines for using Adaptive Platform interfaces, R23-11, §3.1.1, p. 8](https://www.autosar.org/fileadmin/standards/R23-11/AP/AUTOSAR_AP_EXP_InterfacesGuidelines.pdf).
 - Verification: Unit test
-  `AP_R3_CORE_003_ErrorCodeStoresValueAndDomain`.
+  `AP_R3_CORE_003_ErrorCodeStoresValueAndDomain` ✅.
 - Unit Tests: `AP_R3_CORE_003_ErrorCodeStoresValueAndDomain.StoresIntegralErrorValue`; `AP_R3_CORE_003_ErrorCodeStoresValueAndDomain_ReferencesExactOriginatingDomain.ReferencesExactOriginatingDomain`
 - Deviation: Vendor support data is out of scope.
 
@@ -83,7 +83,7 @@ C++ exceptions are enabled in the compiler toolchain.
   SWS_CORE_10991; §8.1.2.1, pp. 56-57, SWS_CORE_00571 and
   SWS_CORE_00572](https://www.autosar.org/fileadmin/standards/R23-11/AP/AUTOSAR_AP_SWS_Core.pdf).
 - Verification: Unit test
-  `AP_R3_CORE_004_ErrorCodeEqualityAndEnumComparison`.
+  `AP_R3_CORE_004_ErrorCodeEqualityAndEnumComparison` ✅.
 - Unit Tests: `AP_R3_CORE_004_ErrorCodeEqualityAndEnumComparison.EnumConversionStoresValueAndDomain`; `AP_R3_CORE_004_ErrorCodeEqualityAndEnumComparison_EquivalentErrorCodesCompareEqual.EquivalentErrorCodesCompareEqual`; `AP_R3_CORE_004_ErrorCodeEqualityAndEnumComparison_DifferentValuesInSameDomainCompareUnequal.DifferentValuesInSameDomainCompareUnequal`; `AP_R3_CORE_004_ErrorCodeEqualityAndEnumComparison_SameValueInDifferentDomainsCompareUnequal.SameValueInDifferentDomainsCompareUnequal`; `AP_R3_CORE_004_ErrorCodeEqualityAndEnumComparison_MatchingEnumComparesEqualInBothDirections.MatchingEnumComparesEqualInBothDirections`; `AP_R3_CORE_004_ErrorCodeEqualityAndEnumComparison_DifferentEnumComparesUnequalInBothDirections.DifferentEnumComparesUnequalInBothDirections`
 - Deviation: None.
 
@@ -100,8 +100,8 @@ C++ exceptions are enabled in the compiler toolchain.
   pp. 75-82](https://www.autosar.org/fileadmin/standards/R23-11/AP/AUTOSAR_AP_SWS_Core.pdf).
   [Guidelines for using Adaptive Platform interfaces, R23-11, §3.1.2, p. 8](https://www.autosar.org/fileadmin/standards/R23-11/AP/AUTOSAR_AP_EXP_InterfacesGuidelines.pdf).
 - Verification: Unit tests
-  `AP_R3_CORE_005_ResultHasExactlyOneState` and
-  `AP_R3_CORE_005_ResultVoidHasExactlyOneState`.
+  `AP_R3_CORE_005_ResultHasExactlyOneState` ✅ and
+  `AP_R3_CORE_005_ResultVoidHasExactlyOneState` ✅.
 - Unit Tests: `AP_R3_CORE_005_ResultHasExactlyOneState.ReportsSelectedState`; `AP_R3_CORE_005_ResultHasExactlyOneState_CopyConstructionPreservesState.CopyConstructionPreservesState`; `AP_R3_CORE_005_ResultHasExactlyOneState_MoveConstructionPreservesState.MoveConstructionPreservesState`; `AP_R3_CORE_005_ResultHasExactlyOneState_SameTypesAndPayloadsKeepAlternativesDistinct.SameTypesAndPayloadsKeepAlternativesDistinct`; `AP_R3_CORE_005_ResultHasExactlyOneState_ConstructsAndDestroysOnlySelectedAlternative.ConstructsAndDestroysOnlySelectedAlternative`; `AP_R3_CORE_005_ResultVoidHasExactlyOneState.ReportsSelectedState`; `AP_R3_CORE_005_ResultVoidHasExactlyOneState_CopyConstructionPreservesState.CopyConstructionPreservesState`; `AP_R3_CORE_005_ResultVoidHasExactlyOneState_MoveConstructionPreservesState.MoveConstructionPreservesState`; `AP_R3_CORE_005_ResultVoidHasExactlyOneState_ConstructsAnErrorOnlyOnFailure.ConstructsAnErrorOnlyOnFailure`; `AP_R3_CORE_006_ReplacementTransitions.PreservesPayloadOnFailureAndReplacesOnSuccess`; `AP_R3_CORE_006_VoidReplacement.PreservesStateOnFailureAndReplacesOnSuccess`
 - Deviation: None.
 
@@ -122,9 +122,9 @@ C++ exceptions are enabled in the compiler toolchain.
   SWS_CORE_00743, and SWS_CORE_00744](https://www.autosar.org/fileadmin/standards/R23-11/AP/AUTOSAR_AP_SWS_Core.pdf).
   [Guidelines for using Adaptive Platform interfaces, R23-11, §3.1.2.1, p. 9](https://www.autosar.org/fileadmin/standards/R23-11/AP/AUTOSAR_AP_EXP_InterfacesGuidelines.pdf).
 - Verification: Compile-time constructor checks and unit-test suites
-  `AP_R3_CORE_006_ResultCreationAndEmplacement`,
-  `AP_R3_CORE_006_ReplacementTransitions`, and
-  `AP_R3_CORE_006_VoidReplacement`.
+  `AP_R3_CORE_006_ResultCreationAndEmplacement` ✅,
+  `AP_R3_CORE_006_ReplacementTransitions` ✅, and
+  `AP_R3_CORE_006_VoidReplacement` ✅.
 - Unit Tests: `AP_R3_CORE_006_ResultCreationAndEmplacement.DirectConstructionSelectsValueOrError`; `AP_R3_CORE_006_ResultCreationAndEmplacement.DirectConstructionSupportsMoveOnlyAlternatives`; `AP_R3_CORE_006_ResultCreationAndEmplacement.SameTypesUseDirectConstructionForValue`; `AP_R3_CORE_006_ResultCreationAndEmplacement.VoidResultSupportsDirectErrorConstruction`; `AP_R3_CORE_006_ResultCreationAndEmplacement.FactoryFunctionsSupportInPlaceConstruction`; `AP_R3_CORE_006_ResultCreationAndEmplacement.EmplaceValueAndErrorReplaceActiveAlternative`; `AP_R3_CORE_006_ResultCreationAndEmplacement.VoidResultSupportsEmplacement`; `AP_R3_CORE_006_ReplacementTransitions.PreservesPayloadOnFailureAndReplacesOnSuccess`; `AP_R3_CORE_006_VoidReplacement.PreservesStateOnFailureAndReplacesOnSuccess`
 - Deviation: None.
 
@@ -139,7 +139,7 @@ C++ exceptions are enabled in the compiler toolchain.
   SWS_CORE_00751 and SWS_CORE_00752](https://www.autosar.org/fileadmin/standards/R23-11/AP/AUTOSAR_AP_SWS_Core.pdf).
   [Guidelines for using Adaptive Platform interfaces, R23-11, §3.1.2, pp. 9-10](https://www.autosar.org/fileadmin/standards/R23-11/AP/AUTOSAR_AP_EXP_InterfacesGuidelines.pdf).
 - Verification: Unit test
-  `AP_R3_CORE_007_HasValueAndBoolReportState`.
+  `AP_R3_CORE_007_HasValueAndBoolReportState` ✅.
 - Unit Tests: `AP_R3_CORE_007_HasValueAndBoolReportState_ValueStates.ReportsSelectedState`; `AP_R3_CORE_007_HasValueAndBoolReportState_VoidStates.ReportsSelectedState`; `AP_R3_CORE_007_HasValueAndBoolReportState.FalsePayloadReportsSuccess`; `AP_R3_CORE_007_HasValueAndBoolReportState.IdenticalPayloadsReportDifferentStates`; `AP_R3_CORE_007_HasValueAndBoolReportState.VoidZeroErrorReportsFailure`; `AP_R3_CORE_007_HasValueAndBoolReportState.QueriesFollowValueReplacement`; `AP_R3_CORE_007_HasValueAndBoolReportState.QueriesFollowVoidReplacement`; `AP_R3_CORE_006_ReplacementTransitions.PreservesPayloadOnFailureAndReplacesOnSuccess`; `AP_R3_CORE_006_VoidReplacement.PreservesStateOnFailureAndReplacesOnSuccess`
 - Deviation: None.
 
@@ -167,8 +167,8 @@ C++ exceptions are enabled in the compiler toolchain.
   SWS_CORE_00755 to SWS_CORE_00756 and SWS_CORE_00766 to
   SWS_CORE_00769](https://www.autosar.org/fileadmin/standards/R23-11/AP/AUTOSAR_AP_SWS_Core.pdf).
 - Verification: Build and run common value-access tests and death test
-  `AP_R3_CORE_008_ValueOnErrorTerminates` in both configurations. Run unit test
-  `AP_R3_CORE_008_ValueOrThrowConvertsDomainError` with exceptions enabled.
+  `AP_R3_CORE_008_ValueOnErrorTerminates` ✅ in both configurations. Run unit test
+  `AP_R3_CORE_008_ValueOrThrowConvertsDomainError` ✅ with exceptions enabled.
   Compile-time checks shall verify absence of `ValueOrThrow()` with exceptions
   disabled and presence with exceptions enabled, for ordinary and void results.
   Inspect compiler commands to verify the selected mode.
@@ -187,7 +187,7 @@ C++ exceptions are enabled in the compiler toolchain.
   SWS_CORE_00757 to SWS_CORE_00758](https://www.autosar.org/fileadmin/standards/R23-11/AP/AUTOSAR_AP_SWS_Core.pdf).
   [Guidelines for using Adaptive Platform interfaces, R23-11, §3.1.2, p. 10](https://www.autosar.org/fileadmin/standards/R23-11/AP/AUTOSAR_AP_EXP_InterfacesGuidelines.pdf).
 - Verification: Death test
-  `AP_R3_CORE_009_ErrorOnValueTerminates`.
+  `AP_R3_CORE_009_ErrorOnValueTerminates` ✅.
 - Unit Tests: `AP_R3_CORE_009_ErrorAccess.ReturnsStoredError`; `AP_R3_CORE_009_ErrorAccess.VoidReturnsStoredError`; `AP_R3_CORE_009_ErrorOnValueTerminates.Terminates`
 - Deviation: None.
 
@@ -200,7 +200,7 @@ C++ exceptions are enabled in the compiler toolchain.
   [Specification of Adaptive Platform Core, R23-11, §8.1.4, p. 61,
   SWS_CORE_00726; p. 64,
   SWS_CORE_00742](https://www.autosar.org/fileadmin/standards/R23-11/AP/AUTOSAR_AP_SWS_Core.pdf).
-- Verification: Unit test `AP_R3_CORE_010_MovePreservesState`.
+- Verification: Unit test `AP_R3_CORE_010_MovePreservesState` ✅.
 - Unit Tests: `AP_R3_CORE_010_MovePreservesState.ValueResultKeepsState`; `AP_R3_CORE_010_MovePreservesState.VoidResultKeepsState`
 - Deviation: The moved-from object is valid only for destruction or assignment.
   Its state and contained object are unspecified and shall not be used.
@@ -232,7 +232,7 @@ C++ exceptions are enabled in the compiler toolchain.
   pp. 26-28, SWS_CORE_10302 and
   SWS_CORE_10303](https://www.autosar.org/fileadmin/standards/R23-11/AP/AUTOSAR_AP_SWS_Core.pdf).
 - Verification: Unit test
-  `AP_R3_CORE_012_ErrorCodeSupportsMultipleDomains`.
+  `AP_R3_CORE_012_ErrorCodeSupportsMultipleDomains` ✅.
 - Unit Tests: `AP_R3_CORE_012_ErrorCodeSupportsMultipleDomains.RetainsValue`; `AP_R3_CORE_012_ErrorCodeSupportsMultipleDomains_RetainsOriginatingDomain.RetainsOriginatingDomain`; `AP_R3_CORE_012_ErrorCodeSupportsMultipleDomains_DistinguishesSameValueFromDifferentDomain.DistinguishesSameValueFromDifferentDomain`
 - Deviation: Release 3 supplies one concrete domain. Later domains are
   project-defined rather than ARXML-generated.
