@@ -19,7 +19,7 @@ namespace ara::core
     kOperationFailed = 3
   };
 
-  #if ADAPTIVE_PI_EXCEPTIONS_ENABLED
+#if ADAPTIVE_PI_EXCEPTIONS_ENABLED
   class AdaptivePiException final : public std::exception
   {
     public:
@@ -46,18 +46,18 @@ namespace ara::core
       throw AdaptivePiException{error};
     }
   } // namespace detail
-  #endif // ADAPTIVE_PI_EXCEPTIONS_ENABLED
+#endif // ADAPTIVE_PI_EXCEPTIONS_ENABLED
 
-  #if ADAPTIVE_PI_EXCEPTIONS_ENABLED
+#if ADAPTIVE_PI_EXCEPTIONS_ENABLED
   /* The high bytes encode ASCII "API" for AdaptivePi, while the low-order value
     1 identifies the first project-owned domain. This published ID remains stable. */
   inline constexpr ErrorDomain kAdaptivePiErrorDomain{0x4150490000000001ULL, "AdaptivePi",
                                                       &detail::ThrowAdaptivePiException};
-  #else  // ADAPTIVE_PI_EXCEPTIONS_ENABLED
+#else  // ADAPTIVE_PI_EXCEPTIONS_ENABLED
   /* The high bytes encode ASCII "API" for AdaptivePi, while the low-order value
       1 identifies the first project-owned domain. This published ID remains stable. */
   inline constexpr ErrorDomain kAdaptivePiErrorDomain{0x4150490000000001ULL, "AdaptivePi"};
-  #endif // ADAPTIVE_PI_EXCEPTIONS_ENABLED
+#endif // ADAPTIVE_PI_EXCEPTIONS_ENABLED
 
   [[nodiscard]] constexpr const ErrorDomain& GetAdaptivePiErrorDomain() noexcept
   {

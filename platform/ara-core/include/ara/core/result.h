@@ -208,7 +208,7 @@ namespace ara::core
         return std::move(storage_).template get<c_resultIdx>();
       }
 
-      #if ADAPTIVE_PI_EXCEPTIONS_ENABLED
+#if ADAPTIVE_PI_EXCEPTIONS_ENABLED
       T& ValueOrThrow() &
       {
         ThrowIfError();
@@ -226,7 +226,7 @@ namespace ara::core
         ThrowIfError();
         return std::move(*this).Value();
       }
-      #endif // ADAPTIVE_PI_EXCEPTIONS_ENABLED
+#endif // ADAPTIVE_PI_EXCEPTIONS_ENABLED
 
       Result(const Result&) = default;
       Result(Result&&) = default;
@@ -237,7 +237,7 @@ namespace ara::core
       /* Deferred until we design safe state replacement */
 
     private:
-      #if ADAPTIVE_PI_EXCEPTIONS_ENABLED
+#if ADAPTIVE_PI_EXCEPTIONS_ENABLED
       void ThrowIfError() const
       {
         static_assert(std::is_same_v<E, ErrorCode>, "ValueOrThrow requires ErrorCode");
@@ -248,7 +248,7 @@ namespace ara::core
           error.Domain().ThrowAsException(error);
         }
       }
-      #endif // ADAPTIVE_PI_EXCEPTIONS_ENABLED
+#endif // ADAPTIVE_PI_EXCEPTIONS_ENABLED
 
       template <typename... Args>
       Result(std::in_place_index_t<c_resultIdx>, Args&&... args)
@@ -332,12 +332,12 @@ namespace ara::core
         }
       }
 
-      #if ADAPTIVE_PI_EXCEPTIONS_ENABLED
+#if ADAPTIVE_PI_EXCEPTIONS_ENABLED
       void ValueOrThrow() const
       {
         ThrowIfError();
       }
-      #endif // ADAPTIVE_PI_EXCEPTIONS_ENABLED
+#endif // ADAPTIVE_PI_EXCEPTIONS_ENABLED
 
       Result(const Result&) = default;
       Result(Result&&) = default;
@@ -346,7 +346,7 @@ namespace ara::core
       Result& operator=(Result&&) = delete;
 
     private:
-      #if ADAPTIVE_PI_EXCEPTIONS_ENABLED
+#if ADAPTIVE_PI_EXCEPTIONS_ENABLED
       void ThrowIfError() const
       {
         static_assert(std::is_same_v<E, ErrorCode>, "ValueOrThrow requires ErrorCode");
@@ -357,7 +357,7 @@ namespace ara::core
           error.Domain().ThrowAsException(error);
         }
       }
-      #endif // ADAPTIVE_PI_EXCEPTIONS_ENABLED
+#endif // ADAPTIVE_PI_EXCEPTIONS_ENABLED
 
       Result() : storage_{std::in_place_index<c_resultIdx>} {}
 

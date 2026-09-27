@@ -1060,11 +1060,11 @@ namespace ara::core
         {
           if (fail)
           {
-            #if ADAPTIVE_PI_EXCEPTIONS_ENABLED
+#if ADAPTIVE_PI_EXCEPTIONS_ENABLED
             throw std::runtime_error{"payload construction failed"};
-            #else
+#else
             std::terminate();
-            #endif
+#endif
           }
           observer.current = this;
           ++observer.live;
@@ -1164,7 +1164,7 @@ namespace ara::core
         initial.replacement_number = replacement.current != nullptr ? replacement.current->number : 0;
         if (parameter.fail_first)
         {
-          #if ADAPTIVE_PI_EXCEPTIONS_ENABLED
+#if ADAPTIVE_PI_EXCEPTIONS_ENABLED
           try
           {
             if (parameter.replaces_with_value)
@@ -1180,7 +1180,7 @@ namespace ara::core
           {
             caught_failure = true;
           }
-          #endif
+#endif
           failed.has_value = result.HasValue();
           failed.as_bool = static_cast<bool>(result);
           failed.original_present = original.current != nullptr;
@@ -1310,11 +1310,11 @@ namespace ara::core
         {
           if (fail)
           {
-            #if ADAPTIVE_PI_EXCEPTIONS_ENABLED
+#if ADAPTIVE_PI_EXCEPTIONS_ENABLED
             throw std::runtime_error{"payload construction failed"};
-            #else
+#else
             std::terminate();
-            #endif
+#endif
           }
           observer.current = this;
           ++observer.live;
@@ -1416,7 +1416,7 @@ namespace ara::core
         initial.replacement_number = replacement.current != nullptr ? replacement.current->number : 0;
         if (parameter.fail_first)
         {
-          #if ADAPTIVE_PI_EXCEPTIONS_ENABLED
+#if ADAPTIVE_PI_EXCEPTIONS_ENABLED
           try
           {
             result.EmplaceError(replacement, "replacement", 42, true);
@@ -1425,7 +1425,7 @@ namespace ara::core
           {
             caught_failure = true;
           }
-          #endif
+#endif
           failed.has_value = result.HasValue();
           failed.as_bool = static_cast<bool>(result);
           failed.original_present = original.current != nullptr;

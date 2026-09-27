@@ -18,15 +18,15 @@ namespace ara::core
 
       using ExceptionConverter = void (*)(const ErrorCode&);
 
-      #if ADAPTIVE_PI_EXCEPTIONS_ENABLED
+#if ADAPTIVE_PI_EXCEPTIONS_ENABLED
       constexpr ErrorDomain(IdType id, std::string_view name, ExceptionConverter converter = nullptr) noexcept
           : id_{id}, name_{name}, converter_
       {
         converter
       }
-      #else  // ADAPTIVE_PI_EXCEPTIONS_ENABLED
+#else  // ADAPTIVE_PI_EXCEPTIONS_ENABLED
       constexpr ErrorDomain(IdType id, std::string_view name) noexcept : id_{id}, name_{name}
-      #endif // ADAPTIVE_PI_EXCEPTIONS_ENABLED
+#endif // ADAPTIVE_PI_EXCEPTIONS_ENABLED
       {
         if (name_.empty())
         {
@@ -54,7 +54,7 @@ namespace ara::core
         return !(*this == other);
       }
 
-      #if ADAPTIVE_PI_EXCEPTIONS_ENABLED
+#if ADAPTIVE_PI_EXCEPTIONS_ENABLED
       [[noreturn]] void ThrowAsException(const ErrorCode& error) const
       {
         if (converter_ != nullptr)
@@ -65,14 +65,14 @@ namespace ara::core
         /* Missing coversion or a converter that unexpectedly returned. */
         std::terminate();
       }
-      #endif // ADAPTIVE_PI_EXCEPTIONS_ENABLED
+#endif // ADAPTIVE_PI_EXCEPTIONS_ENABLED
 
     private:
       IdType id_;
       std::string_view name_;
-      #if ADAPTIVE_PI_EXCEPTIONS_ENABLED
+#if ADAPTIVE_PI_EXCEPTIONS_ENABLED
       ExceptionConverter converter_;
-      #endif // ADAPTIVE_PI_EXCEPTIONS_ENABLED
+#endif // ADAPTIVE_PI_EXCEPTIONS_ENABLED
   };
 
 } // namespace ara::core
