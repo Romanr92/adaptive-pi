@@ -2007,6 +2007,35 @@ namespace ara::core
     struct HasValueOrThrow008<R, std::void_t<decltype(std::declval<R>().ValueOrThrow())>> : std::true_type
     {
     };
+    static_assert(!HasValueOrThrow008<Result<int, int>&>::value);
+    static_assert(!HasValueOrThrow008<const Result<int, int>&>::value);
+    static_assert(!HasValueOrThrow008<Result<int, int>&&>::value);
+    static_assert(!HasValueOrThrow008<Result<void, int>&>::value);
+    static_assert(!HasValueOrThrow008<const Result<void, int>&>::value);
+    static_assert(!HasValueOrThrow008<Result<void, int>&&>::value);
+    template <typename R, typename = void>
+    struct HasForcedValueOrThrow008 : std::false_type
+    {
+    };
+    template <typename R>
+    struct HasForcedValueOrThrow008<R, std::void_t<decltype(std::declval<R>().template ValueOrThrow<ErrorCode>())>>
+        : std::true_type
+    {
+    };
+    static_assert(!HasForcedValueOrThrow008<Result<int, int>&>::value);
+    static_assert(!HasForcedValueOrThrow008<const Result<int, int>&>::value);
+    static_assert(!HasForcedValueOrThrow008<Result<int, int>&&>::value);
+    static_assert(!HasForcedValueOrThrow008<Result<void, int>&>::value);
+    static_assert(!HasForcedValueOrThrow008<const Result<void, int>&>::value);
+    static_assert(!HasForcedValueOrThrow008<Result<void, int>&&>::value);
+#if ADAPTIVE_PI_EXCEPTIONS_ENABLED
+    static_assert(!std::is_constructible_v<ErrorDomain, ErrorDomain::IdType, std::string_view>);
+    static_assert(
+      std::is_constructible_v<ErrorDomain, ErrorDomain::IdType, std::string_view, ErrorDomain::ExceptionConverter>);
+#else
+    static_assert(std::is_constructible_v<ErrorDomain, ErrorDomain::IdType, std::string_view>);
+#endif
+
     static_assert(static_cast<int>(HasValueOrThrow008<Result<int>&>::value) == ADAPTIVE_PI_EXCEPTIONS_ENABLED);
     static_assert(static_cast<int>(HasValueOrThrow008<const Result<int>&>::value) == ADAPTIVE_PI_EXCEPTIONS_ENABLED);
     static_assert(static_cast<int>(HasValueOrThrow008<Result<int>&&>::value) == ADAPTIVE_PI_EXCEPTIONS_ENABLED);
@@ -2520,6 +2549,66 @@ namespace ara::core
       r.ValueOrThrow();
       /* Expect */
       EXPECT_TRUE(r.HasValue());
+    }
+
+    /* ----------------------------------------------------------------------------------- */
+
+    /* Verify exception-enabled domains reject a null converter.
+     * 1. Arrange: Prepare a null conversion function.
+     * 2. Act: Prepare domain construction for execution in the child process.
+     * 3. Expect: Invalid domain construction terminates.
+     */
+    TEST(AP_R3_CORE_008_DomainConversion, NullConverterTerminates)
+    {
+      /* Arrange */
+      const ErrorDomain::ExceptionConverter converter{nullptr};
+      /* Act */
+      const auto construct = [converter]()
+      {
+        const ErrorDomain domain{0x544553540008ULL, "NullConverter", converter};
+        (void)domain;
+      };
+      /* Expect */
+      EXPECT_DEATH(construct(), "");
+    }
+
+    /* ----------------------------------------------------------------------------------- */
+
+    /* Verify a new domain selects its own exception without changes to Result.
+     * 1. Arrange: Define a distinct exception, converter, and error result.
+     * 2. Act: Convert the error through ValueOrThrow.
+     * 3. Expect: The new domain exception preserves its code and originating domain.
+     */
+    TEST(AP_R3_CORE_008_DomainConversion, DispatchesCustomDomain)
+    {
+      /* Arrange */
+      struct CustomDomainException
+      {
+          ErrorCode code;
+      };
+      const ErrorDomain domain{0x544553540009ULL, "CustomConversion", [](const ErrorCode& error)
+                               {
+                                 throw CustomDomainException{error};
+                               }};
+      const ErrorCode error{42, domain};
+      const auto result = Result<int>::FromError(error);
+      std::optional<ErrorCode> observed;
+      /* Act */
+      try
+      {
+        (void)result.ValueOrThrow();
+      }
+      catch (const CustomDomainException& exception)
+      {
+        observed = exception.code;
+      }
+      /* Expect */
+      if (!observed.has_value())
+      {
+        FAIL() << "Expected the custom domain exception";
+      }
+      EXPECT_EQ(observed->Value(), 42);
+      EXPECT_EQ(&observed->Domain(), &domain);
     }
 
 #endif

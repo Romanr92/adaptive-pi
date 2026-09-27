@@ -19,10 +19,10 @@ namespace ara::core
       using ExceptionConverter = void (*)(const ErrorCode&);
 
 #if ADAPTIVE_PI_EXCEPTIONS_ENABLED
-      constexpr ErrorDomain(IdType id, std::string_view name, ExceptionConverter converter = nullptr) noexcept
+      constexpr ErrorDomain(IdType id, std::string_view name, ExceptionConverter converter) noexcept
           : id_{id}, name_{name}, converter_{converter}
       {
-        if (name_.empty())
+        if (name_.empty() || converter_ == nullptr)
         {
           std::terminate();
         }

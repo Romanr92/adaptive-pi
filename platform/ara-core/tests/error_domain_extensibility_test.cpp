@@ -1,4 +1,5 @@
 #include "ara/core/adaptive_pi_error_domain.h"
+#include "ara/core/error_code.h"
 
 #include <gtest/gtest.h>
 #include <ostream>
@@ -22,7 +23,21 @@ namespace ara::core
 
     /* "TST" identifies a test-only namespace and the low-order 1 identifies */
     /* its first domain. It is deliberately different from the AdaptivePi ID. */
-    constexpr ErrorDomain kTestServiceErrorDomain{0x5453540000000001ULL, "TestService"};
+    constexpr ErrorDomain kTestServiceErrorDomain{0x5453540000000001ULL, "TestService"
+#if ADAPTIVE_PI_EXCEPTIONS_ENABLED
+                                                  ,
+                                                  [](const ErrorCode& error)
+                                                  {
+                                                    /* This test domain preserves its error in a distinct exception
+                                                     * type. */
+                                                    struct DomainException
+                                                    {
+                                                        ErrorCode code;
+                                                    };
+                                                    throw DomainException{error};
+                                                  }
+#endif
+    };
 
     [[nodiscard]] constexpr ErrorCode MakeErrorCode(TestServiceErrc error) noexcept
     {

@@ -1,3 +1,4 @@
+#include "ara/core/error_code.h"
 #include "ara/core/error_domain.h"
 
 #include <cstdint>
@@ -44,7 +45,20 @@ namespace ara::core
     {
       /* Arrange */
       const DomainCase_ReturnsConfiguredIdentifier& parameter{GetParam()};
-      const ErrorDomain domain{parameter.id, parameter.name};
+      const ErrorDomain domain{parameter.id, parameter.name
+#if ADAPTIVE_PI_EXCEPTIONS_ENABLED
+                               ,
+                               [](const ErrorCode& error)
+                               {
+                                 /* This test domain preserves its error in a distinct exception type. */
+                                 struct DomainException
+                                 {
+                                     ErrorCode code;
+                                 };
+                                 throw DomainException{error};
+                               }
+#endif
+      };
 
       /* Act */
       const auto actual_id = domain.Id();
@@ -103,7 +117,20 @@ namespace ara::core
     {
       /* Arrange */
       const DomainCase_ReturnsConfiguredName& parameter{GetParam()};
-      const ErrorDomain domain{parameter.id, parameter.name};
+      const ErrorDomain domain{parameter.id, parameter.name
+#if ADAPTIVE_PI_EXCEPTIONS_ENABLED
+                               ,
+                               [](const ErrorCode& error)
+                               {
+                                 /* This test domain preserves its error in a distinct exception type. */
+                                 struct DomainException
+                                 {
+                                     ErrorCode code;
+                                 };
+                                 throw DomainException{error};
+                               }
+#endif
+      };
 
       /* Act */
       const auto actual_name = domain.Name();
@@ -134,11 +161,52 @@ namespace ara::core
 
     /* ========================== Test_AP_R3_CORE_002 ==================================== */
 
-    constexpr ErrorDomain compile_time_domain{0x0000000000000200ULL, "CompileTimeDomain"};
+    constexpr ErrorDomain compile_time_domain{0x0000000000000200ULL, "CompileTimeDomain"
+#if ADAPTIVE_PI_EXCEPTIONS_ENABLED
+                                              ,
+                                              [](const ErrorCode& error)
+                                              {
+                                                /* This test domain preserves its error in a distinct exception type. */
+                                                struct DomainException
+                                                {
+                                                    ErrorCode code;
+                                                };
+                                                throw DomainException{error};
+                                              }
+#endif
+    };
 
-    constexpr ErrorDomain same_compile_time_identity{0x0000000000000200ULL, "SameIdentityDifferentName"};
+    constexpr ErrorDomain same_compile_time_identity{0x0000000000000200ULL, "SameIdentityDifferentName"
+#if ADAPTIVE_PI_EXCEPTIONS_ENABLED
+                                                     ,
+                                                     [](const ErrorCode& error)
+                                                     {
+                                                       /* This test domain preserves its error in a distinct exception
+                                                        * type. */
+                                                       struct DomainException
+                                                       {
+                                                           ErrorCode code;
+                                                       };
+                                                       throw DomainException{error};
+                                                     }
+#endif
+    };
 
-    constexpr ErrorDomain different_compile_time_identity{0x0000000000000201ULL, "DifferentIdentity"};
+    constexpr ErrorDomain different_compile_time_identity{0x0000000000000201ULL, "DifferentIdentity"
+#if ADAPTIVE_PI_EXCEPTIONS_ENABLED
+                                                          ,
+                                                          [](const ErrorCode& error)
+                                                          {
+                                                            /* This test domain preserves its error in a distinct
+                                                             * exception type. */
+                                                            struct DomainException
+                                                            {
+                                                                ErrorCode code;
+                                                            };
+                                                            throw DomainException{error};
+                                                          }
+#endif
+    };
 
     static_assert(compile_time_domain.Id() == 0x0000000000000200ULL,
                   "ErrorDomain identifier access must work in a constant expression");
@@ -186,8 +254,34 @@ namespace ara::core
     {
       /* Arrange */
       const ErrorDomainIdentityCase_PreservesConfiguredIdentifier& parameter{GetParam()};
-      const ErrorDomain first_domain{parameter.id, parameter.name};
-      const ErrorDomain reconstructed_domain{parameter.id, parameter.name};
+      const ErrorDomain first_domain{parameter.id, parameter.name
+#if ADAPTIVE_PI_EXCEPTIONS_ENABLED
+                                     ,
+                                     [](const ErrorCode& error)
+                                     {
+                                       /* This test domain preserves its error in a distinct exception type. */
+                                       struct DomainException
+                                       {
+                                           ErrorCode code;
+                                       };
+                                       throw DomainException{error};
+                                     }
+#endif
+      };
+      const ErrorDomain reconstructed_domain{parameter.id, parameter.name
+#if ADAPTIVE_PI_EXCEPTIONS_ENABLED
+                                             ,
+                                             [](const ErrorCode& error)
+                                             {
+                                               /* This test domain preserves its error in a distinct exception type. */
+                                               struct DomainException
+                                               {
+                                                   ErrorCode code;
+                                               };
+                                               throw DomainException{error};
+                                             }
+#endif
+      };
 
       /* Act */
       const auto first_id = first_domain.Id();
@@ -253,7 +347,20 @@ namespace ara::core
     {
       /* Arrange */
       const ErrorDomainIdentityCase_ProvidesNonEmptyName& parameter{GetParam()};
-      const ErrorDomain domain{parameter.id, parameter.name};
+      const ErrorDomain domain{parameter.id, parameter.name
+#if ADAPTIVE_PI_EXCEPTIONS_ENABLED
+                               ,
+                               [](const ErrorCode& error)
+                               {
+                                 /* This test domain preserves its error in a distinct exception type. */
+                                 struct DomainException
+                                 {
+                                     ErrorCode code;
+                                 };
+                                 throw DomainException{error};
+                               }
+#endif
+      };
 
       /* Act */
       const auto name_is_empty = domain.Name().empty();
@@ -317,8 +424,34 @@ namespace ara::core
     {
       /* Arrange */
       const ErrorDomainIdentityCase_SameIdentifiersCompareEqual& parameters{GetParam()};
-      const ErrorDomain domain{parameters.id, parameters.name};
-      const ErrorDomain same_identity{parameters.id, parameters.alternate_name};
+      const ErrorDomain domain{parameters.id, parameters.name
+#if ADAPTIVE_PI_EXCEPTIONS_ENABLED
+                               ,
+                               [](const ErrorCode& error)
+                               {
+                                 /* This test domain preserves its error in a distinct exception type. */
+                                 struct DomainException
+                                 {
+                                     ErrorCode code;
+                                 };
+                                 throw DomainException{error};
+                               }
+#endif
+      };
+      const ErrorDomain same_identity{parameters.id, parameters.alternate_name
+#if ADAPTIVE_PI_EXCEPTIONS_ENABLED
+                                      ,
+                                      [](const ErrorCode& error)
+                                      {
+                                        /* This test domain preserves its error in a distinct exception type. */
+                                        struct DomainException
+                                        {
+                                            ErrorCode code;
+                                        };
+                                        throw DomainException{error};
+                                      }
+#endif
+      };
 
       /* Act */
       const auto equal = domain == same_identity;
@@ -386,8 +519,34 @@ namespace ara::core
     {
       /* Arrange */
       const ErrorDomainIdentityCase_DifferentIdentifiersCompareUnequal& parameters{GetParam()};
-      const ErrorDomain domain{parameters.id, parameters.name};
-      const ErrorDomain different_identity{parameters.different_id, parameters.name};
+      const ErrorDomain domain{parameters.id, parameters.name
+#if ADAPTIVE_PI_EXCEPTIONS_ENABLED
+                               ,
+                               [](const ErrorCode& error)
+                               {
+                                 /* This test domain preserves its error in a distinct exception type. */
+                                 struct DomainException
+                                 {
+                                     ErrorCode code;
+                                 };
+                                 throw DomainException{error};
+                               }
+#endif
+      };
+      const ErrorDomain different_identity{parameters.different_id, parameters.name
+#if ADAPTIVE_PI_EXCEPTIONS_ENABLED
+                                           ,
+                                           [](const ErrorCode& error)
+                                           {
+                                             /* This test domain preserves its error in a distinct exception type. */
+                                             struct DomainException
+                                             {
+                                                 ErrorCode code;
+                                             };
+                                             throw DomainException{error};
+                                           }
+#endif
+      };
 
       /* Act */
       const auto equal = domain == different_identity;
@@ -458,7 +617,19 @@ namespace ara::core
       /* Act */
       const auto construct_invalid_domain = [&parameter]()
       {
-        const ErrorDomain invalid_domain(parameter.id, std::string_view{});
+        const ErrorDomain invalid_domain{parameter.id, std::string_view{}
+#if ADAPTIVE_PI_EXCEPTIONS_ENABLED
+                                         ,
+                                         [](const ErrorCode& error)
+                                         {
+                                           struct EmptyNameDomainException
+                                           {
+                                               ErrorCode code;
+                                           };
+                                           throw EmptyNameDomainException{error};
+                                         }
+#endif
+        };
         static_cast<void>(invalid_domain);
       };
 

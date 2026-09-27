@@ -1,4 +1,5 @@
 #include "ara/core/adaptive_pi_error_domain.h"
+#include "ara/core/error_code.h"
 
 #include <gtest/gtest.h>
 #include <ostream>
@@ -261,7 +262,20 @@ namespace ara::core
       /* Arrange */
       const ErrorCodeComparisonCase_SameValueInDifferentDomainsCompareUnequal& parameter{GetParam()};
       const ErrorCode adaptive_pi_error{MakeErrorCode(parameter.error)};
-      const ErrorDomain different_domain{parameter.different_domain_id, "DifferentDomain"};
+      const ErrorDomain different_domain{parameter.different_domain_id, "DifferentDomain"
+#if ADAPTIVE_PI_EXCEPTIONS_ENABLED
+                                         ,
+                                         [](const ErrorCode& error)
+                                         {
+                                           /* This test domain preserves its error in a distinct exception type. */
+                                           struct DomainException
+                                           {
+                                               ErrorCode code;
+                                           };
+                                           throw DomainException{error};
+                                         }
+#endif
+      };
       const ErrorCode different_domain_error{static_cast<ErrorCode::ValueType>(parameter.error), different_domain};
 
       /* Act */

@@ -240,23 +240,28 @@ namespace ara::core
       }
 
 #if ADAPTIVE_PI_EXCEPTIONS_ENABLED
+
+      template <typename U = E, std::enable_if_t<std::is_same_v<U, E> && std::is_same_v<U, ErrorCode>, int> = 0>
       T& ValueOrThrow() &
       {
         ThrowIfError();
         return Value();
       }
 
+      template <typename U = E, std::enable_if_t<std::is_same_v<U, E> && std::is_same_v<U, ErrorCode>, int> = 0>
       const T& ValueOrThrow() const&
       {
         ThrowIfError();
         return Value();
       }
 
+      template <typename U = E, std::enable_if_t<std::is_same_v<U, E> && std::is_same_v<U, ErrorCode>, int> = 0>
       T&& ValueOrThrow() &&
       {
         ThrowIfError();
         return std::move(*this).Value();
       }
+
 #endif // ADAPTIVE_PI_EXCEPTIONS_ENABLED
 
       /* Implements AP-R3-CORE-010 */
@@ -390,12 +395,13 @@ namespace ara::core
       }
 
 #if ADAPTIVE_PI_EXCEPTIONS_ENABLED
-      /* Implements AP-R3-CORE-008: ValueOrThrow returns the stored value or converts the ErrorCode through the domain.
-       */
+
+      template <typename U = E, std::enable_if_t<std::is_same_v<U, E> && std::is_same_v<U, ErrorCode>, int> = 0>
       void ValueOrThrow() const
       {
         ThrowIfError();
       }
+
 #endif // ADAPTIVE_PI_EXCEPTIONS_ENABLED
 
       /* Implements AP-R3-CORE-010 */

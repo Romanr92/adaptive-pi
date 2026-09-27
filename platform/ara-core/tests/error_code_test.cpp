@@ -49,7 +49,20 @@ namespace ara::core
     {
       /* Arrange */
       const ErrorCodeContentCase_StoresIntegralErrorValue& parameter{GetParam()};
-      const ErrorDomain domain{parameter.domain_id, parameter.domain_name};
+      const ErrorDomain domain{parameter.domain_id, parameter.domain_name
+#if ADAPTIVE_PI_EXCEPTIONS_ENABLED
+                               ,
+                               [](const ErrorCode& error)
+                               {
+                                 /* This test domain preserves its error in a distinct exception type. */
+                                 struct DomainException
+                                 {
+                                     ErrorCode code;
+                                 };
+                                 throw DomainException{error};
+                               }
+#endif
+      };
       const ErrorCode error_code{parameter.value, domain};
 
       /* Act */
@@ -115,7 +128,20 @@ namespace ara::core
     {
       /* Arrange */
       const ErrorCodeContentCase_ReferencesExactOriginatingDomain& parameter{GetParam()};
-      const ErrorDomain domain{parameter.domain_id, parameter.domain_name};
+      const ErrorDomain domain{parameter.domain_id, parameter.domain_name
+#if ADAPTIVE_PI_EXCEPTIONS_ENABLED
+                               ,
+                               [](const ErrorCode& error)
+                               {
+                                 /* This test domain preserves its error in a distinct exception type. */
+                                 struct DomainException
+                                 {
+                                     ErrorCode code;
+                                 };
+                                 throw DomainException{error};
+                               }
+#endif
+      };
       const ErrorCode error_code{parameter.value, domain};
 
       /* Act */
