@@ -111,7 +111,9 @@ namespace ara::core
           return std::get<Index>(std::move(*active_slot));
         }
 
+        /* Implements AP-R3-CORE-010 */
         ResultStorage(const ResultStorage&) = default;
+        /* Implements AP-R3-CORE-010 */
         ResultStorage(ResultStorage&&) = default;
         ResultStorage& operator=(const ResultStorage&) = delete;
         ResultStorage& operator=(ResultStorage&&) = delete;
@@ -252,7 +254,9 @@ namespace ara::core
       }
 #endif // ADAPTIVE_PI_EXCEPTIONS_ENABLED
 
+      /* Implements AP-R3-CORE-010 */
       Result(const Result&) = default;
+      /* Implements AP-R3-CORE-010 */
       Result(Result&&) = default;
 
       /* Deferred until we design safe state replacement */
@@ -389,7 +393,9 @@ namespace ara::core
       }
 #endif // ADAPTIVE_PI_EXCEPTIONS_ENABLED
 
+      /* Implements AP-R3-CORE-010 */
       Result(const Result&) = default;
+      /* Implements AP-R3-CORE-010 */
       Result(Result&&) = default;
 
       Result& operator=(const Result&) = delete;

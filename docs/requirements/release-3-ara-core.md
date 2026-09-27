@@ -201,7 +201,7 @@ C++ exceptions are enabled in the compiler toolchain.
   SWS_CORE_00726; p. 64,
   SWS_CORE_00742](https://www.autosar.org/fileadmin/standards/R23-11/AP/AUTOSAR_AP_SWS_Core.pdf).
 - Verification: Unit test `AP_R3_CORE_010_MovePreservesState`.
-- Unit Tests: `AP_R3_CORE_005_ResultHasExactlyOneState_MoveConstructionPreservesState.MoveConstructionPreservesState`; `AP_R3_CORE_005_ResultVoidHasExactlyOneState_MoveConstructionPreservesState.MoveConstructionPreservesState`
+- Unit Tests: `AP_R3_CORE_010_MovePreservesState.ValueResultKeepsState`; `AP_R3_CORE_010_MovePreservesState.VoidResultKeepsState`
 - Deviation: The moved-from object is valid only for destruction or assignment.
   Its state and contained object are unspecified and shall not be used.
 

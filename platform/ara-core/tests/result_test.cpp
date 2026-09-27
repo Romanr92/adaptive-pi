@@ -2544,5 +2544,54 @@ namespace ara::core
     }
 
     /* ============================= End Test_AP_R3_CORE_009 ============================= */
+
+    /* =============================== Test_AP_R3_CORE_010 =============================== */
+
+    /* ----------------------------------------------------------------------------------- */
+    /* Verify moving a value result preserves the selected alternative and payload.
+     * 1. Arrange: Construct one value result and one error result.
+     * 2. Act: Move both results into new destinations.
+     * 3. Expect: The moved destinations retain their original state and payload.
+     */
+    TEST(AP_R3_CORE_010_MovePreservesState, ValueResultKeepsState)
+    {
+      /* Arrange */
+      auto value_result = Result<int>::FromValue(42);
+      auto error_result = Result<int>::FromError(MakeErrorCode(AdaptivePiErrc::kInvalidState));
+
+      /* Act */
+      const Result<int> moved_value{value_result};
+      const Result<int> moved_error{error_result};
+
+      /* Expect */
+      EXPECT_TRUE(moved_value.HasValue());
+      EXPECT_EQ(moved_value.Value(), 42);
+      EXPECT_FALSE(moved_error.HasValue());
+      EXPECT_EQ(moved_error.Error(), MakeErrorCode(AdaptivePiErrc::kInvalidState));
+    }
+
+    /* ----------------------------------------------------------------------------------- */
+    /* Verify moving a void result preserves the selected alternative and error payload.
+     * 1. Arrange: Construct one successful void result and one error void result.
+     * 2. Act: Move both results into new destinations.
+     * 3. Expect: The moved destinations retain their original success/error state.
+     */
+    TEST(AP_R3_CORE_010_MovePreservesState, VoidResultKeepsState)
+    {
+      /* Arrange */
+      auto value_result = Result<void>::FromValue();
+      auto error_result = Result<void>::FromError(MakeErrorCode(AdaptivePiErrc::kOperationFailed));
+
+      /* Act */
+      const Result<void> moved_value{value_result};
+      const Result<void> moved_error{error_result};
+
+      /* Expect */
+      EXPECT_TRUE(moved_value.HasValue());
+      EXPECT_FALSE(moved_error.HasValue());
+      EXPECT_EQ(moved_error.Error(), MakeErrorCode(AdaptivePiErrc::kOperationFailed));
+    }
+
+    /* ============================= End Test_AP_R3_CORE_010 ============================= */
   } /* namespace */
 } /* namespace ara::core */
