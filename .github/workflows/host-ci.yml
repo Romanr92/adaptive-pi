@@ -42,13 +42,15 @@ jobs:
       - name: Install build and coverage tools
         run: |
           sudo apt-get update
-          sudo apt-get install --yes clang clang-tidy ninja-build gcovr
+          sudo apt-get install --yes clang clang-tidy ninja-build gcovr llvm
 
       - name: Configure coverage-enabled unit tests
         run: |
           cmake --preset debug-unit-tests \
             -DADAPTIVE_PI_ENABLE_EXCEPTIONS=OFF \
             -DCMAKE_BUILD_TYPE=Debug \
+            -DCMAKE_C_COMPILER=clang \
+            -DCMAKE_CXX_COMPILER=clang++ \
             -DCMAKE_CXX_FLAGS="--coverage -O0 -g" \
             -DCMAKE_C_FLAGS="--coverage -O0 -g" \
             -DCMAKE_EXE_LINKER_FLAGS="--coverage" \
@@ -63,11 +65,16 @@ jobs:
       - name: Generate HTML coverage report
         run: |
           mkdir -p coverage
+          LLVM_COV_BIN="$(command -v llvm-cov || command -v llvm-cov-18 || command -v llvm-cov-17 || true)"
+          if [ -z "$LLVM_COV_BIN" ]; then
+            echo "llvm-cov not found" >&2
+            exit 1
+          fi
           gcovr -r . \
+            --gcov-executable "${LLVM_COV_BIN} gcov" \
             --html-details \
             --output coverage/index.html \
-            --print-summary \
-            --branches
+            --print-summary
 
       - name: Upload coverage artifact
         uses: actions/upload-artifact@v4
