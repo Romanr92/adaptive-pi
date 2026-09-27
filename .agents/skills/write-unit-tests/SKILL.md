@@ -13,6 +13,15 @@ LLMs and AI agents are allowed to write and modify unit tests directly. This is 
 - A requirement verified by unit tests may have multiple unit tests. Cover its distinct behaviors, boundary conditions, and failure cases as needed; do not force one test per requirement.
 - Keep each test traceable to its requirement ID using the repository's existing naming and grouping conventions.
 
+## Cover both exception configurations
+
+- Read `docs/adr/0006-exception-build-policy.md` and inspect the current build configuration. Unit tests shall cover both `ADAPTIVE_PI_ENABLE_EXCEPTIONS=OFF` and `ON`.
+- Keep tests for common behavior active in both builds. Add configuration-specific tests where behavior or API availability differs; do not duplicate identical tests just to label the build mode.
+- Guard exception-only support declarations, throwing constructors, and test bodies with `#if ADAPTIVE_PI_EXCEPTIONS_ENABLED`. Runtime skipping does not make `throw` or `try`/`catch` compile with exceptions disabled.
+- Preserve successful construction, replacement, access, and applicable death-test coverage in the exception-disabled build. Do not hide common coverage inside exception-only blocks.
+- For conditional APIs such as `ValueOrThrow()`, include compile-time checks for absence with exceptions disabled and presence with exceptions enabled. Test exception conversion and throwing-constructor failure paths in the enabled build where required.
+- Run affected exception-disabled tests locally. Exception-enabled test execution is CI-only unless the user explicitly requests a local run. Inspect both configurations and report enabled-build verification as pending until CI evidence is available; do not claim both passed from a local disabled-build run.
+
 ## Prefer parameterized tests
 
 - Prefer parameterized tests over standalone tests when several cases share setup, execution, and assertions and differ mainly in inputs or expected results. Follow the existing GoogleTest conventions.
@@ -114,4 +123,4 @@ Example for an implemented requirement:
 
 ## Verify the changes
 
-Follow the existing test formatting and CMake structure, and run the affected test target. Report what was verified and any checks that could not run. If a test exposes an implementation defect, explain the defect and guide the user through the production fix without editing production code.
+Follow the existing test formatting and CMake structure, and run the affected exception-disabled test target locally. Verify exception-enabled execution through CI as specified above. Report what was verified and any checks that could not run. If a test exposes an implementation defect, explain the defect and guide the user through the production fix without editing production code.

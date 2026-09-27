@@ -45,16 +45,40 @@ jobs:
           sudo apt-get install --yes clang clang-tidy ninja-build
 
       - name: Configure Debug Application
-        run: cmake --preset debug-app
+        run: cmake --preset debug-app -DADAPTIVE_PI_ENABLE_EXCEPTIONS=OFF
 
       - name: Build Debug Application
         run: cmake --build build/debug-app --parallel
 
       - name: Configure Debug Unit Tests
-        run: cmake --preset debug-unit-tests
+        run: cmake --preset debug-unit-tests -DADAPTIVE_PI_ENABLE_EXCEPTIONS=OFF
 
       - name: Build and run unit tests
         run: cmake --build build/debug-unit-tests --parallel
+
+  build-and-test-exceptions:
+    name: Build and unit test (exceptions enabled)
+    runs-on: ubuntu-24.04
+    if: github.event_name == 'pull_request'
+
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+
+      - name: Install build tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes clang clang-tidy ninja-build
+
+      - name: Configure exception-enabled unit tests
+        run: |
+          cmake --preset debug-unit-tests \
+            -B build/ci-unit-tests-exceptions \
+            -DADAPTIVE_PI_ENABLE_EXCEPTIONS=ON
+
+      # The default build target runs CTest through run-unit-tests.
+      - name: Build and run exception-enabled unit tests
+        run: cmake --build build/ci-unit-tests-exceptions --parallel
 
   cross-build-qemu-target:
     name: Cross-build QEMU target
@@ -90,7 +114,7 @@ jobs:
             -d "${GITHUB_WORKSPACE}/yocto/sdk"
 
       - name: Configure AArch64 application build
-        run: cmake --preset debug-qemu-app
+        run: cmake --preset debug-qemu-app -DADAPTIVE_PI_ENABLE_EXCEPTIONS=OFF
 
       - name: Build AArch64 applications
         run: cmake --build --preset debug-qemu-app

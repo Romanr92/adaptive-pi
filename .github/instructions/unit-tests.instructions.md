@@ -23,3 +23,10 @@ Check especially:
 
 Distinguish missing test coverage from formatting violations.
 Do not claim tests pass unless execution evidence is available.
+
+Review coverage for both exception-disabled and exception-enabled builds, following
+the skill's configuration rules. Common tests must remain active in both modes;
+exception-only support and tests must be guarded. Check compile-time availability
+of conditional APIs and preserve successful-path coverage in the disabled build.
+Exception-enabled tests run in CI, not locally by default. Report the verification
+status of each mode separately; a passing disabled build does not verify both.
