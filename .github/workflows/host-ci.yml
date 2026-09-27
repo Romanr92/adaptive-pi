@@ -7,6 +7,8 @@ on:
 
 permissions:
   contents: read
+  pages: write
+  id-token: write
 
 env:
   ADAPTIVE_PI_YOCTO_SDK_RELEASE: v0.2.0
@@ -76,11 +78,26 @@ jobs:
             --output coverage/index.html \
             --print-summary
 
-      - name: Upload coverage artifact
-        uses: actions/upload-artifact@v4
+      - name: Upload coverage pages artifact
+        uses: actions/upload-pages-artifact@v3
         with:
-          name: unit-test-coverage
-          path: coverage/index.html
+          path: ./coverage
+
+  deploy-pages:
+    name: Deploy coverage to GitHub Pages
+    needs: coverage
+    runs-on: ubuntu-24.04
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+
+    steps:
+      - name: Configure GitHub Pages
+        uses: actions/configure-pages@v5
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
 
   build-and-test:
     name: Build and unit test
