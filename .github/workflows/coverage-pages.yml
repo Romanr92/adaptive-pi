@@ -67,9 +67,9 @@ jobs:
           fi
           gcovr -r . \
             --gcov-executable "${LLVM_COV_BIN} gcov" \
-            --filter './platform/' \
-            --filter './apps/' \
-            --exclude '.*/tests/.*' \
+            --filter '^(apps|platform)/.*\.(c|cpp|cxx|h|hpp|hxx)$' \
+            --exclude '^(apps|platform)/(.*/)?tests?/' \
+            --exclude '^(apps|platform)/(.*/)?(test_[^/]*|[^/]*_(test|tests|spec))\.(c|cpp|cxx|h|hpp|hxx)$' \
             --html-details \
             --output site/coverage/index.html \
             --print-summary
