@@ -82,7 +82,7 @@ jobs:
 
           summary = json.loads(Path("site/coverage/summary.json").read_text())
           files = summary.get("files", [])
-          production = re.compile(r"^(apps|platform)/.*\\.(c|cpp|cxx|h|hpp|hxx)$")
+          production = re.compile(r"^(apps|platform)/.*\.(c|cpp|cxx|h|hpp|hxx)$")
           reported = [entry for entry in files if production.fullmatch(entry.get("filename", ""))]
           lines = sum(entry.get("line_total", 0) for entry in reported)
           if len(reported) != len(files) or not reported or lines <= 0:
