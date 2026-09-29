@@ -14,6 +14,7 @@ fi
 
 cmake -S "${project_root}" -B "${build_dir}" -G Ninja \
     -DCMAKE_BUILD_TYPE=Debug \
+    -DBUILD_TESTING=ON \
     -DADAPTIVE_PI_ENABLE_EXCEPTIONS=ON \
     -DCMAKE_C_COMPILER=clang \
     -DCMAKE_CXX_COMPILER=clang++ \
@@ -23,6 +24,9 @@ cmake -S "${project_root}" -B "${build_dir}" -G Ninja \
     -DCMAKE_SHARED_LINKER_FLAGS='--coverage' \
     -DADAPTIVE_PI_ENABLE_CLANG_TIDY=OFF \
     -DADAPTIVE_PI_WARNINGS_AS_ERRORS=ON
+
+# Discard counters from earlier runs before rebuilding and executing the tests.
+find "${build_dir}" -type f -name '*.gcda' -delete
 
 cmake --build "${build_dir}" --parallel
 ctest --test-dir "${build_dir}" --output-on-failure
@@ -35,7 +39,7 @@ fi
 
 mkdir -p "${coverage_dir}"
 
-gcovr -r "${project_root}" \
+gcovr -r "${project_root}" "${build_dir}" \
     --root "${project_root}" \
     --gcov-executable "${LLVM_COV_BIN} gcov" \
     --filter '^(apps|platform)/.*\.(c|cpp|cxx|h|hpp|hxx)$' \

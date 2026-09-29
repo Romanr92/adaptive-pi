@@ -1566,6 +1566,132 @@ namespace ara::core
                              VoidReplacementCaseName_PreservesStateOnFailureAndReplacesOnSuccess);
 #endif
 
+#if ADAPTIVE_PI_EXCEPTIONS_ENABLED
+    /* ----------------------------------------------------------------------------------- */
+
+    /* Verify initial FromValue construction propagates failure and releases acquired resources.
+     * 1. Arrange: Define a payload that acquires ownership before its constructor throws.
+     * 2. Act: Transfer sole ownership into the factory and catch the construction failure.
+     * 3. Expect: The original exception propagates and the partially constructed member is destroyed.
+     */
+    TEST(AP_R3_CORE_006_InitialConstructionFailure, ValueFactoryPropagatesConstructionFailure)
+    {
+      /* Arrange */
+      struct FailingPayload
+      {
+          std::shared_ptr<int> resource;
+
+          explicit FailingPayload(std::shared_ptr<int> input) : resource{std::move(input)}
+          {
+            throw std::runtime_error{"initial construction failed"};
+          }
+      };
+      auto resource = std::make_shared<int>(42);
+      const std::weak_ptr<int> observer{resource};
+      bool caught_failure{false};
+      std::string message;
+
+      /* Act */
+      try
+      {
+        (void)Result<FailingPayload, int>::FromValue(std::move(resource));
+      }
+      catch (const std::runtime_error& error)
+      {
+        caught_failure = true;
+        message = error.what();
+      }
+
+      /* Expect */
+      EXPECT_TRUE(caught_failure);
+      EXPECT_EQ(message, "initial construction failed");
+      EXPECT_TRUE(observer.expired());
+    }
+
+    /* ----------------------------------------------------------------------------------- */
+
+    /* Verify initial FromError construction propagates failure and releases acquired resources.
+     * 1. Arrange: Define a payload that acquires ownership before its constructor throws.
+     * 2. Act: Transfer sole ownership into the factory and catch the construction failure.
+     * 3. Expect: The original exception propagates and the partially constructed member is destroyed.
+     */
+    TEST(AP_R3_CORE_006_InitialConstructionFailure, ErrorFactoryPropagatesConstructionFailure)
+    {
+      /* Arrange */
+      struct FailingPayload
+      {
+          std::shared_ptr<int> resource;
+
+          explicit FailingPayload(std::shared_ptr<int> input) : resource{std::move(input)}
+          {
+            throw std::runtime_error{"initial construction failed"};
+          }
+      };
+      auto resource = std::make_shared<int>(42);
+      const std::weak_ptr<int> observer{resource};
+      bool caught_failure{false};
+      std::string message;
+
+      /* Act */
+      try
+      {
+        (void)Result<int, FailingPayload>::FromError(std::move(resource));
+      }
+      catch (const std::runtime_error& error)
+      {
+        caught_failure = true;
+        message = error.what();
+      }
+
+      /* Expect */
+      EXPECT_TRUE(caught_failure);
+      EXPECT_EQ(message, "initial construction failed");
+      EXPECT_TRUE(observer.expired());
+    }
+
+    /* ----------------------------------------------------------------------------------- */
+
+    /* Verify initial FromError construction propagates failure and releases acquired resources.
+     * 1. Arrange: Define a payload that acquires ownership before its constructor throws.
+     * 2. Act: Transfer sole ownership into the factory and catch the construction failure.
+     * 3. Expect: The original exception propagates and the partially constructed member is destroyed.
+     */
+    TEST(AP_R3_CORE_006_InitialConstructionFailure, VoidErrorFactoryPropagatesConstructionFailure)
+    {
+      /* Arrange */
+      struct FailingPayload
+      {
+          std::shared_ptr<int> resource;
+
+          explicit FailingPayload(std::shared_ptr<int> input) : resource{std::move(input)}
+          {
+            throw std::runtime_error{"initial construction failed"};
+          }
+      };
+      auto resource = std::make_shared<int>(42);
+      const std::weak_ptr<int> observer{resource};
+      bool caught_failure{false};
+      std::string message;
+
+      /* Act */
+      try
+      {
+        (void)Result<void, FailingPayload>::FromError(std::move(resource));
+      }
+      catch (const std::runtime_error& error)
+      {
+        caught_failure = true;
+        message = error.what();
+      }
+
+      /* Expect */
+      EXPECT_TRUE(caught_failure);
+      EXPECT_EQ(message, "initial construction failed");
+      EXPECT_TRUE(observer.expired());
+    }
+
+#endif
+
     /* ======================== End Test_AP_R3_CORE_006 ================================== */
 
     /* ========================== Test_AP_R3_CORE_007 ==================================== */
