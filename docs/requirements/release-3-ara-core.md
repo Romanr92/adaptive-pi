@@ -160,7 +160,7 @@ Approved pending confirmed exception-enabled CI verification.
   [Guidelines for using Adaptive Platform interfaces, R23-11, §3.1.2, pp. 9-10](https://www.autosar.org/fileadmin/standards/R23-11/AP/AUTOSAR_AP_EXP_InterfacesGuidelines.pdf).
 - Verification: Unit test
   `AP_R3_CORE_007_HasValueAndBoolReportState` ✅.
-- Unit Tests: `AP_R3_CORE_007_HasValueAndBoolReportState_ValueStates.ReportsSelectedState`; `AP_R3_CORE_007_HasValueAndBoolReportState_VoidStates.ReportsSelectedState`; `AP_R3_CORE_007_HasValueAndBoolReportState.FalsePayloadReportsSuccess`; `AP_R3_CORE_007_HasValueAndBoolReportState.IdenticalPayloadsReportDifferentStates`; `AP_R3_CORE_007_HasValueAndBoolReportState.VoidZeroErrorReportsFailure`; `AP_R3_CORE_007_HasValueAndBoolReportState.QueriesFollowValueReplacement`; `AP_R3_CORE_007_HasValueAndBoolReportState.QueriesFollowVoidReplacement`; `AP_R3_CORE_006_ReplacementTransitions.PreservesPayloadOnFailureAndReplacesOnSuccess`; `AP_R3_CORE_006_VoidReplacement.PreservesStateOnFailureAndReplacesOnSuccess`
+- Unit Tests: `AP_R3_CORE_007_HasValueAndBoolReportState_ValueStates.ReportsSelectedState`; `AP_R3_CORE_007_HasValueAndBoolReportState_VoidStates.ReportsSelectedState`; `AP_R3_CORE_007_HasValueAndBoolReportState.FalsePayloadReportsSuccess`; `AP_R3_CORE_007_HasValueAndBoolReportState.IdenticalPayloadsReportDifferentStates`; `AP_R3_CORE_007_HasValueAndBoolReportState.VoidZeroErrorReportsFailure`; `AP_R3_CORE_007_HasValueAndBoolReportState.QueriesFollowValueReplacement`; `AP_R3_CORE_007_HasValueAndBoolReportState.QueriesFollowVoidReplacement`; `AP_R3_CORE_006_ReplacementTransitions.PreservesPayloadOnFailureAndReplacesOnSuccess`; `AP_R3_CORE_006_VoidReplacement.PreservesStateOnFailureAndReplacesOnSuccess`; `AP_R3_CORE_007_EmptySlotDeathTest.ForcedEmptySlotTerminates`
 - Deviation: None.
 
 ## AP-R3-CORE-008 - Value access and exception conversion
@@ -188,14 +188,14 @@ Approved pending confirmed exception-enabled CI verification.
   SWS_CORE_00755 to SWS_CORE_00756 and SWS_CORE_00766 to
   SWS_CORE_00769](https://www.autosar.org/fileadmin/standards/R23-11/AP/AUTOSAR_AP_SWS_Core.pdf).
 - Verification: Build and run common value-access tests and death test
-  `AP_R3_CORE_008_ValueOnErrorTerminates` (declaration exists; exception-disabled
+  `AP_R3_CORE_008_ValueOnErrorTerminates` ✅ (declaration exists; exception-disabled
   execution observed, exception-enabled execution remains pending). Run unit test
   `AP_R3_CORE_008_ValueOrThrowConvertsDomainError` ✅ (test declaration exists;
   exception-enabled execution remains pending confirmed CI evidence).
   Compile-time checks shall verify absence of `ValueOrThrow()` with exceptions
   disabled and presence with exceptions enabled, for ordinary and void results.
   Inspect compiler commands to verify the selected mode.
-- Unit Tests: `AP_R3_CORE_008_DomainConversion.NullConverterTerminates`; `AP_R3_CORE_008_DomainConversion.DispatchesCustomDomain`; `AP_R3_CORE_008_DomainConversion.ReturningConverterTerminates`; `AP_R3_CORE_008_ValueAccess.ReferencesStoredValue`; `AP_R3_CORE_008_ValueAccess.MovesPayload`; `AP_R3_CORE_008_ValueAccess.VoidSuccess`; `AP_R3_CORE_008_ValueOnErrorTerminates.Terminates`; `AP_R3_CORE_008_ValueOnErrorTerminates_Const.Terminates`; `AP_R3_CORE_008_ValueOnErrorTerminates_Rvalue.Terminates`; `AP_R3_CORE_008_ValueOnErrorTerminates_Void.Terminates`; `AP_R3_CORE_008_ValueOrThrowConvertsDomainError.ConvertsError`; `AP_R3_CORE_008_ValueOrThrowConvertsDomainError_Const.ConvertsError`; `AP_R3_CORE_008_ValueOrThrowConvertsDomainError_Rvalue.ConvertsError`; `AP_R3_CORE_008_ValueOrThrowConvertsDomainError_Void.ConvertsError`; `AP_R3_CORE_008_ThrowSuccess.PreservesReferences`; `AP_R3_CORE_008_ThrowSuccess.MovesPayload`; `AP_R3_CORE_008_ThrowSuccess.VoidSuccess`
+- Unit Tests: `AP_R3_CORE_008_DomainConversion.NullConverterTerminates`; `AP_R3_CORE_008_DomainConversion.DispatchesCustomDomain`; `AP_R3_CORE_008_DomainConversion.ReturningConverterTerminates`; `AP_R3_CORE_008_ValueAccess.ReferencesStoredValue`; `AP_R3_CORE_008_ValueAccess.MovesPayload`; `AP_R3_CORE_008_ValueAccess.VoidSuccess`; `AP_R3_CORE_008_ValueOnErrorTerminates.Terminates`; `AP_R3_CORE_008_ValueOnErrorTerminates_Const.Terminates`; `AP_R3_CORE_008_ValueOnErrorTerminates_Rvalue.Terminates`; `AP_R3_CORE_008_ValueOnErrorTerminates_Void.Terminates`; `AP_R3_CORE_008_ValueOrThrowConvertsDomainError.ConvertsError`; `AP_R3_CORE_008_ValueOrThrowConvertsDomainError_Const.ConvertsError`; `AP_R3_CORE_008_ValueOrThrowConvertsDomainError_Rvalue.ConvertsError`; `AP_R3_CORE_008_ValueOrThrowConvertsDomainError_Void.ConvertsError`; `AP_R3_CORE_008_ThrowSuccess.PreservesReferences`; `AP_R3_CORE_008_ThrowSuccess.MovesPayload`; `AP_R3_CORE_008_ThrowSuccess.VoidSuccess`; `AP_R3_CORE_008_ValueAccess.EmptyStorageGuardTerminates`; `AP_R3_CORE_008_ValueAccess.WrongAlternativeTerminates`; `AP_R3_CORE_008_ValueAccess.StorageGuardConstAndRvalueTerminate`; `AP_R3_CORE_008_DomainConversion.NullConverterThrowTerminates`; `AP_R3_CORE_008_MutableStorageGuardDeathTest.ForcedStatesValidateStorageGuard`; `AP_R3_CORE_008_ConstStorageGuardDeathTest.ForcedStatesValidateStorageGuard`; `AP_R3_CORE_008_RvalueStorageGuardDeathTest.ForcedStatesValidateStorageGuard`; `AP_R3_CORE_008_PayloadConversion.ConvertsErrorAndReturnsValue`
 - Deviation: None.
 
 ## AP-R3-CORE-009 - Error access
@@ -212,7 +212,7 @@ Approved pending confirmed exception-enabled CI verification.
   [Guidelines for using Adaptive Platform interfaces, R23-11, §3.1.2, p. 10](https://www.autosar.org/fileadmin/standards/R23-11/AP/AUTOSAR_AP_EXP_InterfacesGuidelines.pdf).
 - Verification: Death test
   `AP_R3_CORE_009_ErrorOnValueTerminates` ✅.
-- Unit Tests: `AP_R3_CORE_009_ErrorAccess.ReturnsStoredError`; `AP_R3_CORE_009_ErrorAccess.VoidReturnsStoredError`; `AP_R3_CORE_009_ErrorOnValueTerminates.Terminates`; `AP_R3_CORE_009_ErrorOnValueTerminates.RvalueTerminates`; `AP_R3_CORE_009_ErrorOnValueTerminates.VoidRvalueTerminates`; `AP_R3_CORE_009_ErrorAccess.MovesErrorPayload`; `AP_R3_CORE_009_ErrorAccess.VoidMovesErrorPayload`
+- Unit Tests: `AP_R3_CORE_009_ErrorAccess.ReturnsStoredError`; `AP_R3_CORE_009_ErrorAccess.VoidReturnsStoredError`; `AP_R3_CORE_009_ErrorOnValueTerminates.Terminates`; `AP_R3_CORE_009_ErrorOnValueTerminates.RvalueTerminates`; `AP_R3_CORE_009_ErrorOnValueTerminates.VoidRvalueTerminates`; `AP_R3_CORE_009_ErrorAccess.MovesErrorPayload`; `AP_R3_CORE_009_ErrorAccess.VoidMovesErrorPayload`; `AP_R3_CORE_009_ErrorOnValueTerminates.VoidResultErrorAccessTerminates`; `AP_R3_CORE_009_ConstPayloadErrorDeathTest.SuccessRejectsErrorAccess`; `AP_R3_CORE_009_RvaluePayloadErrorDeathTest.SuccessRejectsErrorAccess`; `AP_R3_CORE_009_ErrorAccess.ReturnsDefaultErrorFromRvalue`; `AP_R3_CORE_009_ErrorAccess.VoidReturnsDefaultErrorFromRvalue`
 - Deviation: None.
 
 ## AP-R3-CORE-010 - Result move state

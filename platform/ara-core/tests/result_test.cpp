@@ -14,12 +14,14 @@
 
 #include "ara/core/adaptive_pi_error_domain.h"
 
+#include <array>
 #include <gtest/gtest.h>
 #include <memory>
 #include <ostream>
 #include <stdexcept>
 #include <string>
 #include <string_view>
+#include <tuple>
 #include <type_traits>
 #include <utility>
 
@@ -350,6 +352,7 @@ namespace ara::core
 
     /* Verify construction and destruction of only the selected alternatives.
      * 1. Arrange: Initialize the lifetime counters and storage for observations.
+     *    A separate coverage-only probe permits child-only empty-slot fault injection.
      * 2. Act: Construct scoped results and record their state and live payload counts before destruction.
      * 3. Expect: Only selected payloads were alive and all live counts return to zero after scope exit.
      */
@@ -357,6 +360,11 @@ namespace ara::core
            ConstructsAndDestroysOnlySelectedAlternative)
     {
       /* Arrange */
+      int guard_live{0};
+      auto guard_probe = Result<TrackedObject_ConstructsAndDestroysOnlySelectedAlternative,
+                                TrackedObject_ConstructsAndDestroysOnlySelectedAlternative>::
+        FromValue(TrackedObject_ConstructsAndDestroysOnlySelectedAlternative{guard_live});
+
       const ResultStateCase_ConstructsAndDestroysOnlySelectedAlternative& parameter{GetParam()};
       int live_values{0};
       int live_errors{0};
@@ -365,6 +373,14 @@ namespace ara::core
       int errors_while_alive{};
 
       /* Act */
+      /* Coverage-only fault injection: a live Result cannot lose its active slot
+       * through the public API. Force it here to exercise this payload's guard.
+       */
+      const auto query_empty_slot = [&guard_probe]()
+      {
+        guard_probe.storage_.slots_[guard_probe.storage_.active_].reset();
+        (void)guard_probe.HasValue();
+      };
       {
         const auto result = parameter.has_value
                               ? Result<TrackedObject_ConstructsAndDestroysOnlySelectedAlternative,
@@ -380,6 +396,7 @@ namespace ara::core
       }
 
       /* Expect */
+      EXPECT_DEATH(query_empty_slot(), "");
       EXPECT_EQ(selected_has_value, parameter.has_value);
       EXPECT_EQ(values_while_alive, parameter.has_value ? 1 : 0);
       EXPECT_EQ(errors_while_alive, parameter.has_value ? 0 : 1);
@@ -650,18 +667,29 @@ namespace ara::core
 
     /* Verify construction and destruction of only the selected alternatives.
      * 1. Arrange: Initialize the lifetime counters and storage for observations.
+     *    A separate coverage-only probe permits child-only empty-slot fault injection.
      * 2. Act: Construct scoped results and record their state and live payload counts before destruction.
      * 3. Expect: Only selected payloads were alive and all live counts return to zero after scope exit.
      */
     TEST_P(AP_R3_CORE_005_ResultVoidHasExactlyOneState_ConstructsAnErrorOnlyOnFailure, ConstructsAnErrorOnlyOnFailure)
     {
       /* Arrange */
+      auto guard_probe = Result<void, VoidStateTrackedObject_ConstructsAnErrorOnlyOnFailure>::FromValue();
+
       const ResultVoidStateCase_ConstructsAnErrorOnlyOnFailure& parameter{GetParam()};
       int live_errors{0};
       bool selected_has_value{};
       int errors_while_alive{};
 
       /* Act */
+      /* Coverage-only fault injection: a live Result cannot lose its active slot
+       * through the public API. Force it here to exercise this payload's guard.
+       */
+      const auto query_empty_slot = [&guard_probe]()
+      {
+        guard_probe.storage_.slots_[guard_probe.storage_.active_].reset();
+        (void)guard_probe.HasValue();
+      };
       {
         const auto result = parameter.has_value
                               ? Result<void, VoidStateTrackedObject_ConstructsAnErrorOnlyOnFailure>::FromValue()
@@ -673,6 +701,7 @@ namespace ara::core
       }
 
       /* Expect */
+      EXPECT_DEATH(query_empty_slot(), "");
       EXPECT_EQ(selected_has_value, parameter.has_value);
       EXPECT_EQ(errors_while_alive, parameter.has_value ? 0 : 1);
 
@@ -827,12 +856,18 @@ namespace ara::core
 
     /* Verify construction and destruction of only the selected alternatives.
      * 1. Arrange: Initialize the lifetime counters and storage for observations.
+     *    A separate coverage-only probe permits child-only empty-slot fault injection.
      * 2. Act: Construct scoped results and record their state and live payload counts before destruction.
      * 3. Expect: Only selected payloads were alive and all live counts return to zero after scope exit.
      */
     TEST(AP_R3_CORE_006_ResultCreationAndEmplacement, DirectConstructionSupportsMoveOnlyAlternatives)
     {
       /* Arrange */
+      int guard_live{0};
+      auto guard_probe = Result<ConstructionTrackedObject_DirectConstructionSupportsMoveOnlyAlternatives,
+                                TrackedError_DirectConstructionSupportsMoveOnlyAlternatives>::
+        FromValue(ConstructionTrackedObject_DirectConstructionSupportsMoveOnlyAlternatives{guard_live});
+
       int live_values{0};
       int live_errors{0};
       bool value_has_value{};
@@ -841,6 +876,14 @@ namespace ara::core
       int errors_while_alive{};
 
       /* Act */
+      /* Coverage-only fault injection: a live Result cannot lose its active slot
+       * through the public API. Force it here to exercise this payload's guard.
+       */
+      const auto query_empty_slot = [&guard_probe]()
+      {
+        guard_probe.storage_.slots_[guard_probe.storage_.active_].reset();
+        (void)guard_probe.HasValue();
+      };
       {
         const Result<ConstructionTrackedObject_DirectConstructionSupportsMoveOnlyAlternatives,
                      TrackedError_DirectConstructionSupportsMoveOnlyAlternatives>
@@ -856,6 +899,7 @@ namespace ara::core
       }
 
       /* Expect */
+      EXPECT_DEATH(query_empty_slot(), "");
       EXPECT_TRUE(value_has_value);
       EXPECT_FALSE(error_has_value);
       EXPECT_EQ(values_while_alive, 1);
@@ -917,21 +961,59 @@ namespace ara::core
         ResultConstructionValueCase_FactoryFunctionsSupportInPlaceConstruction(std::string text_in, int value_in)
             : text{std::move(text_in)}, value{value_in}
         {
+#if ADAPTIVE_PI_EXCEPTIONS_ENABLED
+          /* Test-only fault injection for this exact constructor instantiation. */
+          if (value_in < 0)
+          {
+            throw std::runtime_error{"in-place payload construction failed"};
+          }
+#endif
         }
     };
 
     /* Verify that factories construct the selected alternative from constructor arguments.
      * 1. Arrange: Prepare the text and integer arguments for the value payload.
+     *    A separate coverage-only probe permits child-only empty-slot fault injection.
      * 2. Act: Construct the results using the constructor or factory under test.
      * 3. Expect: The resulting objects report the intended value or error state.
      */
     TEST(AP_R3_CORE_006_ResultCreationAndEmplacement, FactoryFunctionsSupportInPlaceConstruction)
     {
       /* Arrange */
+      const std::string guard_text{"guard"};
+      const int guard_value{0};
+      auto guard_probe =
+        Result<ResultConstructionValueCase_FactoryFunctionsSupportInPlaceConstruction, AdaptivePiErrc>::FromValue(
+          guard_text, guard_value);
+
       const std::string text{"created-value"};
       const int value{42};
 
+#if ADAPTIVE_PI_EXCEPTIONS_ENABLED
+      const int rejected_value{-1};
+      bool caught_initial_failure{false};
+#endif
+
       /* Act */
+#if ADAPTIVE_PI_EXCEPTIONS_ENABLED
+      try
+      {
+        (void)Result<ResultConstructionValueCase_FactoryFunctionsSupportInPlaceConstruction, AdaptivePiErrc>::FromValue(
+          text, rejected_value);
+      }
+      catch (const std::runtime_error&)
+      {
+        caught_initial_failure = true;
+      }
+#endif
+      /* Coverage-only fault injection: a live Result cannot lose its active slot
+       * through the public API. Force it here to exercise this payload's guard.
+       */
+      const auto query_empty_slot = [&guard_probe]()
+      {
+        guard_probe.storage_.slots_[guard_probe.storage_.active_].reset();
+        (void)guard_probe.HasValue();
+      };
       Result<ResultConstructionValueCase_FactoryFunctionsSupportInPlaceConstruction, AdaptivePiErrc> value_result =
         Result<ResultConstructionValueCase_FactoryFunctionsSupportInPlaceConstruction, AdaptivePiErrc>::FromValue(
           text, value);
@@ -940,6 +1022,10 @@ namespace ara::core
           AdaptivePiErrc::kInvalidArgument);
 
       /* Expect */
+#if ADAPTIVE_PI_EXCEPTIONS_ENABLED
+      EXPECT_TRUE(caught_initial_failure);
+#endif
+      EXPECT_DEATH(query_empty_slot(), "");
       EXPECT_TRUE(value_result.HasValue());
       EXPECT_FALSE(error_result.HasValue());
     }
@@ -1007,12 +1093,18 @@ namespace ara::core
 
     /* Verify that emplacement replaces the active alternative.
      * 1. Arrange: Construct an initial successful result and any lifetime counters.
+     *    A separate coverage-only probe permits child-only empty-slot fault injection.
      * 2. Act: Emplace an error and then a value, recording the state and live counts at each transition.
      * 3. Expect: Each replacement selects the requested state and destroys the previous payload.
      */
     TEST(AP_R3_CORE_006_ResultCreationAndEmplacement, EmplaceValueAndErrorReplaceActiveAlternative)
     {
       /* Arrange */
+      int guard_live{0};
+      auto guard_probe = Result<ConstructionTrackedObject_EmplaceValueAndErrorReplaceActiveAlternative,
+                                TrackedError_EmplaceValueAndErrorReplaceActiveAlternative>::
+        FromValue(ConstructionTrackedObject_EmplaceValueAndErrorReplaceActiveAlternative{guard_live});
+
       int live_values{0};
       int live_errors{0};
 
@@ -1023,6 +1115,14 @@ namespace ara::core
           FromValue(ConstructionTrackedObject_EmplaceValueAndErrorReplaceActiveAlternative{live_values});
 
       /* Act */
+      /* Coverage-only fault injection: a live Result cannot lose its active slot
+       * through the public API. Force it here to exercise this payload's guard.
+       */
+      const auto query_empty_slot = [&guard_probe]()
+      {
+        guard_probe.storage_.slots_[guard_probe.storage_.active_].reset();
+        (void)guard_probe.HasValue();
+      };
       const bool initially_has_value = result.HasValue();
 
       result.EmplaceError(live_errors);
@@ -1036,6 +1136,7 @@ namespace ara::core
       const auto errors_after_value = live_errors;
 
       /* Expect */
+      EXPECT_DEATH(query_empty_slot(), "");
       EXPECT_TRUE(initially_has_value);
       EXPECT_FALSE(has_value_after_error);
       EXPECT_EQ(values_after_error, 0);
@@ -1167,6 +1268,7 @@ namespace ara::core
 
     /* Verify replacement, failure preservation, retry, and destruction across the selected states.
      * 1. Arrange: Create payload observers and storage for each state, content, identity, and lifetime checkpoint.
+     *    A separate coverage-only probe permits child-only empty-slot fault injection.
      * 2. Act: Construct the initial result, attempt the configured replacements, and record each checkpoint.
      * 3. Expect: The expected exception occurs, failure preserves the original payload, and success replaces and cleans
      * up payloads.
@@ -1174,6 +1276,12 @@ namespace ara::core
     TEST_P(AP_R3_CORE_006_ReplacementTransitions, PreservesPayloadOnFailureAndReplacesOnSuccess)
     {
       /* Arrange */
+      PayloadObserver_PreservesPayloadOnFailureAndReplacesOnSuccess guard_observer;
+      auto guard_probe =
+        Result<ObservedPayload_PreservesPayloadOnFailureAndReplacesOnSuccess,
+               ObservedPayload_PreservesPayloadOnFailureAndReplacesOnSuccess>::FromValue(guard_observer, "original", 17,
+                                                                                         false);
+
       const ReplacementCase_PreservesPayloadOnFailureAndReplacesOnSuccess& parameter{GetParam()};
       using ObservedResult = Result<ObservedPayload_PreservesPayloadOnFailureAndReplacesOnSuccess,
                                     ObservedPayload_PreservesPayloadOnFailureAndReplacesOnSuccess>;
@@ -1184,7 +1292,40 @@ namespace ara::core
       ReplacementSnapshot_PreservesPayloadOnFailureAndReplacesOnSuccess replaced;
       bool caught_failure{false};
 
+#if ADAPTIVE_PI_EXCEPTIONS_ENABLED
+      PayloadObserver_PreservesPayloadOnFailureAndReplacesOnSuccess initial_failure_observer;
+      bool caught_initial_fromvalue{false};
+      bool caught_initial_fromerror{false};
+#endif
+
       /* Act */
+#if ADAPTIVE_PI_EXCEPTIONS_ENABLED
+      try
+      {
+        (void)ObservedResult::FromValue(initial_failure_observer, "original", 17, true);
+      }
+      catch (const std::runtime_error&)
+      {
+        caught_initial_fromvalue = true;
+      }
+      try
+      {
+        (void)ObservedResult::FromError(initial_failure_observer, "original", 17, true);
+      }
+      catch (const std::runtime_error&)
+      {
+        caught_initial_fromerror = true;
+      }
+#endif
+
+      /* Coverage-only fault injection: a live Result cannot lose its active slot
+       * through the public API. Force it here to exercise this payload's guard.
+       */
+      const auto query_empty_slot = [&guard_probe]()
+      {
+        guard_probe.storage_.slots_[guard_probe.storage_.active_].reset();
+        (void)guard_probe.HasValue();
+      };
       {
         auto result = parameter.starts_with_value ? ObservedResult::FromValue(original, "original", 17, false)
                                                   : ObservedResult::FromError(original, "original", 17, false);
@@ -1253,6 +1394,14 @@ namespace ara::core
       }
 
       /* Expect */
+#if ADAPTIVE_PI_EXCEPTIONS_ENABLED
+      EXPECT_TRUE(caught_initial_fromvalue);
+      EXPECT_TRUE(caught_initial_fromerror);
+      EXPECT_EQ(initial_failure_observer.live, 0);
+      EXPECT_EQ(initial_failure_observer.current, nullptr);
+#endif
+
+      EXPECT_DEATH(query_empty_slot(), "");
       EXPECT_EQ(initial.has_value, parameter.starts_with_value);
       EXPECT_TRUE(initial.original_present);
       EXPECT_EQ(initial.original_text, "original");
@@ -1416,6 +1565,7 @@ namespace ara::core
 
     /* Verify replacement, failure preservation, retry, and destruction across the selected states.
      * 1. Arrange: Create payload observers and storage for each state, content, identity, and lifetime checkpoint.
+     *    A separate coverage-only probe permits child-only empty-slot fault injection.
      * 2. Act: Construct the initial result, attempt the configured replacements, and record each checkpoint.
      * 3. Expect: The expected exception occurs, failure preserves the original payload, and success replaces and cleans
      * up payloads.
@@ -1423,6 +1573,8 @@ namespace ara::core
     TEST_P(AP_R3_CORE_006_VoidReplacement, PreservesStateOnFailureAndReplacesOnSuccess)
     {
       /* Arrange */
+      auto guard_probe = Result<void, VoidObservedPayload_PreservesStateOnFailureAndReplacesOnSuccess>::FromValue();
+
       const VoidReplacementCase_PreservesStateOnFailureAndReplacesOnSuccess& parameter{GetParam()};
       using ObservedResult = Result<void, VoidObservedPayload_PreservesStateOnFailureAndReplacesOnSuccess>;
       VoidPayloadObserver_PreservesStateOnFailureAndReplacesOnSuccess original;
@@ -1436,7 +1588,31 @@ namespace ara::core
       int live_after_success{0};
       bool payload_after_success{false};
 
+#if ADAPTIVE_PI_EXCEPTIONS_ENABLED
+      VoidPayloadObserver_PreservesStateOnFailureAndReplacesOnSuccess initial_failure_observer;
+      bool caught_initial_fromerror{false};
+#endif
+
       /* Act */
+#if ADAPTIVE_PI_EXCEPTIONS_ENABLED
+      try
+      {
+        (void)ObservedResult::FromError(initial_failure_observer, "original", 17, true);
+      }
+      catch (const std::runtime_error&)
+      {
+        caught_initial_fromerror = true;
+      }
+#endif
+
+      /* Coverage-only fault injection: a live Result cannot lose its active slot
+       * through the public API. Force it here to exercise this payload's guard.
+       */
+      const auto query_empty_slot = [&guard_probe]()
+      {
+        guard_probe.storage_.slots_[guard_probe.storage_.active_].reset();
+        (void)guard_probe.HasValue();
+      };
       {
         auto result = parameter.starts_with_value ? ObservedResult::FromValue()
                                                   : ObservedResult::FromError(original, "original", 17, false);
@@ -1497,6 +1673,13 @@ namespace ara::core
       }
 
       /* Expect */
+#if ADAPTIVE_PI_EXCEPTIONS_ENABLED
+      EXPECT_TRUE(caught_initial_fromerror);
+      EXPECT_EQ(initial_failure_observer.live, 0);
+      EXPECT_EQ(initial_failure_observer.current, nullptr);
+#endif
+
+      EXPECT_DEATH(query_empty_slot(), "");
       EXPECT_EQ(initial.has_value, parameter.starts_with_value);
       EXPECT_EQ(initial.original_present, !parameter.starts_with_value);
       if (!parameter.starts_with_value)
@@ -1571,8 +1754,8 @@ namespace ara::core
 
     /* Verify initial FromValue construction propagates failure and releases acquired resources.
      * 1. Arrange: Define a payload that acquires ownership before its constructor throws.
-     * 2. Act: Transfer sole ownership into the factory and catch the construction failure.
-     * 3. Expect: The original exception propagates and the partially constructed member is destroyed.
+     * 2. Act: Transfer ownership, catch the failure, then retry with a non-failing payload.
+     * 3. Expect: The exception propagates; failed and successful construction both release their resources.
      */
     TEST(AP_R3_CORE_006_InitialConstructionFailure, ValueFactoryPropagatesConstructionFailure)
     {
@@ -1583,13 +1766,19 @@ namespace ara::core
 
           explicit FailingPayload(std::shared_ptr<int> input) : resource{std::move(input)}
           {
-            throw std::runtime_error{"initial construction failed"};
+            if (*resource == 42)
+            {
+              throw std::runtime_error{"initial construction failed"};
+            }
           }
       };
       auto resource = std::make_shared<int>(42);
       const std::weak_ptr<int> observer{resource};
       bool caught_failure{false};
       std::string message;
+      auto retry_resource = std::make_shared<int>(43);
+      const std::weak_ptr<int> retry_observer{retry_resource};
+      bool retry_owned_resource{false};
 
       /* Act */
       try
@@ -1602,18 +1791,25 @@ namespace ara::core
         message = error.what();
       }
 
+      {
+        const auto retry = Result<FailingPayload, int>::FromValue(std::move(retry_resource));
+        retry_owned_resource = !retry_observer.expired();
+      }
+
       /* Expect */
       EXPECT_TRUE(caught_failure);
       EXPECT_EQ(message, "initial construction failed");
       EXPECT_TRUE(observer.expired());
+      EXPECT_TRUE(retry_owned_resource);
+      EXPECT_TRUE(retry_observer.expired());
     }
 
     /* ----------------------------------------------------------------------------------- */
 
     /* Verify initial FromError construction propagates failure and releases acquired resources.
      * 1. Arrange: Define a payload that acquires ownership before its constructor throws.
-     * 2. Act: Transfer sole ownership into the factory and catch the construction failure.
-     * 3. Expect: The original exception propagates and the partially constructed member is destroyed.
+     * 2. Act: Transfer ownership, catch the failure, then retry with a non-failing payload.
+     * 3. Expect: The exception propagates; failed and successful construction both release their resources.
      */
     TEST(AP_R3_CORE_006_InitialConstructionFailure, ErrorFactoryPropagatesConstructionFailure)
     {
@@ -1624,13 +1820,19 @@ namespace ara::core
 
           explicit FailingPayload(std::shared_ptr<int> input) : resource{std::move(input)}
           {
-            throw std::runtime_error{"initial construction failed"};
+            if (*resource == 42)
+            {
+              throw std::runtime_error{"initial construction failed"};
+            }
           }
       };
       auto resource = std::make_shared<int>(42);
       const std::weak_ptr<int> observer{resource};
       bool caught_failure{false};
       std::string message;
+      auto retry_resource = std::make_shared<int>(43);
+      const std::weak_ptr<int> retry_observer{retry_resource};
+      bool retry_owned_resource{false};
 
       /* Act */
       try
@@ -1643,18 +1845,25 @@ namespace ara::core
         message = error.what();
       }
 
+      {
+        const auto retry = Result<int, FailingPayload>::FromError(std::move(retry_resource));
+        retry_owned_resource = !retry_observer.expired();
+      }
+
       /* Expect */
       EXPECT_TRUE(caught_failure);
       EXPECT_EQ(message, "initial construction failed");
       EXPECT_TRUE(observer.expired());
+      EXPECT_TRUE(retry_owned_resource);
+      EXPECT_TRUE(retry_observer.expired());
     }
 
     /* ----------------------------------------------------------------------------------- */
 
     /* Verify initial FromError construction propagates failure and releases acquired resources.
      * 1. Arrange: Define a payload that acquires ownership before its constructor throws.
-     * 2. Act: Transfer sole ownership into the factory and catch the construction failure.
-     * 3. Expect: The original exception propagates and the partially constructed member is destroyed.
+     * 2. Act: Transfer ownership, catch the failure, then retry with a non-failing payload.
+     * 3. Expect: The exception propagates; failed and successful construction both release their resources.
      */
     TEST(AP_R3_CORE_006_InitialConstructionFailure, VoidErrorFactoryPropagatesConstructionFailure)
     {
@@ -1665,13 +1874,19 @@ namespace ara::core
 
           explicit FailingPayload(std::shared_ptr<int> input) : resource{std::move(input)}
           {
-            throw std::runtime_error{"initial construction failed"};
+            if (*resource == 42)
+            {
+              throw std::runtime_error{"initial construction failed"};
+            }
           }
       };
       auto resource = std::make_shared<int>(42);
       const std::weak_ptr<int> observer{resource};
       bool caught_failure{false};
       std::string message;
+      auto retry_resource = std::make_shared<int>(43);
+      const std::weak_ptr<int> retry_observer{retry_resource};
+      bool retry_owned_resource{false};
 
       /* Act */
       try
@@ -1684,10 +1899,17 @@ namespace ara::core
         message = error.what();
       }
 
+      {
+        const auto retry = Result<void, FailingPayload>::FromError(std::move(retry_resource));
+        retry_owned_resource = !retry_observer.expired();
+      }
+
       /* Expect */
       EXPECT_TRUE(caught_failure);
       EXPECT_EQ(message, "initial construction failed");
       EXPECT_TRUE(observer.expired());
+      EXPECT_TRUE(retry_owned_resource);
+      EXPECT_TRUE(retry_observer.expired());
     }
 
 #endif
@@ -2133,6 +2355,56 @@ namespace ara::core
       EXPECT_EQ(state_5_entered_success, true);
       EXPECT_EQ(state_5_repeated_has_value, true);
       EXPECT_EQ(state_5_repeated_as_bool, true);
+    }
+
+    /* ----------------------------------------------------------------------------------- */
+
+    /* Each TypeParam selects an existing template instantiation. No production
+     * behavior depends on this test-only type list.
+     */
+    template <typename T>
+    class AP_R3_CORE_007_EmptySlotDeathTest : public ::testing::Test
+    {
+    };
+    using AP_R3_CORE_007_EmptySlotDeathTestTypes =
+      ::testing::Types<Result<int>, Result<int, int>, Result<void>, Result<long, int>, Result<int, AdaptivePiErrc>,
+                       Result<void, AdaptivePiErrc>, Result<bool>, Result<void, int>, Result<std::string>,
+                       Result<std::unique_ptr<int>>, Result<int, std::unique_ptr<int>>,
+                       Result<void, std::unique_ptr<int>>>;
+    struct AP_R3_CORE_007_EmptySlotDeathTestNames
+    {
+        template <typename>
+        static std::string GetName(int index)
+        {
+          constexpr std::array<const char*, 12> names{
+            "IntDefaultError",  "IntInt",  "VoidDefaultError",   "LongInt",       "IntEnum",       "VoidEnum",
+            "BoolDefaultError", "VoidInt", "StringDefaultError", "MoveOnlyValue", "MoveOnlyError", "VoidMoveOnlyError"};
+          return names.at(static_cast<std::size_t>(index));
+        }
+    };
+    TYPED_TEST_SUITE(AP_R3_CORE_007_EmptySlotDeathTest, AP_R3_CORE_007_EmptySlotDeathTestTypes,
+                     AP_R3_CORE_007_EmptySlotDeathTestNames);
+
+    /* Exercise index()'s otherwise infeasible empty-slot branch for each payload.
+     * Coverage-only: construction and replacement always leave an engaged active slot.
+     * 1. Arrange: Construct a valid success result of the selected type.
+     * 2. Act: Prepare a child-only mutation that clears its active optional before querying.
+     * 3. Expect: The corrupted child terminates and the parent's success state is intact. */
+    TYPED_TEST(AP_R3_CORE_007_EmptySlotDeathTest, ForcedEmptySlotTerminates)
+    {
+      /* Arrange */
+      auto result = TypeParam::FromValue();
+
+      /* Act */
+      const auto query = [&result]()
+      {
+        result.storage_.slots_[result.storage_.active_].reset();
+        (void)result.HasValue();
+      };
+
+      /* Expect */
+      EXPECT_DEATH(query(), "");
+      EXPECT_TRUE(result.HasValue());
     }
 
     /* ======================== End Test_AP_R3_CORE_007 ================================== */
@@ -2912,6 +3184,312 @@ namespace ara::core
     }
 
 #endif
+    /* ----------------------------------------------------------------------------------- */
+
+    /* Each TypeParam selects an existing template instantiation. No production
+     * behavior depends on this test-only type list.
+     */
+    template <typename T>
+    class AP_R3_CORE_008_MutableStorageGuardDeathTest : public ::testing::Test
+    {
+    };
+    using AP_R3_CORE_008_MutableStorageGuardDeathTestTypes =
+      ::testing::Types<std::tuple<int, ErrorCode, std::integral_constant<std::size_t, 0>>,
+                       std::tuple<int, ErrorCode, std::integral_constant<std::size_t, 1>>,
+                       std::tuple<std::string, ErrorCode, std::integral_constant<std::size_t, 0>>>;
+    struct AP_R3_CORE_008_MutableStorageGuardDeathTestNames
+    {
+        template <typename>
+        static std::string GetName(int index)
+        {
+          constexpr std::array<const char*, 3> names{"IntValue", "IntError", "StringValue"};
+          return names.at(static_cast<std::size_t>(index));
+        }
+    };
+    TYPED_TEST_SUITE(AP_R3_CORE_008_MutableStorageGuardDeathTest, AP_R3_CORE_008_MutableStorageGuardDeathTestTypes,
+                     AP_R3_CORE_008_MutableStorageGuardDeathTestNames);
+
+    /* Exercise the selected getter's success, empty-slot and wrong-alternative paths.
+     * Coverage-only: empty slots are infeasible through the public API; direct
+     * error-storage mismatch probes also bypass the public Error() state check.
+     * 1. Arrange: Construct live value/error alternatives and select the requested one.
+     * 2. Act: Retrieve the valid reference and prepare child-only storage mutations.
+     * 3. Expect: Valid access aliases the payload; empty and mismatched access terminate. */
+    TYPED_TEST(AP_R3_CORE_008_MutableStorageGuardDeathTest, ForcedStatesValidateStorageGuard)
+    {
+      /* Arrange */
+      using Value = std::tuple_element_t<0, TypeParam>;
+      using Error = std::tuple_element_t<1, TypeParam>;
+      constexpr std::size_t index = std::tuple_element_t<2, TypeParam>::value;
+      detail::ResultStorage<Value, Error> storage{std::in_place_index<c_resultIdx>};
+      /* Prepare both concrete alternatives so the mismatch probe can switch to
+       * a real object of the wrong type without type-punning or invalid lifetimes.
+       */
+      if constexpr (std::is_same_v<Error, ErrorCode>)
+      {
+        storage.slots_[1].emplace(std::in_place_index<c_errorIdx>, MakeErrorCode(AdaptivePiErrc::kInvalidState));
+      }
+      else
+      {
+        storage.slots_[1].emplace(std::in_place_index<c_errorIdx>);
+      }
+      storage.active_ = index;
+      const auto& selected_slot = storage.slots_[index];
+
+      /* Act */
+      const auto empty = [&storage]()
+      {
+        storage.slots_[storage.active_].reset();
+        (void)storage.template get<index>();
+      };
+      const auto mismatched = [&storage]()
+      {
+        storage.active_ = 1U - storage.active_;
+        (void)storage.template get<index>();
+      };
+      /* Binding this reference does not move the stored payload. */
+      auto&& observed = storage.template get<index>();
+
+      /* Expect */
+      if (!selected_slot.has_value())
+      {
+        ADD_FAILURE() << "The parent must retain its constructed payload";
+        return;
+      }
+      EXPECT_EQ(std::addressof(observed), std::addressof(std::get<index>(selected_slot.value())));
+      EXPECT_DEATH(empty(), "");
+      EXPECT_DEATH(mismatched(), "");
+    }
+
+    /* ----------------------------------------------------------------------------------- */
+
+    /* Each TypeParam selects an existing template instantiation. No production
+     * behavior depends on this test-only type list.
+     */
+    template <typename T>
+    class AP_R3_CORE_008_ConstStorageGuardDeathTest : public ::testing::Test
+    {
+    };
+    using AP_R3_CORE_008_ConstStorageGuardDeathTestTypes =
+      ::testing::Types<std::tuple<long, int, std::integral_constant<std::size_t, 1>>,
+                       std::tuple<int, ErrorCode, std::integral_constant<std::size_t, 0>>,
+                       std::tuple<int, ErrorCode, std::integral_constant<std::size_t, 1>>,
+                       std::tuple<std::string, ErrorCode, std::integral_constant<std::size_t, 1>>,
+                       std::tuple<std::monostate, ErrorCode, std::integral_constant<std::size_t, 1>>,
+                       std::tuple<std::string, ErrorCode, std::integral_constant<std::size_t, 0>>,
+                       std::tuple<std::unique_ptr<int>, ErrorCode, std::integral_constant<std::size_t, 1>>,
+                       std::tuple<int, std::unique_ptr<int>, std::integral_constant<std::size_t, 1>>,
+                       std::tuple<std::monostate, std::unique_ptr<int>, std::integral_constant<std::size_t, 1>>>;
+    struct AP_R3_CORE_008_ConstStorageGuardDeathTestNames
+    {
+        template <typename>
+        static std::string GetName(int index)
+        {
+          constexpr std::array<const char*, 9> names{"LongIntError",       "IntValue",      "IntError",
+                                                     "StringError",        "VoidError",     "StringValue",
+                                                     "MoveOnlyValueError", "MoveOnlyError", "VoidMoveOnlyError"};
+          return names.at(static_cast<std::size_t>(index));
+        }
+    };
+    TYPED_TEST_SUITE(AP_R3_CORE_008_ConstStorageGuardDeathTest, AP_R3_CORE_008_ConstStorageGuardDeathTestTypes,
+                     AP_R3_CORE_008_ConstStorageGuardDeathTestNames);
+
+    /* Exercise the selected getter's success, empty-slot and wrong-alternative paths.
+     * Coverage-only: empty slots are infeasible through the public API; direct
+     * error-storage mismatch probes also bypass the public Error() state check.
+     * 1. Arrange: Construct live value/error alternatives and select the requested one.
+     * 2. Act: Retrieve the valid reference and prepare child-only storage mutations.
+     * 3. Expect: Valid access aliases the payload; empty and mismatched access terminate. */
+    TYPED_TEST(AP_R3_CORE_008_ConstStorageGuardDeathTest, ForcedStatesValidateStorageGuard)
+    {
+      /* Arrange */
+      using Value = std::tuple_element_t<0, TypeParam>;
+      using Error = std::tuple_element_t<1, TypeParam>;
+      constexpr std::size_t index = std::tuple_element_t<2, TypeParam>::value;
+      detail::ResultStorage<Value, Error> storage{std::in_place_index<c_resultIdx>};
+      /* Prepare both concrete alternatives so the mismatch probe can switch to
+       * a real object of the wrong type without type-punning or invalid lifetimes.
+       */
+      if constexpr (std::is_same_v<Error, ErrorCode>)
+      {
+        storage.slots_[1].emplace(std::in_place_index<c_errorIdx>, MakeErrorCode(AdaptivePiErrc::kInvalidState));
+      }
+      else
+      {
+        storage.slots_[1].emplace(std::in_place_index<c_errorIdx>);
+      }
+      storage.active_ = index;
+      const auto& selected_slot = storage.slots_[index];
+
+      /* Act */
+      const auto empty = [&storage]()
+      {
+        storage.slots_[storage.active_].reset();
+        (void)std::as_const(storage).template get<index>();
+      };
+      const auto mismatched = [&storage]()
+      {
+        storage.active_ = 1U - storage.active_;
+        (void)std::as_const(storage).template get<index>();
+      };
+      /* Binding this reference does not move the stored payload. */
+      auto&& observed = std::as_const(storage).template get<index>();
+
+      /* Expect */
+      if (!selected_slot.has_value())
+      {
+        ADD_FAILURE() << "The parent must retain its constructed payload";
+        return;
+      }
+      EXPECT_EQ(std::addressof(observed), std::addressof(std::get<index>(selected_slot.value())));
+      EXPECT_DEATH(empty(), "");
+      EXPECT_DEATH(mismatched(), "");
+    }
+
+    /* ----------------------------------------------------------------------------------- */
+
+    /* Each TypeParam selects an existing template instantiation. No production
+     * behavior depends on this test-only type list.
+     */
+    template <typename T>
+    class AP_R3_CORE_008_RvalueStorageGuardDeathTest : public ::testing::Test
+    {
+    };
+    using AP_R3_CORE_008_RvalueStorageGuardDeathTestTypes =
+      ::testing::Types<std::tuple<std::unique_ptr<int>, ErrorCode, std::integral_constant<std::size_t, 0>>,
+                       std::tuple<int, ErrorCode, std::integral_constant<std::size_t, 1>>,
+                       std::tuple<int, ErrorCode, std::integral_constant<std::size_t, 0>>,
+                       std::tuple<std::string, ErrorCode, std::integral_constant<std::size_t, 0>>,
+                       std::tuple<std::monostate, ErrorCode, std::integral_constant<std::size_t, 1>>,
+                       std::tuple<int, std::unique_ptr<int>, std::integral_constant<std::size_t, 1>>,
+                       std::tuple<std::monostate, std::unique_ptr<int>, std::integral_constant<std::size_t, 1>>>;
+    struct AP_R3_CORE_008_RvalueStorageGuardDeathTestNames
+    {
+        template <typename>
+        static std::string GetName(int index)
+        {
+          constexpr std::array<const char*, 7> names{
+            "MoveOnlyValue", "IntError", "IntValue", "StringValue", "VoidError", "MoveOnlyError", "VoidMoveOnlyError"};
+          return names.at(static_cast<std::size_t>(index));
+        }
+    };
+    TYPED_TEST_SUITE(AP_R3_CORE_008_RvalueStorageGuardDeathTest, AP_R3_CORE_008_RvalueStorageGuardDeathTestTypes,
+                     AP_R3_CORE_008_RvalueStorageGuardDeathTestNames);
+
+    /* Exercise the selected getter's success, empty-slot and wrong-alternative paths.
+     * Coverage-only: empty slots are infeasible through the public API; direct
+     * error-storage mismatch probes also bypass the public Error() state check.
+     * 1. Arrange: Construct live value/error alternatives and select the requested one.
+     * 2. Act: Retrieve the valid reference and prepare child-only storage mutations.
+     * 3. Expect: Valid access aliases the payload; empty and mismatched access terminate. */
+    TYPED_TEST(AP_R3_CORE_008_RvalueStorageGuardDeathTest, ForcedStatesValidateStorageGuard)
+    {
+      /* Arrange */
+      using Value = std::tuple_element_t<0, TypeParam>;
+      using Error = std::tuple_element_t<1, TypeParam>;
+      constexpr std::size_t index = std::tuple_element_t<2, TypeParam>::value;
+      detail::ResultStorage<Value, Error> storage{std::in_place_index<c_resultIdx>};
+      /* Prepare both concrete alternatives so the mismatch probe can switch to
+       * a real object of the wrong type without type-punning or invalid lifetimes.
+       */
+      if constexpr (std::is_same_v<Error, ErrorCode>)
+      {
+        storage.slots_[1].emplace(std::in_place_index<c_errorIdx>, MakeErrorCode(AdaptivePiErrc::kInvalidState));
+      }
+      else
+      {
+        storage.slots_[1].emplace(std::in_place_index<c_errorIdx>);
+      }
+      storage.active_ = index;
+      const auto& selected_slot = storage.slots_[index];
+
+      /* Act */
+      const auto empty = [&storage]()
+      {
+        storage.slots_[storage.active_].reset();
+        (void)std::move(storage).template get<index>();
+      };
+      const auto mismatched = [&storage]()
+      {
+        storage.active_ = 1U - storage.active_;
+        (void)std::move(storage).template get<index>();
+      };
+      /* Binding this reference does not move the stored payload. */
+      auto&& observed = std::move(storage).template get<index>();
+
+      /* Expect */
+      if (!selected_slot.has_value())
+      {
+        ADD_FAILURE() << "The parent must retain its constructed payload";
+        return;
+      }
+      EXPECT_EQ(std::addressof(observed), std::addressof(std::get<index>(selected_slot.value())));
+      EXPECT_DEATH(empty(), "");
+      EXPECT_DEATH(mismatched(), "");
+    }
+
+#if ADAPTIVE_PI_EXCEPTIONS_ENABLED
+    /* ----------------------------------------------------------------------------------- */
+
+    /* Each TypeParam selects an existing template instantiation. No production
+     * behavior depends on this test-only type list.
+     */
+    template <typename T>
+    class AP_R3_CORE_008_PayloadConversion : public ::testing::Test
+    {
+    };
+    using AP_R3_CORE_008_PayloadConversionTypes = ::testing::Types<int, std::string, std::unique_ptr<int>>;
+    struct AP_R3_CORE_008_PayloadConversionNames
+    {
+        template <typename>
+        static std::string GetName(int index)
+        {
+          constexpr std::array<const char*, 3> names{"Int", "String", "MoveOnly"};
+          return names.at(static_cast<std::size_t>(index));
+        }
+    };
+    TYPED_TEST_SUITE(AP_R3_CORE_008_PayloadConversion, AP_R3_CORE_008_PayloadConversionTypes,
+                     AP_R3_CORE_008_PayloadConversionNames);
+
+    /* Verify both conversion outcomes for payload types previously tested on only one path.
+     * 1. Arrange: Construct a success and an error result with the selected payload type.
+     * 2. Act: Access the successful rvalue and catch conversion of the error rvalue.
+     * 3. Expect: Successful access aliases the payload and conversion preserves the error. */
+    TYPED_TEST(AP_R3_CORE_008_PayloadConversion, ConvertsErrorAndReturnsValue)
+    {
+      /* Arrange */
+      auto success = Result<TypeParam>::FromValue();
+      const auto error = MakeErrorCode(AdaptivePiErrc::kInvalidState);
+      auto failure = Result<TypeParam>::FromError(error);
+      const auto& selected_slot = success.storage_.slots_[success.storage_.active_];
+      std::optional<ErrorCode> observed_error;
+
+      /* Act */
+      auto&& observed_value = std::move(success).ValueOrThrow();
+      try
+      {
+        (void)std::move(failure).ValueOrThrow();
+      }
+      catch (const AdaptivePiException& exception)
+      {
+        observed_error = exception.Error();
+      }
+
+      /* Expect */
+      if (!selected_slot.has_value())
+      {
+        ADD_FAILURE() << "The parent must retain its constructed payload";
+        return;
+      }
+      EXPECT_EQ(std::addressof(observed_value), std::addressof(std::get<c_resultIdx>(selected_slot.value())));
+      ASSERT_TRUE(observed_error.has_value());
+      EXPECT_EQ(*observed_error, error);
+    }
+
+#endif
+
+    /* ============================= End Test_AP_R3_CORE_008 ============================= */
+
     /* =============================== Test_AP_R3_CORE_009 =============================== */
 
     /* ----------------------------------------------------------------------------------- */
@@ -3083,6 +3661,143 @@ namespace ara::core
       ASSERT_NE(observed, nullptr);
       EXPECT_EQ(observed.get(), original);
       EXPECT_EQ(*observed, 42);
+    }
+
+    /* ----------------------------------------------------------------------------------- */
+
+    /* Each TypeParam selects an existing template instantiation. No production
+     * behavior depends on this test-only type list.
+     */
+    template <typename T>
+    class AP_R3_CORE_009_ConstPayloadErrorDeathTest : public ::testing::Test
+    {
+    };
+    using AP_R3_CORE_009_ConstPayloadErrorDeathTestTypes =
+      ::testing::Types<Result<long, int>, Result<int>, Result<int, std::unique_ptr<int>>, Result<std::string>,
+                       Result<void>, Result<void, std::unique_ptr<int>>>;
+    struct AP_R3_CORE_009_ConstPayloadErrorDeathTestNames
+    {
+        template <typename>
+        static std::string GetName(int index)
+        {
+          constexpr std::array<const char*, 6> names{"LongInt",          "IntDefaultError",
+                                                     "MoveOnlyError",    "StringDefaultError",
+                                                     "VoidDefaultError", "VoidMoveOnlyError"};
+          return names.at(static_cast<std::size_t>(index));
+        }
+    };
+    TYPED_TEST_SUITE(AP_R3_CORE_009_ConstPayloadErrorDeathTest, AP_R3_CORE_009_ConstPayloadErrorDeathTestTypes,
+                     AP_R3_CORE_009_ConstPayloadErrorDeathTestNames);
+
+    /* Verify Error() rejects success for every instantiated payload type.
+     * This is a reachable public-API misuse case, not an infeasible storage state.
+     * 1. Arrange: Construct a successful result of the selected type.
+     * 2. Act: Prepare error access through the selected reference qualifier.
+     * 3. Expect: Invalid error access terminates the child process. */
+    TYPED_TEST(AP_R3_CORE_009_ConstPayloadErrorDeathTest, SuccessRejectsErrorAccess)
+    {
+      /* Arrange */
+      auto result = TypeParam::FromValue();
+
+      /* Act */
+      const auto access = [&result]()
+      {
+        (void)std::as_const(result).Error();
+      };
+
+      /* Expect */
+      EXPECT_DEATH(access(), "");
+    }
+
+    /* ----------------------------------------------------------------------------------- */
+
+    /* Each TypeParam selects an existing template instantiation. No production
+     * behavior depends on this test-only type list.
+     */
+    template <typename T>
+    class AP_R3_CORE_009_RvaluePayloadErrorDeathTest : public ::testing::Test
+    {
+    };
+    using AP_R3_CORE_009_RvaluePayloadErrorDeathTestTypes =
+      ::testing::Types<Result<int>, Result<int, std::unique_ptr<int>>, Result<void>,
+                       Result<void, std::unique_ptr<int>>>;
+    struct AP_R3_CORE_009_RvaluePayloadErrorDeathTestNames
+    {
+        template <typename>
+        static std::string GetName(int index)
+        {
+          constexpr std::array<const char*, 4> names{"IntDefaultError", "MoveOnlyError", "VoidDefaultError",
+                                                     "VoidMoveOnlyError"};
+          return names.at(static_cast<std::size_t>(index));
+        }
+    };
+    TYPED_TEST_SUITE(AP_R3_CORE_009_RvaluePayloadErrorDeathTest, AP_R3_CORE_009_RvaluePayloadErrorDeathTestTypes,
+                     AP_R3_CORE_009_RvaluePayloadErrorDeathTestNames);
+
+    /* Verify Error() rejects success for every instantiated payload type.
+     * This is a reachable public-API misuse case, not an infeasible storage state.
+     * 1. Arrange: Construct a successful result of the selected type.
+     * 2. Act: Prepare error access through the selected reference qualifier.
+     * 3. Expect: Invalid error access terminates the child process. */
+    TYPED_TEST(AP_R3_CORE_009_RvaluePayloadErrorDeathTest, SuccessRejectsErrorAccess)
+    {
+      /* Arrange */
+      auto result = TypeParam::FromValue();
+
+      /* Act */
+      const auto access = [&result]()
+      {
+        (void)std::move(result).Error();
+      };
+
+      /* Expect */
+      EXPECT_DEATH(access(), "");
+    }
+
+    /* ----------------------------------------------------------------------------------- */
+
+    /* Verify successful rvalue Error() access preserves the exact stored ErrorCode.
+     * 1. Arrange: Construct a failure result and capture the stored object's address.
+     * 2. Act: Retrieve the error through the rvalue overload.
+     * 3. Expect: The returned reference aliases the stored error and preserves its metadata.
+     */
+    TEST(AP_R3_CORE_009_ErrorAccess, ReturnsDefaultErrorFromRvalue)
+    {
+      /* Arrange */
+      const auto error = MakeErrorCode(AdaptivePiErrc::kInvalidState);
+      auto result = Result<int>::FromError(error);
+      const auto* expected = &result.Error();
+
+      /* Act */
+      auto&& observed = std::move(result).Error();
+
+      /* Expect */
+      EXPECT_EQ(&observed, expected);
+      EXPECT_EQ(observed, error);
+      EXPECT_EQ(&observed.Domain(), &error.Domain());
+    }
+
+    /* ----------------------------------------------------------------------------------- */
+
+    /* Verify successful rvalue Error() access preserves the exact stored ErrorCode.
+     * 1. Arrange: Construct a failure result and capture the stored object's address.
+     * 2. Act: Retrieve the error through the rvalue overload.
+     * 3. Expect: The returned reference aliases the stored error and preserves its metadata.
+     */
+    TEST(AP_R3_CORE_009_ErrorAccess, VoidReturnsDefaultErrorFromRvalue)
+    {
+      /* Arrange */
+      const auto error = MakeErrorCode(AdaptivePiErrc::kInvalidState);
+      auto result = Result<void>::FromError(error);
+      const auto* expected = &result.Error();
+
+      /* Act */
+      auto&& observed = std::move(result).Error();
+
+      /* Expect */
+      EXPECT_EQ(&observed, expected);
+      EXPECT_EQ(observed, error);
+      EXPECT_EQ(&observed.Domain(), &error.Domain());
     }
 
     /* ============================= End Test_AP_R3_CORE_009 ============================= */

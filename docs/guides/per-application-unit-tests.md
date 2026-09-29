@@ -69,3 +69,9 @@ Results:
 - The `debug-app` preset configured and built without adding test directories.
 - The `debug-unit-tests` preset configured the application-owned test directory.
 - CTest discovered and passed both `BuildInfoTest` cases.
+
+## Coverage and application smoke tests
+
+See [raw source coverage and forced-state tests](coverage.md) for per-application
+entry-point checks, exception-mode commands, the coverage-only internal-state
+probes, and the remaining exception-enabled compiler branches.

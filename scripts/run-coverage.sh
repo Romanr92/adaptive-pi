@@ -3,6 +3,12 @@ set -euo pipefail
 
 project_root="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)"
 build_dir="${1:-${project_root}/build/coverage-check}"
+# Optional second argument selects the measured exception configuration.
+exception_mode="${2:-ON}"
+case "${exception_mode}" in
+    ON|OFF) ;;
+    *) echo "Usage: $0 [build-directory] [ON|OFF]" >&2; exit 2 ;;
+esac
 site_dir="${build_dir}/site"
 coverage_dir="${site_dir}/coverage"
 
@@ -12,10 +18,11 @@ if [[ -d "${project_root}/site" && "${project_root}/site" != "${site_dir}" ]]; t
     rm -rf "${project_root}/site"
 fi
 
-cmake -S "${project_root}" -B "${build_dir}" -G Ninja \
+# A compiler change in a reused cache can silently reset the coverage flags.
+cmake --fresh -S "${project_root}" -B "${build_dir}" -G Ninja \
     -DCMAKE_BUILD_TYPE=Debug \
     -DBUILD_TESTING=ON \
-    -DADAPTIVE_PI_ENABLE_EXCEPTIONS=ON \
+    -DADAPTIVE_PI_ENABLE_EXCEPTIONS="${exception_mode}" \
     -DCMAKE_C_COMPILER=clang \
     -DCMAKE_CXX_COMPILER=clang++ \
     -DCMAKE_CXX_FLAGS='--coverage -O0 -g' \
