@@ -2510,24 +2510,23 @@ namespace ara::core
 
     /* ----------------------------------------------------------------------------------- */
     /* Verify the internal storage guard terminates when no active payload exists.
-     * 1. Arrange: Construct a default ResultStorage instance with no active value.
-     * 2. Act: Query its active index and payload access in the spawned child.
+     * 1. Arrange: Construct a valid storage object containing an integer value.
+     * 2. Act: Prepare child-only probes that empty the slot before querying its index or payload.
      * 3. Expect: The child terminates instead of returning an invalid internal state.
      */
     TEST(AP_R3_CORE_008_ValueAccess, EmptyStorageGuardTerminates)
     {
       /* Arrange */
-      const auto access_index = []()
+      detail::ResultStorage<int, ErrorCode> storage{std::in_place_index<c_resultIdx>, 42};
+
+      /* Act */
+      const auto access_index = [&storage]()
       {
-        detail::ResultStorage<int, ErrorCode> storage{std::in_place_index<c_resultIdx>, 42};
-        storage.active_ = 0U;
         storage.slots_[0].reset();
         (void)storage.index();
       };
-      const auto access_payload = []()
+      const auto access_payload = [&storage]()
       {
-        detail::ResultStorage<int, ErrorCode> storage{std::in_place_index<c_resultIdx>, 42};
-        storage.active_ = 0U;
         storage.slots_[0].reset();
         (void)storage.template get<c_resultIdx>();
       };
@@ -2540,7 +2539,7 @@ namespace ara::core
     /* ----------------------------------------------------------------------------------- */
     /* Verify the storage mismatch guard terminates on the wrong alternative.
      * 1. Arrange: Prepare value and error results whose private storage is probed with the opposite type.
-     * 2. Act: Retrieve the mismatched alternative from the private storage slots.
+     * 2. Act: Prepare child-only probes that retrieve the wrong alternative through each qualifier.
      * 3. Expect: The child process terminates instead of returning an invalid active alternative.
      */
     TEST(AP_R3_CORE_008_ValueAccess, WrongAlternativeTerminates)
@@ -2548,6 +2547,7 @@ namespace ara::core
       /* Arrange */
       auto value_result = Result<int>::FromValue(42);
       auto error_result = Result<int>::FromError(MakeErrorCode(AdaptivePiErrc::kInvalidArgument));
+      /* Act */
       const auto value_access = [&value_result]()
       {
         (void)value_result.storage_.template get<c_errorIdx>();
@@ -2584,35 +2584,33 @@ namespace ara::core
 
     /* ----------------------------------------------------------------------------------- */
     /* Verify the private storage guards remain active for the const and rvalue accessors too.
-     * 1. Arrange: Build a storage object with an empty active slot and a mismatched wrong-type access.
-     * 2. Act: Probe the private const and rvalue storage accessors in child processes.
+     * 1. Arrange: Construct valid storage and a value result for the two failure scenarios.
+     * 2. Act: Prepare child-only probes for empty slots and mismatched const/rvalue access.
      * 3. Expect: The child terminates instead of returning a value for an invalid internal state.
      */
     TEST(AP_R3_CORE_008_ValueAccess, StorageGuardConstAndRvalueTerminate)
     {
       /* Arrange */
-      const auto empty_slot_const = []()
+      detail::ResultStorage<int, ErrorCode> storage{std::in_place_index<c_resultIdx>, 42};
+      auto result = Result<int>::FromValue(42);
+
+      /* Act */
+      const auto empty_slot_const = [&storage]()
       {
-        detail::ResultStorage<int, ErrorCode> storage{std::in_place_index<c_resultIdx>, 42};
-        storage.active_ = 0U;
         storage.slots_[0].reset();
         (void)std::as_const(storage).template get<c_resultIdx>();
       };
-      const auto empty_slot_rvalue = []()
+      const auto empty_slot_rvalue = [&storage]()
       {
-        detail::ResultStorage<int, ErrorCode> storage{std::in_place_index<c_resultIdx>, 42};
-        storage.active_ = 0U;
         storage.slots_[0].reset();
         (void)std::move(storage).template get<c_resultIdx>();
       };
-      const auto mismatched_const = []()
+      const auto mismatched_const = [&result]()
       {
-        auto result = Result<int>::FromValue(42);
         (void)std::as_const(result).storage_.template get<c_errorIdx>();
       };
-      const auto mismatched_rvalue = []()
+      const auto mismatched_rvalue = [&result]()
       {
-        auto result = Result<int>::FromValue(42);
         (void)std::move(result).storage_.template get<c_errorIdx>();
       };
 
@@ -3598,13 +3596,14 @@ namespace ara::core
     /* ----------------------------------------------------------------------------------- */
     /* Verify void error access terminates when the result is successful.
      * 1. Arrange: Construct a successful void result in both const and rvalue forms.
-     * 2. Act: Attempt invalid access to the error payload through each overload.
+     * 2. Act: Prepare child-only calls to the const and rvalue Error() overloads.
      * 3. Expect: Each child process terminates instead of returning an error from a value result.
      */
     TEST(AP_R3_CORE_009_ErrorOnValueTerminates, VoidResultErrorAccessTerminates)
     {
       /* Arrange */
       auto result = Result<void>::FromValue();
+      /* Act */
       const auto const_access = [&result]()
       {
         (void)std::as_const(result).Error();
