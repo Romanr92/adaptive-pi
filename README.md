@@ -199,7 +199,7 @@ Before it becomes a required check, its harnesses and bounds must be stable.
 - [Architecture Decision Records](docs/adr/)
 - [Exception build policy](docs/adr/0006-exception-build-policy.md)
 - [Per-application unit tests](docs/guides/per-application-unit-tests.md)
-- [ESBMC installation and bounded proofs](docs/guides/esbmc.md)
+- [ESBMC concepts, proof authoring, and execution](docs/guides/esbmc.md)
 - [Publishing and installing a complete Yocto platform](docs/guides/publish-platform-release.md)
 - [Publishing a versioned Yocto SDK](docs/guides/publish-yocto-sdk.md)
 
