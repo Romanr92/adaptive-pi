@@ -85,7 +85,7 @@ sudo pacman -Syu --needed \
   zstd \
   qemu-system-aarch64 \
   tmux \
-  openssh\
+  openssh \
   gcovr \
   llvm
 ```
