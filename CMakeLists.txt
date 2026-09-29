@@ -74,6 +74,7 @@ function(adaptive_pi_add_application source_directory target_compatible)
 endfunction()
 
 include(cmake/CompilerWarnings.cmake)
+include(cmake/ESBMC.cmake)
 
 if(BUILD_TESTING)
     include(cmake/Dependencies.cmake)
@@ -84,6 +85,8 @@ add_subdirectory(platform/ara-log)
 
 adaptive_pi_add_application("apps/platform-test-service" FALSE)
 adaptive_pi_add_application("apps/hello-adaptive" TRUE)
+
+adaptive_pi_run_esbmc_proofs()
 
 if(BUILD_TESTING)
     get_property(
