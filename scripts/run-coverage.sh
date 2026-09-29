@@ -57,6 +57,39 @@ gcovr -r "${project_root}" "${build_dir}" \
     --json-summary "${coverage_dir}/summary.json" \
     --print-summary
 
+# Reject empty or out-of-scope reports before advertising success.
+test -s "${coverage_dir}/index.html"
+python3 - "${coverage_dir}/summary.json" <<'PY_VALIDATE'
+import json
+import posixpath
+import re
+import sys
+from pathlib import Path
+
+
+def normalize_filename(filename: str) -> str:
+    normalized = posixpath.normpath(filename.replace("\\", "/"))
+    while normalized.startswith("./"):
+        normalized = normalized[2:]
+    return "" if normalized == "." else normalized
+
+
+summary = json.loads(Path(sys.argv[1]).read_text())
+files = summary.get("files", [])
+production = re.compile(r"^(apps|platform)/.*\.(c|cpp|cxx|h|hpp|hxx)$")
+test_dir = re.compile(r"^(apps|platform)/(.*/)?tests?/")
+test_file = re.compile(r"^(apps|platform)/(.*/)?(test_[^/]*|[^/]*_(test|tests|spec))\.(c|cpp|cxx|h|hpp|hxx)$")
+reported = []
+for entry in files:
+    filename = normalize_filename(entry.get("filename", ""))
+    if production.fullmatch(filename) and not test_dir.match(filename) and not test_file.fullmatch(filename):
+        reported.append(entry)
+lines = sum(entry.get("line_total", 0) for entry in reported)
+if len(reported) != len(files) or not reported or lines <= 0:
+    sys.exit("Coverage report has no valid production source results")
+print(f"Coverage report contains {len(reported)} production files and {lines} instrumented lines")
+PY_VALIDATE
+
 cat > "${site_dir}/index.html" <<HTML
 <!doctype html>
 <html lang="en">
