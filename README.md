@@ -110,6 +110,7 @@ git ls-files -z -- '*.c' '*.cc' '*.cpp' '*.cxx' '*.h' '*.hh' '*.hpp' '*.hxx' '*.
 |---|---|
 | `debug-app` | Native Arch/Linux application build |
 | `debug-unit-tests` | Native unit-test build and execution |
+| `debug-esbmc-proofs` | ESBMC installation and all registered platform/application proofs |
 | `debug-qemu-app` | Yocto SDK cross-build for the ARM64 QEMU guest |
 
 ## Project structure
@@ -198,6 +199,7 @@ Before it becomes a required check, its harnesses and bounds must be stable.
 - [Architecture Decision Records](docs/adr/)
 - [Exception build policy](docs/adr/0006-exception-build-policy.md)
 - [Per-application unit tests](docs/guides/per-application-unit-tests.md)
+- [ESBMC concepts, proof authoring, and execution](docs/guides/esbmc.md)
 - [Publishing and installing a complete Yocto platform](docs/guides/publish-platform-release.md)
 - [Publishing a versioned Yocto SDK](docs/guides/publish-yocto-sdk.md)
 

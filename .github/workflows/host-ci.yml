@@ -86,6 +86,26 @@ jobs:
       - name: Run exception-enabled unit tests
         run: ctest --test-dir build/ci-unit-tests-exceptions --output-on-failure
 
+  esbmc-proofs:
+    if: github.event_name == 'pull_request'
+    name: ESBMC proofs
+    runs-on: ubuntu-24.04
+
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+
+      - name: Install build tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes clang ninja-build
+
+      - name: Configure and verify ESBMC proofs
+        run: cmake --preset debug-esbmc-proofs
+
+      - name: Re-run ESBMC proofs
+        run: cmake --build --preset debug-esbmc-proofs
+
   cross-build-qemu-target:
     name: Cross-build QEMU target
     runs-on: ubuntu-24.04
