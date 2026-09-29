@@ -1,3 +1,4 @@
+#include "ara/core/adaptive_pi_error_domain.h"
 #include "ara/core/error_code.h"
 #include "ara/core/error_domain.h"
 
@@ -658,7 +659,84 @@ namespace ara::core
           "Execution domain has a stable high unsigned identity and non-empty name"}),
       ErrorDomainIdentityCaseName_EmptyNameTerminates);
 
+    /* ----------------------------------------------------------------------------------- */
+
+    /* Verify the published AdaptivePi domain identity remains stable and self-equal.
+     * 1. Arrange: Capture the singleton domain and expected metadata.
+     * 2. Act: Read its identifier and name and compare it to itself.
+     * 3. Expect: The project-owned identity matches the published contract and is self-equal.
+     */
+    TEST(AP_R3_CORE_002_ErrorDomainHasStableIdentityAndName, AdaptivePiDomainIdentityIsStable)
+    {
+      /* Arrange */
+      const auto& domain = GetAdaptivePiErrorDomain();
+
+      /* Act */
+      const auto actual_id = domain.Id();
+      const auto actual_name = domain.Name();
+      const auto equal = domain == GetAdaptivePiErrorDomain();
+      const auto unequal = domain != GetAdaptivePiErrorDomain();
+
+      /* Expect */
+      EXPECT_EQ(actual_id, 0x4150490000000001ULL);
+      EXPECT_EQ(actual_name, "AdaptivePi");
+      EXPECT_TRUE(equal);
+      EXPECT_FALSE(unequal);
+    }
+
     /* ======================== End Test_AP_R3_CORE_002 ================================== */
+
+    /* ========================== Test_AP_R3_CORE_008 ==================================== */
+
+#if ADAPTIVE_PI_EXCEPTIONS_ENABLED
+    /* ----------------------------------------------------------------------------------- */
+
+    /* Verify the published AdaptivePi exception preserves both its original error and message.
+     * 1. Arrange: Construct the error and wrap it in the project-owned exception type.
+     * 2. Act: Retrieve the stored error and textual message from the exception.
+     * 3. Expect: The payload and message match the project contract exactly.
+     */
+    TEST(AP_R3_CORE_008_AdaptivePiException, AdaptivePiExceptionPreservesMetadata)
+    {
+      /* Arrange */
+      const auto error = MakeErrorCode(AdaptivePiErrc::kOperationFailed);
+      const AdaptivePiException exception{error};
+
+      /* Act */
+      const auto& observed_error = exception.Error();
+      const auto* observed_message = exception.what();
+
+      /* Expect */
+      EXPECT_EQ(observed_error, error);
+      EXPECT_EQ(observed_error.Domain(), GetAdaptivePiErrorDomain());
+      EXPECT_STREQ(observed_message, "AdaptivePi operation failed");
+    }
+
+    /* ----------------------------------------------------------------------------------- */
+
+    /* Verify the published exception text is returned exactly as the public contract defines.
+     * 1. Arrange: Construct the project-owned exception with the selected error payload.
+     * 2. Act: Query the message string from the exception object.
+     * 3. Expect: The returned message is the exact published AdaptivePi failure text.
+     */
+    TEST(AP_R3_CORE_008_AdaptivePiException, AdaptivePiExceptionMessageMatchesContract)
+    {
+      /* Arrange */
+      const auto error = MakeErrorCode(AdaptivePiErrc::kInvalidState);
+      const AdaptivePiException exception{error};
+
+      /* Act */
+      const auto* observed_message = exception.what();
+
+      /* Expect */
+      EXPECT_STREQ(observed_message, "AdaptivePi operation failed");
+      EXPECT_EQ(exception.Error(), error);
+    }
+
+    /* ----------------------------------------------------------------------------------- */
+#endif // ADAPTIVE_PI_EXCEPTIONS_ENABLED
+
+    /* ======================== End Test_AP_R3_CORE_008 ================================== */
 
   } /* namespace */
 

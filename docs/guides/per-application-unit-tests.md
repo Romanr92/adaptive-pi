@@ -43,6 +43,10 @@ if(BUILD_TESTING)
 endif()
 ```
 
+Tests execute on the native host. Configurations with `ADAPTIVE_PI_TARGET_BUILD=ON`
+or `CMAKE_CROSSCOMPILING` must set `BUILD_TESTING=OFF`; CMake rejects testing in
+these configurations before adding test dependencies or executable discovery.
+
 The repository root owns the common test runner because it must run all discovered application tests through CTest.
 
 ## Why this structure
@@ -69,3 +73,9 @@ Results:
 - The `debug-app` preset configured and built without adding test directories.
 - The `debug-unit-tests` preset configured the application-owned test directory.
 - CTest discovered and passed both `BuildInfoTest` cases.
+
+## Coverage and application smoke tests
+
+See [raw source coverage and forced-state tests](coverage.md) for per-application
+entry-point checks, exception-mode commands, the coverage-only internal-state
+probes, and the remaining exception-enabled compiler branches.

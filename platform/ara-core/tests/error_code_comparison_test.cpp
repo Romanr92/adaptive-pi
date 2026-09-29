@@ -450,6 +450,67 @@ namespace ara::core
           "OperationFailedComparisons", "Operation failed error conversion and comparison behavior"}),
       ErrorCodeComparisonCaseName_DifferentEnumComparesUnequalInBothDirections);
 
+    /* ----------------------------------------------------------------------------------- */
+
+    struct ForeignDomainEnumCase
+    {
+        AdaptivePiErrc error;
+        const char* name;
+    };
+
+    std::ostream& operator<<(std::ostream& output, const ForeignDomainEnumCase& parameter)
+    {
+      return output << parameter.name;
+    }
+
+    /* GetParam() supplies each published error number to verify that an equal
+     * numeric value in another domain never compares equal to AdaptivePi's enum.
+     */
+    class AP_R3_CORE_004_ForeignDomainEnumComparison : public ::testing::TestWithParam<ForeignDomainEnumCase>
+    {
+    };
+
+    /* Verify enum comparisons retain domain identity in both operand orders.
+     * 1. Arrange: Store the enum's numeric value in a distinct error domain.
+     * 2. Act: Compare that error with the AdaptivePi enum using both operators.
+     * 3. Expect: Equality is false and inequality is true in both operand orders.
+     */
+    TEST_P(AP_R3_CORE_004_ForeignDomainEnumComparison, RejectsMatchingValueFromAnotherDomain)
+    {
+      /* Arrange */
+      const auto& parameter = GetParam();
+#if ADAPTIVE_PI_EXCEPTIONS_ENABLED
+      const ErrorDomain other_domain{0x4150490000000002ULL, "OtherDomain", &detail::ThrowAdaptivePiException};
+#else
+      const ErrorDomain other_domain{0x4150490000000002ULL, "OtherDomain"};
+#endif
+      const ErrorCode code{static_cast<ErrorCode::ValueType>(parameter.error), other_domain};
+
+      /* Act */
+      const bool code_equals_enum = code == parameter.error;
+      const bool enum_equals_code = parameter.error == code;
+      const bool code_differs_from_enum = code != parameter.error;
+      const bool enum_differs_from_code = parameter.error != code;
+
+      /* Expect */
+      EXPECT_FALSE(code_equals_enum);
+      EXPECT_FALSE(enum_equals_code);
+      EXPECT_TRUE(code_differs_from_enum);
+      EXPECT_TRUE(enum_differs_from_code);
+    }
+
+    std::string ForeignDomainEnumCaseName(const ::testing::TestParamInfo<ForeignDomainEnumCase>& information)
+    {
+      return information.param.name;
+    }
+
+    INSTANTIATE_TEST_SUITE_P(
+      PublishedErrors, AP_R3_CORE_004_ForeignDomainEnumComparison,
+      ::testing::Values(ForeignDomainEnumCase{AdaptivePiErrc::kInvalidArgument, "InvalidArgument"},
+                        ForeignDomainEnumCase{AdaptivePiErrc::kInvalidState, "InvalidState"},
+                        ForeignDomainEnumCase{AdaptivePiErrc::kOperationFailed, "OperationFailed"}),
+      ForeignDomainEnumCaseName);
+
     /* ======================== End Test_AP_R3_CORE_004 ================================== */
   } /* namespace */
 } /* namespace ara::core */

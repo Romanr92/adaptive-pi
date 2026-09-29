@@ -85,7 +85,9 @@ sudo pacman -Syu --needed \
   zstd \
   qemu-system-aarch64 \
   tmux \
-  openssh
+  openssh \
+  gcovr \
+  llvm
 ```
 
 Other recommended packages but not necessary:
@@ -94,7 +96,7 @@ sudo pacman -S --needed --noconfirm\
   less \
   bash-completion \
   fzf \
-  bat
+  bat 
 ```
  - less -> needed for `git` branch paging 
  - bash-completion -> autocomplete `git` commands with Tab

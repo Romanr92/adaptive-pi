@@ -5,13 +5,14 @@ add_executable(
     error_domain_extensibility_test.cpp
     error_domain_test.cpp
     result_test.cpp
+    coverage_test_main.cpp
 )
 
 target_link_libraries(
     ara_core_test
     PRIVATE
         adaptive_pi_ara_core
-        GTest::gtest_main
+        GTest::gtest
 )
 
 adaptive_pi_configure_target(ara_core_test)
