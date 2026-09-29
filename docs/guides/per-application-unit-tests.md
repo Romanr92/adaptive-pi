@@ -43,6 +43,10 @@ if(BUILD_TESTING)
 endif()
 ```
 
+Tests execute on the native host. Configurations with `ADAPTIVE_PI_TARGET_BUILD=ON`
+or `CMAKE_CROSSCOMPILING` must set `BUILD_TESTING=OFF`; CMake rejects testing in
+these configurations before adding test dependencies or executable discovery.
+
 The repository root owns the common test runner because it must run all discovered application tests through CTest.
 
 ## Why this structure

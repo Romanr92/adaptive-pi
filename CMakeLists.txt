@@ -23,6 +23,14 @@ option(
     OFF
 )
 
+# Test discovery and the default test runner execute binaries on the host.
+if(BUILD_TESTING AND (ADAPTIVE_PI_TARGET_BUILD OR CMAKE_CROSSCOMPILING))
+    message(FATAL_ERROR
+        "Tests require a native host build. Configure target or cross builds "
+        "with -DBUILD_TESTING=OFF."
+    )
+endif()
+
 option(
     ADAPTIVE_PI_ENABLE_EXCEPTIONS
     "Enable C++ exceptions and exception-conversion APIs"

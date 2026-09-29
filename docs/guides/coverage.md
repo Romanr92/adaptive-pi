@@ -3,9 +3,10 @@
 Coverage is measured only for the production paths selected by
 [`scripts/run-coverage.sh`](../../scripts/run-coverage.sh): C/C++ sources and headers
 under `apps/` and `platform/`, excluding their test directories and test filenames.
-No branch exclusions, fabricated counters, or source filters were added to obtain
-the results below. Both applications have their own `tests/main_test.cmake` smoke
-test, checking exit status, stdout and stderr.
+The script intentionally uses source filters and exclusions to limit the report
+to those production paths. Within that scope, no branch exclusions or fabricated
+counters were used to obtain the results below. Both applications have their own
+`tests/main_test.cmake` smoke test, checking exit status, stdout and stderr.
 
 ## Reproduce both configurations
 
