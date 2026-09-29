@@ -1,18 +1,6 @@
-#if defined(__clang__)
-  #pragma clang diagnostic push
-  #pragma clang diagnostic ignored "-Wkeyword-macro"
-#endif
-#define private public
-#define protected public
+#include "ara/core/adaptive_pi_error_domain.h"
 #include "ara/core/error_domain.h"
 #include "ara/core/result.h"
-#undef private
-#undef protected
-#if defined(__clang__)
-  #pragma clang diagnostic pop
-#endif
-
-#include "ara/core/adaptive_pi_error_domain.h"
 
 #include <array>
 #include <gtest/gtest.h>
@@ -29,6 +17,90 @@ namespace ara::core
 {
   namespace
   {
+    /* Narrow test-only access to the members used by the fault-injection probes.
+     * Explicit instantiation permits naming a private member as a template
+     * argument ([temp.explicit] in C++17). The injected friend belongs to this
+     * test-only tag, not to a production class. All production headers are parsed
+     * unchanged, so their definitions remain identical across translation units.
+     * The concrete member allowlist is at the end of this translation unit.
+     */
+#if defined(__GNUC__) && !defined(__clang__)
+  #pragma GCC diagnostic push
+  /* Intentionally declare one non-template friend overload per concrete tag. */
+  #pragma GCC diagnostic ignored "-Wnon-template-friend"
+#endif
+    template <typename Owner, typename Member>
+    struct PrivateMemberTag
+    {
+        using Pointer = Member Owner::*;
+        friend Pointer TestMemberPointer(PrivateMemberTag) noexcept;
+    };
+#if defined(__GNUC__) && !defined(__clang__)
+  #pragma GCC diagnostic pop
+#endif
+
+    template <typename Tag, typename Tag::Pointer Member>
+    struct ExposeTestMember
+    {
+        friend typename Tag::Pointer TestMemberPointer(Tag) noexcept
+        {
+          return Member;
+        }
+    };
+
+    template <typename T, typename E>
+    using TestStorage = detail::ResultStorage<std::conditional_t<std::is_void_v<T>, std::monostate, T>, E>;
+
+    template <typename T, typename E>
+    using TestSlots =
+      std::array<std::optional<std::variant<std::conditional_t<std::is_void_v<T>, std::monostate, T>, E>>, 2>;
+
+    /* Register the three storage members together, only for the explicitly
+     * listed Result specializations at the end of this test translation unit.
+     */
+    template <typename T, typename E, TestStorage<T, E> Result<T, E>::* StorageMember,
+              TestSlots<T, E> TestStorage<T, E>::* SlotsMember, std::size_t TestStorage<T, E>::* ActiveMember>
+    struct ExposeResultProbe : ExposeTestMember<PrivateMemberTag<Result<T, E>, TestStorage<T, E>>, StorageMember>,
+                               ExposeTestMember<PrivateMemberTag<TestStorage<T, E>, TestSlots<T, E>>, SlotsMember>,
+                               ExposeTestMember<PrivateMemberTag<TestStorage<T, E>, std::size_t>, ActiveMember>
+    {
+    };
+
+    template <typename T, typename E>
+    decltype(auto) StorageOf(Result<T, E>& result) noexcept
+    {
+      return (result.*TestMemberPointer(PrivateMemberTag<Result<T, E>, TestStorage<T, E>>{}));
+    }
+
+    template <typename T, typename E>
+    decltype(auto) StorageOf(const Result<T, E>& result) noexcept
+    {
+      return (result.*TestMemberPointer(PrivateMemberTag<Result<T, E>, TestStorage<T, E>>{}));
+    }
+
+    template <typename T, typename E>
+    decltype(auto) SlotsOf(detail::ResultStorage<T, E>& storage) noexcept
+    {
+      using Slots = std::array<std::optional<std::variant<T, E>>, 2>;
+      return (storage.*TestMemberPointer(PrivateMemberTag<detail::ResultStorage<T, E>, Slots>{}));
+    }
+
+    template <typename T, typename E>
+    std::size_t& ActiveIndexOf(detail::ResultStorage<T, E>& storage) noexcept
+    {
+      return storage.*TestMemberPointer(PrivateMemberTag<detail::ResultStorage<T, E>, std::size_t>{});
+    }
+
+#if ADAPTIVE_PI_EXCEPTIONS_ENABLED
+    template struct ExposeTestMember<PrivateMemberTag<ErrorDomain, ErrorDomain::ExceptionConverter>,
+                                     &ErrorDomain::converter_>;
+
+    ErrorDomain::ExceptionConverter& ExceptionConverterOf(ErrorDomain& domain) noexcept
+    {
+      return domain.*TestMemberPointer(PrivateMemberTag<ErrorDomain, ErrorDomain::ExceptionConverter>{});
+    }
+#endif
+
     /* ========================== Test_AP_R3_CORE_005 ==================================== */
 
     /* ----------------------------------------------------------------------------------- */
@@ -378,7 +450,7 @@ namespace ara::core
        */
       const auto query_empty_slot = [&guard_probe]()
       {
-        guard_probe.storage_.slots_[guard_probe.storage_.active_].reset();
+        SlotsOf(StorageOf(guard_probe))[ActiveIndexOf(StorageOf(guard_probe))].reset();
         (void)guard_probe.HasValue();
       };
       {
@@ -687,7 +759,7 @@ namespace ara::core
        */
       const auto query_empty_slot = [&guard_probe]()
       {
-        guard_probe.storage_.slots_[guard_probe.storage_.active_].reset();
+        SlotsOf(StorageOf(guard_probe))[ActiveIndexOf(StorageOf(guard_probe))].reset();
         (void)guard_probe.HasValue();
       };
       {
@@ -881,7 +953,7 @@ namespace ara::core
        */
       const auto query_empty_slot = [&guard_probe]()
       {
-        guard_probe.storage_.slots_[guard_probe.storage_.active_].reset();
+        SlotsOf(StorageOf(guard_probe))[ActiveIndexOf(StorageOf(guard_probe))].reset();
         (void)guard_probe.HasValue();
       };
       {
@@ -1011,7 +1083,7 @@ namespace ara::core
        */
       const auto query_empty_slot = [&guard_probe]()
       {
-        guard_probe.storage_.slots_[guard_probe.storage_.active_].reset();
+        SlotsOf(StorageOf(guard_probe))[ActiveIndexOf(StorageOf(guard_probe))].reset();
         (void)guard_probe.HasValue();
       };
       Result<ResultConstructionValueCase_FactoryFunctionsSupportInPlaceConstruction, AdaptivePiErrc> value_result =
@@ -1120,7 +1192,7 @@ namespace ara::core
        */
       const auto query_empty_slot = [&guard_probe]()
       {
-        guard_probe.storage_.slots_[guard_probe.storage_.active_].reset();
+        SlotsOf(StorageOf(guard_probe))[ActiveIndexOf(StorageOf(guard_probe))].reset();
         (void)guard_probe.HasValue();
       };
       const bool initially_has_value = result.HasValue();
@@ -1323,7 +1395,7 @@ namespace ara::core
        */
       const auto query_empty_slot = [&guard_probe]()
       {
-        guard_probe.storage_.slots_[guard_probe.storage_.active_].reset();
+        SlotsOf(StorageOf(guard_probe))[ActiveIndexOf(StorageOf(guard_probe))].reset();
         (void)guard_probe.HasValue();
       };
       {
@@ -1610,7 +1682,7 @@ namespace ara::core
        */
       const auto query_empty_slot = [&guard_probe]()
       {
-        guard_probe.storage_.slots_[guard_probe.storage_.active_].reset();
+        SlotsOf(StorageOf(guard_probe))[ActiveIndexOf(StorageOf(guard_probe))].reset();
         (void)guard_probe.HasValue();
       };
       {
@@ -2398,7 +2470,7 @@ namespace ara::core
       /* Act */
       const auto query = [&result]()
       {
-        result.storage_.slots_[result.storage_.active_].reset();
+        SlotsOf(StorageOf(result))[ActiveIndexOf(StorageOf(result))].reset();
         (void)result.HasValue();
       };
 
@@ -2522,12 +2594,12 @@ namespace ara::core
       /* Act */
       const auto access_index = [&storage]()
       {
-        storage.slots_[0].reset();
+        SlotsOf(storage)[0].reset();
         (void)storage.index();
       };
       const auto access_payload = [&storage]()
       {
-        storage.slots_[0].reset();
+        SlotsOf(storage)[0].reset();
         (void)storage.template get<c_resultIdx>();
       };
 
@@ -2550,27 +2622,27 @@ namespace ara::core
       /* Act */
       const auto value_access = [&value_result]()
       {
-        (void)value_result.storage_.template get<c_errorIdx>();
+        (void)StorageOf(value_result).template get<c_errorIdx>();
       };
       const auto value_const_access = [&value_result]()
       {
-        (void)std::as_const(value_result).storage_.template get<c_errorIdx>();
+        (void)StorageOf(std::as_const(value_result)).template get<c_errorIdx>();
       };
       const auto value_rvalue_access = [&value_result]()
       {
-        (void)std::move(value_result).storage_.template get<c_errorIdx>();
+        (void)std::move(StorageOf(value_result)).template get<c_errorIdx>();
       };
       const auto error_access = [&error_result]()
       {
-        (void)error_result.storage_.template get<c_resultIdx>();
+        (void)StorageOf(error_result).template get<c_resultIdx>();
       };
       const auto error_const_access = [&error_result]()
       {
-        (void)std::as_const(error_result).storage_.template get<c_resultIdx>();
+        (void)StorageOf(std::as_const(error_result)).template get<c_resultIdx>();
       };
       const auto error_rvalue_access = [&error_result]()
       {
-        (void)std::move(error_result).storage_.template get<c_resultIdx>();
+        (void)std::move(StorageOf(error_result)).template get<c_resultIdx>();
       };
 
       /* Expect */
@@ -2597,21 +2669,21 @@ namespace ara::core
       /* Act */
       const auto empty_slot_const = [&storage]()
       {
-        storage.slots_[0].reset();
+        SlotsOf(storage)[0].reset();
         (void)std::as_const(storage).template get<c_resultIdx>();
       };
       const auto empty_slot_rvalue = [&storage]()
       {
-        storage.slots_[0].reset();
+        SlotsOf(storage)[0].reset();
         (void)std::move(storage).template get<c_resultIdx>();
       };
       const auto mismatched_const = [&result]()
       {
-        (void)std::as_const(result).storage_.template get<c_errorIdx>();
+        (void)StorageOf(std::as_const(result)).template get<c_errorIdx>();
       };
       const auto mismatched_rvalue = [&result]()
       {
-        (void)std::move(result).storage_.template get<c_errorIdx>();
+        (void)std::move(StorageOf(result)).template get<c_errorIdx>();
       };
 
       /* Expect */
@@ -3169,7 +3241,7 @@ namespace ara::core
       /* Arrange */
       ErrorDomain domain{0x54455354000BULL, "NullThrower", [](const ErrorCode&) {}};
       const ErrorCode error{42, domain};
-      domain.converter_ = nullptr;
+      ExceptionConverterOf(domain) = nullptr;
 
       /* Act */
       const auto convert = [&domain, &error]()
@@ -3225,24 +3297,24 @@ namespace ara::core
        */
       if constexpr (std::is_same_v<Error, ErrorCode>)
       {
-        storage.slots_[1].emplace(std::in_place_index<c_errorIdx>, MakeErrorCode(AdaptivePiErrc::kInvalidState));
+        SlotsOf(storage)[1].emplace(std::in_place_index<c_errorIdx>, MakeErrorCode(AdaptivePiErrc::kInvalidState));
       }
       else
       {
-        storage.slots_[1].emplace(std::in_place_index<c_errorIdx>);
+        SlotsOf(storage)[1].emplace(std::in_place_index<c_errorIdx>);
       }
-      storage.active_ = index;
-      const auto& selected_slot = storage.slots_[index];
+      ActiveIndexOf(storage) = index;
+      const auto& selected_slot = SlotsOf(storage)[index];
 
       /* Act */
       const auto empty = [&storage]()
       {
-        storage.slots_[storage.active_].reset();
+        SlotsOf(storage)[ActiveIndexOf(storage)].reset();
         (void)storage.template get<index>();
       };
       const auto mismatched = [&storage]()
       {
-        storage.active_ = 1U - storage.active_;
+        ActiveIndexOf(storage) = 1U - ActiveIndexOf(storage);
         (void)storage.template get<index>();
       };
       /* Binding this reference does not move the stored payload. */
@@ -3310,24 +3382,24 @@ namespace ara::core
        */
       if constexpr (std::is_same_v<Error, ErrorCode>)
       {
-        storage.slots_[1].emplace(std::in_place_index<c_errorIdx>, MakeErrorCode(AdaptivePiErrc::kInvalidState));
+        SlotsOf(storage)[1].emplace(std::in_place_index<c_errorIdx>, MakeErrorCode(AdaptivePiErrc::kInvalidState));
       }
       else
       {
-        storage.slots_[1].emplace(std::in_place_index<c_errorIdx>);
+        SlotsOf(storage)[1].emplace(std::in_place_index<c_errorIdx>);
       }
-      storage.active_ = index;
-      const auto& selected_slot = storage.slots_[index];
+      ActiveIndexOf(storage) = index;
+      const auto& selected_slot = SlotsOf(storage)[index];
 
       /* Act */
       const auto empty = [&storage]()
       {
-        storage.slots_[storage.active_].reset();
+        SlotsOf(storage)[ActiveIndexOf(storage)].reset();
         (void)std::as_const(storage).template get<index>();
       };
       const auto mismatched = [&storage]()
       {
-        storage.active_ = 1U - storage.active_;
+        ActiveIndexOf(storage) = 1U - ActiveIndexOf(storage);
         (void)std::as_const(storage).template get<index>();
       };
       /* Binding this reference does not move the stored payload. */
@@ -3392,24 +3464,24 @@ namespace ara::core
        */
       if constexpr (std::is_same_v<Error, ErrorCode>)
       {
-        storage.slots_[1].emplace(std::in_place_index<c_errorIdx>, MakeErrorCode(AdaptivePiErrc::kInvalidState));
+        SlotsOf(storage)[1].emplace(std::in_place_index<c_errorIdx>, MakeErrorCode(AdaptivePiErrc::kInvalidState));
       }
       else
       {
-        storage.slots_[1].emplace(std::in_place_index<c_errorIdx>);
+        SlotsOf(storage)[1].emplace(std::in_place_index<c_errorIdx>);
       }
-      storage.active_ = index;
-      const auto& selected_slot = storage.slots_[index];
+      ActiveIndexOf(storage) = index;
+      const auto& selected_slot = SlotsOf(storage)[index];
 
       /* Act */
       const auto empty = [&storage]()
       {
-        storage.slots_[storage.active_].reset();
+        SlotsOf(storage)[ActiveIndexOf(storage)].reset();
         (void)std::move(storage).template get<index>();
       };
       const auto mismatched = [&storage]()
       {
-        storage.active_ = 1U - storage.active_;
+        ActiveIndexOf(storage) = 1U - ActiveIndexOf(storage);
         (void)std::move(storage).template get<index>();
       };
       /* Binding this reference does not move the stored payload. */
@@ -3459,7 +3531,7 @@ namespace ara::core
       auto success = Result<TypeParam>::FromValue();
       const auto error = MakeErrorCode(AdaptivePiErrc::kInvalidState);
       auto failure = Result<TypeParam>::FromError(error);
-      const auto& selected_slot = success.storage_.slots_[success.storage_.active_];
+      const auto& selected_slot = SlotsOf(StorageOf(success))[ActiveIndexOf(StorageOf(success))];
       std::optional<ErrorCode> observed_error;
 
       /* Act */
@@ -3938,5 +4010,110 @@ namespace ara::core
     }
 
     /* ============================= End Test_AP_R3_CORE_011 ============================= */
+
+    /* Concrete member allowlist for the existing coverage probes. These explicit
+     * instantiations expose only the named members, without changing production
+     * declarations or access specifiers.
+     */
+    template struct ExposeResultProbe<int, ErrorCode, &Result<int, ErrorCode>::storage_,
+                                      &TestStorage<int, ErrorCode>::slots_, &TestStorage<int, ErrorCode>::active_>;
+
+    template struct ExposeResultProbe<int, int, &Result<int, int>::storage_, &TestStorage<int, int>::slots_,
+                                      &TestStorage<int, int>::active_>;
+
+    template struct ExposeResultProbe<void, ErrorCode, &Result<void, ErrorCode>::storage_,
+                                      &TestStorage<void, ErrorCode>::slots_, &TestStorage<void, ErrorCode>::active_>;
+
+    template struct ExposeResultProbe<long, int, &Result<long, int>::storage_, &TestStorage<long, int>::slots_,
+                                      &TestStorage<long, int>::active_>;
+
+    template struct ExposeResultProbe<int, AdaptivePiErrc, &Result<int, AdaptivePiErrc>::storage_,
+                                      &TestStorage<int, AdaptivePiErrc>::slots_,
+                                      &TestStorage<int, AdaptivePiErrc>::active_>;
+
+    template struct ExposeResultProbe<void, AdaptivePiErrc, &Result<void, AdaptivePiErrc>::storage_,
+                                      &TestStorage<void, AdaptivePiErrc>::slots_,
+                                      &TestStorage<void, AdaptivePiErrc>::active_>;
+
+    template struct ExposeResultProbe<bool, ErrorCode, &Result<bool, ErrorCode>::storage_,
+                                      &TestStorage<bool, ErrorCode>::slots_, &TestStorage<bool, ErrorCode>::active_>;
+
+    template struct ExposeResultProbe<void, int, &Result<void, int>::storage_, &TestStorage<void, int>::slots_,
+                                      &TestStorage<void, int>::active_>;
+
+    template struct ExposeResultProbe<std::string, ErrorCode, &Result<std::string, ErrorCode>::storage_,
+                                      &TestStorage<std::string, ErrorCode>::slots_,
+                                      &TestStorage<std::string, ErrorCode>::active_>;
+
+    template struct ExposeResultProbe<
+      std::unique_ptr<int>, ErrorCode, &Result<std::unique_ptr<int>, ErrorCode>::storage_,
+      &TestStorage<std::unique_ptr<int>, ErrorCode>::slots_, &TestStorage<std::unique_ptr<int>, ErrorCode>::active_>;
+
+    template struct ExposeResultProbe<int, std::unique_ptr<int>, &Result<int, std::unique_ptr<int>>::storage_,
+                                      &TestStorage<int, std::unique_ptr<int>>::slots_,
+                                      &TestStorage<int, std::unique_ptr<int>>::active_>;
+
+    template struct ExposeResultProbe<void, std::unique_ptr<int>, &Result<void, std::unique_ptr<int>>::storage_,
+                                      &TestStorage<void, std::unique_ptr<int>>::slots_,
+                                      &TestStorage<void, std::unique_ptr<int>>::active_>;
+
+    template struct ExposeResultProbe<
+      TrackedObject_ConstructsAndDestroysOnlySelectedAlternative,
+      TrackedObject_ConstructsAndDestroysOnlySelectedAlternative,
+      &Result<TrackedObject_ConstructsAndDestroysOnlySelectedAlternative,
+              TrackedObject_ConstructsAndDestroysOnlySelectedAlternative>::storage_,
+      &TestStorage<TrackedObject_ConstructsAndDestroysOnlySelectedAlternative,
+                   TrackedObject_ConstructsAndDestroysOnlySelectedAlternative>::slots_,
+      &TestStorage<TrackedObject_ConstructsAndDestroysOnlySelectedAlternative,
+                   TrackedObject_ConstructsAndDestroysOnlySelectedAlternative>::active_>;
+
+    template struct ExposeResultProbe<
+      void, VoidStateTrackedObject_ConstructsAnErrorOnlyOnFailure,
+      &Result<void, VoidStateTrackedObject_ConstructsAnErrorOnlyOnFailure>::storage_,
+      &TestStorage<void, VoidStateTrackedObject_ConstructsAnErrorOnlyOnFailure>::slots_,
+      &TestStorage<void, VoidStateTrackedObject_ConstructsAnErrorOnlyOnFailure>::active_>;
+
+    template struct ExposeResultProbe<
+      ConstructionTrackedObject_DirectConstructionSupportsMoveOnlyAlternatives,
+      TrackedError_DirectConstructionSupportsMoveOnlyAlternatives,
+      &Result<ConstructionTrackedObject_DirectConstructionSupportsMoveOnlyAlternatives,
+              TrackedError_DirectConstructionSupportsMoveOnlyAlternatives>::storage_,
+      &TestStorage<ConstructionTrackedObject_DirectConstructionSupportsMoveOnlyAlternatives,
+                   TrackedError_DirectConstructionSupportsMoveOnlyAlternatives>::slots_,
+      &TestStorage<ConstructionTrackedObject_DirectConstructionSupportsMoveOnlyAlternatives,
+                   TrackedError_DirectConstructionSupportsMoveOnlyAlternatives>::active_>;
+
+    template struct ExposeResultProbe<
+      ResultConstructionValueCase_FactoryFunctionsSupportInPlaceConstruction, AdaptivePiErrc,
+      &Result<ResultConstructionValueCase_FactoryFunctionsSupportInPlaceConstruction, AdaptivePiErrc>::storage_,
+      &TestStorage<ResultConstructionValueCase_FactoryFunctionsSupportInPlaceConstruction, AdaptivePiErrc>::slots_,
+      &TestStorage<ResultConstructionValueCase_FactoryFunctionsSupportInPlaceConstruction, AdaptivePiErrc>::active_>;
+
+    template struct ExposeResultProbe<
+      ConstructionTrackedObject_EmplaceValueAndErrorReplaceActiveAlternative,
+      TrackedError_EmplaceValueAndErrorReplaceActiveAlternative,
+      &Result<ConstructionTrackedObject_EmplaceValueAndErrorReplaceActiveAlternative,
+              TrackedError_EmplaceValueAndErrorReplaceActiveAlternative>::storage_,
+      &TestStorage<ConstructionTrackedObject_EmplaceValueAndErrorReplaceActiveAlternative,
+                   TrackedError_EmplaceValueAndErrorReplaceActiveAlternative>::slots_,
+      &TestStorage<ConstructionTrackedObject_EmplaceValueAndErrorReplaceActiveAlternative,
+                   TrackedError_EmplaceValueAndErrorReplaceActiveAlternative>::active_>;
+
+    template struct ExposeResultProbe<
+      ObservedPayload_PreservesPayloadOnFailureAndReplacesOnSuccess,
+      ObservedPayload_PreservesPayloadOnFailureAndReplacesOnSuccess,
+      &Result<ObservedPayload_PreservesPayloadOnFailureAndReplacesOnSuccess,
+              ObservedPayload_PreservesPayloadOnFailureAndReplacesOnSuccess>::storage_,
+      &TestStorage<ObservedPayload_PreservesPayloadOnFailureAndReplacesOnSuccess,
+                   ObservedPayload_PreservesPayloadOnFailureAndReplacesOnSuccess>::slots_,
+      &TestStorage<ObservedPayload_PreservesPayloadOnFailureAndReplacesOnSuccess,
+                   ObservedPayload_PreservesPayloadOnFailureAndReplacesOnSuccess>::active_>;
+
+    template struct ExposeResultProbe<
+      void, VoidObservedPayload_PreservesStateOnFailureAndReplacesOnSuccess,
+      &Result<void, VoidObservedPayload_PreservesStateOnFailureAndReplacesOnSuccess>::storage_,
+      &TestStorage<void, VoidObservedPayload_PreservesStateOnFailureAndReplacesOnSuccess>::slots_,
+      &TestStorage<void, VoidObservedPayload_PreservesStateOnFailureAndReplacesOnSuccess>::active_>;
+
   } /* namespace */
 } /* namespace ara::core */

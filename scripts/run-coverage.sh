@@ -14,10 +14,6 @@ coverage_dir="${site_dir}/coverage"
 
 mkdir -p "${build_dir}"
 
-if [[ -d "${project_root}/site" && "${project_root}/site" != "${site_dir}" ]]; then
-    rm -rf "${project_root}/site"
-fi
-
 # A compiler change in a reused cache can silently reset the coverage flags.
 cmake --fresh -S "${project_root}" -B "${build_dir}" -G Ninja \
     -DCMAKE_BUILD_TYPE=Debug \
@@ -35,8 +31,8 @@ cmake --fresh -S "${project_root}" -B "${build_dir}" -G Ninja \
 # Discard counters from earlier runs before rebuilding and executing the tests.
 find "${build_dir}" -type f -name '*.gcda' -delete
 
+# The default build includes run-unit-tests, which invokes CTest once.
 cmake --build "${build_dir}" --parallel
-ctest --test-dir "${build_dir}" --output-on-failure
 
 LLVM_COV_BIN="$(command -v llvm-cov || command -v llvm-cov-18 || command -v llvm-cov-17 || true)"
 if [[ -z "${LLVM_COV_BIN}" ]]; then

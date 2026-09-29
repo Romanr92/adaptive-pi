@@ -19,8 +19,10 @@ scripts/run-coverage.sh build/coverage-unit-off OFF
 The optional second argument defaults to `ON`, preserving the previous script
 behavior. Use separate build directories for the two configurations. Each run
 refreshes the CMake cache (so compiler changes cannot silently discard coverage
-flags), clears old `.gcda` counters and scans only its selected build directory. Reports
-are written to `<build-directory>/site/coverage/index.html`.
+flags), clears old `.gcda` counters and scans only its selected build directory.
+The default build runs CTest once through `run-unit-tests`; the script does not
+run it a second time. An existing repository-root `site/` directory is left alone.
+Reports are written to `<build-directory>/site/coverage/index.html`.
 
 Measured with Clang/LLVM 22.1.8, the host libstdc++, and `--coverage -O0 -g`:
 
@@ -56,8 +58,14 @@ list and descriptive case names.
 Fault injection uses real optional/variant objects and `reset()`/`emplace()`; it
 does not reinterpret unconstructed memory or rely on an out-of-bounds index.
 Mutations used for death assertions run in the child, leaving the parent's object
-intact. The existing test translation unit exposes private members; production
-headers and production behavior remain unchanged.
+intact. The test translation unit uses a concrete allowlist of pointers to private
+members, obtained through test-only explicit template instantiations. The
+[C++ explicit-instantiation access rule](https://www.eel.is/c++draft/temp.spec.general)
+permits naming those members in the instantiation arguments. The accessors expose
+only the storage, slot array, active index and exception converter needed by these
+probes. They do not redefine `private`/`protected` or alter any production class
+or standard-library header, preserving identical class definitions across
+translation units.
 
 The test-only runner installs a terminate handler in gcov-instrumented builds. It
 calls the runtime's `__gcov_dump()` before delegating to the original terminate
