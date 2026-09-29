@@ -58,8 +58,7 @@ namespace ara::core
     /* Register the three storage members together, only for the explicitly
      * listed Result specializations at the end of this test translation unit.
      */
-    template <typename T, typename E, TestStorage<T, E> Result<T, E>::* StorageMember,
-              TestSlots<T, E> TestStorage<T, E>::* SlotsMember, std::size_t TestStorage<T, E>::* ActiveMember>
+    template <typename T, typename E, auto StorageMember, auto SlotsMember, auto ActiveMember>
     struct ExposeResultProbe : ExposeTestMember<PrivateMemberTag<Result<T, E>, TestStorage<T, E>>, StorageMember>,
                                ExposeTestMember<PrivateMemberTag<TestStorage<T, E>, TestSlots<T, E>>, SlotsMember>,
                                ExposeTestMember<PrivateMemberTag<TestStorage<T, E>, std::size_t>, ActiveMember>
