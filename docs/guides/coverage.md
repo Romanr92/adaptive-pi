@@ -24,6 +24,10 @@ flags), clears old `.gcda` counters and scans only its selected build directory.
 The default build runs CTest once through `run-unit-tests`; the script does not
 run it a second time. An existing repository-root `site/` directory is left alone.
 Reports are written to `<build-directory>/site/coverage/index.html`.
+The Pages workflow invokes the same script with exceptions enabled and uploads
+`build/coverage-check/site`, sharing configuration, test execution, filters, and
+report validation with local runs. Gcov processing errors fail the run.
+
 
 Measured with Clang/LLVM 22.1.8, the host libstdc++, and `--coverage -O0 -g`:
 

@@ -50,9 +50,6 @@ gcovr -r "${project_root}" "${build_dir}" \
     --exclude '^yocto/' \
     --exclude '^(apps|platform)/(.*/)?tests?/' \
     --exclude '^(apps|platform)/(.*/)?(test_[^/]*|[^/]*_(test|tests|spec))\.(c|cpp|cxx|h|hpp|hxx)$' \
-    --gcov-ignore-errors=source_not_found \
-    --gcov-ignore-errors=output_error \
-    --gcov-ignore-errors=no_working_dir_found \
     --html-details "${coverage_dir}/index.html" \
     --json-summary "${coverage_dir}/summary.json" \
     --print-summary

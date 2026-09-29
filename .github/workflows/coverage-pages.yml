@@ -39,99 +39,13 @@ jobs:
           sudo apt-get update
           sudo apt-get install --yes clang clang-tidy ninja-build gcovr llvm
 
-      - name: Configure coverage-enabled unit tests
-        run: |
-          cmake --preset debug-unit-tests \
-            -DADAPTIVE_PI_ENABLE_EXCEPTIONS=ON \
-            -DCMAKE_BUILD_TYPE=Debug \
-            -DCMAKE_C_COMPILER=clang \
-            -DCMAKE_CXX_COMPILER=clang++ \
-            -DCMAKE_CXX_FLAGS="--coverage -O0 -g" \
-            -DCMAKE_C_FLAGS="--coverage -O0 -g" \
-            -DCMAKE_EXE_LINKER_FLAGS="--coverage" \
-            -DCMAKE_SHARED_LINKER_FLAGS="--coverage"
-
-      - name: Build coverage-enabled unit tests
-        run: cmake --build build/debug-unit-tests --parallel
-
-      - name: Run unit tests with coverage data
-        run: ctest --test-dir build/debug-unit-tests --output-on-failure
-
-      - name: Generate report at /coverage/
-        run: |
-          mkdir -p site/coverage
-          LLVM_COV_BIN="$(command -v llvm-cov || command -v llvm-cov-18 || command -v llvm-cov-17 || true)"
-          if [ -z "$LLVM_COV_BIN" ]; then
-            echo "llvm-cov not found" >&2
-            exit 1
-          fi
-          gcovr -r . \
-            --gcov-executable "${LLVM_COV_BIN} gcov" \
-            --filter '^(apps|platform)/.*\.(c|cpp|cxx|h|hpp|hxx)$' \
-            --exclude '^(apps|platform)/(.*/)?tests?/' \
-            --exclude '^(apps|platform)/(.*/)?(test_[^/]*|[^/]*_(test|tests|spec))\.(c|cpp|cxx|h|hpp|hxx)$' \
-            --html-details site/coverage/index.html \
-            --json-summary site/coverage/summary.json \
-            --print-summary
-          test -s site/coverage/index.html
-          python3 - <<'PY'
-          import json
-          import posixpath
-          import re
-          import sys
-          from pathlib import Path
-
-          def normalize_filename(filename: str) -> str:
-              normalized = posixpath.normpath(filename.replace("\\", "/"))
-              while normalized.startswith("./"):
-                  normalized = normalized[2:]
-              return "" if normalized == "." else normalized
-
-          summary = json.loads(Path("site/coverage/summary.json").read_text())
-          files = summary.get("files", [])
-          production = re.compile(r"^(apps|platform)/.*\.(c|cpp|cxx|h|hpp|hxx)$")
-          test_dir = re.compile(r"^(apps|platform)/(.*/)?tests?/")
-          test_file = re.compile(r"^(apps|platform)/(.*/)?(test_[^/]*|[^/]*_(test|tests|spec))\.(c|cpp|cxx|h|hpp|hxx)$")
-          for raw, expected in {
-              "apps/example/src/main.cpp": "apps/example/src/main.cpp",
-              "./apps/example/src/main.cpp": "apps/example/src/main.cpp",
-              "platform/example/include/lib.hpp": "platform/example/include/lib.hpp",
-              "./platform/example/include/lib.hpp": "platform/example/include/lib.hpp",
-          }.items():
-              normalized = normalize_filename(raw)
-              if normalized != expected:
-                  print(
-                      f"Coverage path normalization failed for {raw!r}: {normalized!r} != {expected!r}",
-                      file=sys.stderr,
-                  )
-                  sys.exit(1)
-          normalized_files = [
-              (entry, normalize_filename(entry.get("filename", "")))
-              for entry in files
-          ]
-          reported = [
-              entry
-              for entry, filename in normalized_files
-              if production.fullmatch(filename)
-              and not test_dir.match(filename)
-              and not test_file.fullmatch(filename)
-          ]
-          lines = sum(entry.get("line_total", 0) for entry in reported)
-          if len(reported) != len(files) or not reported or lines <= 0:
-              print("Coverage report has no valid production source results", file=sys.stderr)
-              sys.exit(1)
-          print(f"Coverage report contains {len(reported)} production files and {lines} instrumented lines")
-          PY
-          cat > site/index.html <<'HTML'
-          <!doctype html>
-          <html lang="en"><head><meta charset="utf-8"><title>AdaptivePi coverage</title></head>
-          <body><a href="coverage/">View unit-test coverage</a></body></html>
-          HTML
+      - name: Build, test, and generate coverage
+        run: scripts/run-coverage.sh build/coverage-check ON
 
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: ./site
+          path: ./build/coverage-check/site
 
       - name: Deploy to GitHub Pages
         id: deployment
