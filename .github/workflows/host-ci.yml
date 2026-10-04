@@ -111,13 +111,15 @@ jobs:
         uses: actions/cache@v4
         with:
           path: build/esbmc-gate-tests
-          key: esbmc-gate-tests-v1-ubuntu24-${{ runner.arch }}-${{ hashFiles('cmake/**', 'scripts/esbmc/**', 'scripts/install-esbmc.sh', '.github/workflows/host-ci.yml') }}
+          key: esbmc-gate-tests-v1-ubuntu24-${{ runner.arch }}-${{ hashFiles('cmake/**', 'scripts/esbmc/**', 'tools/esbmc-report/**', 'scripts/install-esbmc.sh', '.github/workflows/host-ci.yml') }}
 
       - name: Verify gate failure handling
         if: steps.gate-tests.outputs.cache-hit != 'true'
         run: |
           python3 scripts/esbmc/test_gate.py \
-            --esbmc "$PWD/build/debug-esbmc-proofs/tools/esbmc/bin/esbmc"
+            --esbmc "$PWD/build/debug-esbmc-proofs/tools/esbmc/bin/esbmc" \
+            --report-exception-modes OFF ON
+          python3 -m unittest discover -s tools/esbmc-report -p 'test_*.py' -v
           mkdir -p build/esbmc-gate-tests
           echo passed > build/esbmc-gate-tests/result
 

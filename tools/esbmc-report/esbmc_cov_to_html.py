@@ -11,6 +11,7 @@ from pathlib import Path
 import re
 import shlex
 import subprocess
+import tempfile
 
 
 def parse_coverage(raw, log):
@@ -56,13 +57,57 @@ def parse_properties(log):
         if location:
             filename, function = location.groups()
             continue
-        result = re.fullmatch(r"\s+(PASSED|FAILED|UNKNOWN|UNREACHABLE)\s+\[([^]]+)\]\s+line\s+(\d+)\s+(.+)", line)
+        result = re.fullmatch(r"\s+(PASSED|FAILED|UNKNOWN|UNREACHABLE)\s+\[(.+)\]\s+line\s+(\d+)\s+(.+)", line)
         if filename and result:
             status, identifier, number, description = result.groups()
             properties.append({"file": filename, "line": int(number), "function": function,
                                "condition": f"{identifier}: {description}", "kind": "property",
                                "status": {"PASSED": "covered", "FAILED": "uncovered"}.get(status, "unknown")})
     return properties
+
+
+def property_evidence(run):
+    """Require a complete located-property inventory before presenting passed checks."""
+    properties = parse_properties(run["proof_log"])
+    summary = re.search(r"^\*\* (\d+) of (\d+) properties failed, (\d+) passed\s*$",
+                        run["proof_log"], re.M)
+    complete = False
+    if summary:
+        failed, total, passed = map(int, summary.groups())
+        complete = (total == len(properties) and failed + passed == total
+                    and sum(c["status"] == "covered" for c in properties) == passed
+                    and sum(c["status"] == "uncovered" for c in properties) == failed)
+    for claim in properties:
+        if claim["status"] == "covered" and (not complete or run["proof_status"] != "passed"):
+            claim["status"] = "unknown"
+    return properties, "" if complete else "Located safety-property results are missing or incomplete."
+
+
+def line_level(entries):
+    """A failed safety property must remain red even beside passed checks or branch goals."""
+    claims = [claim for _, claim in entries]
+    if not claims:
+        return ""
+    if any(c.get("kind") == "property" and c["status"] == "uncovered" for c in claims):
+        return "low"
+    if any(c["status"] == "unknown" for c in claims):
+        return "unknown"
+    passed = sum(c["status"] == "covered" for c in claims)
+    return "high" if passed == len(claims) else "low" if passed == 0 else "medium"
+
+
+def write_report(path, content):
+    """Publish complete HTML atomically so a partial file cannot defeat the CI fallback."""
+    temporary = None
+    try:
+        with tempfile.NamedTemporaryFile(mode="w", encoding="utf-8", dir=path.parent,
+                                         prefix=".report-", suffix=".tmp", delete=False) as output:
+            temporary = Path(output.name)
+            output.write(content)
+        temporary.replace(path)
+    finally:
+        if temporary is not None:
+            temporary.unlink(missing_ok=True)
 
 
 def execute(command, cwd, timeout):
@@ -101,17 +146,17 @@ def run_manifest(manifest_path, output):
                                       "--branch-coverage-claims", "--cov-report-json"]
         cov_code, cov_log = execute(coverage_command, work, proof["timeout"])
         run = {"name": name, "exceptions": manifest["exceptions"], "version": version.strip(),
-               "directory": str(work), "command": command, "coverage_command": coverage_command,
+               "directory": str(work), "proof_directory": proof["directory"], "command": command, "coverage_command": coverage_command,
                "unwind": command[command.index("--unwind") + 1], "timeout": proof["timeout"],
                "proof_status": verdict, "proof_exit": code, "coverage_exit": cov_code,
                "proof_log": proof_log, "coverage_log": cov_log,
                "coverage": None, "error": ""}
         try:
-            if cov_code != 0 or "COVERAGE ANALYSIS COMPLETE" not in cov_log:
+            if cov_code != 0 or not re.search(r"^COVERAGE ANALYSIS COMPLETE\s*$", cov_log, re.M):
                 raise ValueError(f"Coverage incomplete (exit: {cov_code})")
             run["coverage"] = parse_coverage(
                 cov_file.read_text() if cov_file.exists() else None, cov_log)
-        except (ValueError, KeyError, TypeError) as error:
+        except (OSError, ValueError, KeyError, TypeError) as error:
             run["error"] = str(error)
         (work / "proof.log").write_text(proof_log)
         (work / "coverage.log").write_text(cov_log)
@@ -178,12 +223,10 @@ def render(bundles, root, revision, errors=()):
             if filename:
                 mapped[filename][claim["line"]].append((run, claim))
     for run in runs:
-        # Only completed successful proof runs can contribute passed checks.
-        for claim in parse_properties(run["proof_log"]):
-            filename = source_path(claim["file"], run["directory"], root)
+        properties, run["property_error"] = property_evidence(run)
+        for claim in properties:
+            filename = source_path(claim["file"], run.get("proof_directory", run["directory"]), root)
             if filename:
-                if claim["status"] == "covered" and run["proof_status"] != "passed":
-                    claim["status"] = "unknown"
                 mapped[filename][claim["line"]].append((run, claim))
     # Include uninstrumented production files so missing harnesses are visible.
     for base in ("apps", "platform"):
@@ -194,6 +237,7 @@ def render(bundles, root, revision, errors=()):
     total = sum(r["coverage"]["total"] for r in runs if r.get("coverage"))
     covered = sum(r["coverage"]["covered"] for r in runs if r.get("coverage"))
     unknown = sum(r.get("coverage") is None for r in runs)
+    property_unknown = sum(bool(r["property_error"]) for r in runs)
     passed = sum(r["proof_status"] == "passed" for r in runs)
     properties = [c for lines in mapped.values() for entries in lines.values()
                   for _, c in entries if c.get("kind") == "property"]
@@ -209,7 +253,7 @@ tbody tr:nth-child(even){background:#edf3fa}.high{background:#86df87}.medium{bac
 meter{margin-left:12px;width:130px}summary{cursor:pointer}pre{white-space:pre-wrap;overflow-wrap:anywhere}
 .source{font:13px monospace}.source td{padding:2px 6px}.source code{white-space:pre}
 .source tr.high{background:#86df87}.source tr.medium{background:#ffff70}
-.source tr.low{background:#ffacaa}
+.source tr.low{background:#ffacaa}.source tr.unknown{background:#e3e3e3}
 .source .number{width:45px;background:#eee}.source .goals{width:260px}
 .no-proof{color:#725000;background:#fff1ca;padding:2px 5px;display:inline-block}
 .scroll{overflow:auto}header,footer{border-block:2px solid #487fac;padding:12px 0}
@@ -220,7 +264,8 @@ input{padding:8px;width:min(600px,90%)}.notice{padding:10px;background:#fff1ca}
               f'<p>Safety proofs passed: {passed} / {len(runs)} · '
               f'Production safety checks passed: {ratio(property_passed, len(properties))} · '
               f'Branch goals reached: {ratio(covered, total)} · '
-              f'Coverage runs unavailable: {unknown}</p>',
+              f'Coverage runs unavailable: {unknown} · '
+              f'Located safety-property inventories unavailable: {property_unknown}</p>',
               '<p>Bounded reachability within registered harnesses and their assumptions. '
               'A reached branch is not a safety proof. Counts sum goals across harnesses and '
               'exception modes; they are not unique program branches. Only production sources '
@@ -235,9 +280,10 @@ input{padding:8px;width:min(600px,90%)}.notice{padding:10px;background:#fff1ca}
               'Branch not reached means no witness within the model and bound, not a runtime hit count. Thresholds: '
               '<span class="low">&lt;75%</span> <span class="medium">75–&lt;90%</span> '
               '<span class="high">≥90%</span>.</p></header>']
-    if errors or unknown or not runs:
+    if errors or unknown or property_unknown or not runs:
         chunks.append('<p class="notice">Incomplete report: missing or unsuccessful coverage runs '
-                      'are excluded from percentages. ' + escape("; ".join(errors)) + '</p>')
+                      'are excluded from percentages. Missing or incomplete located safety-property results '
+                      'cannot establish source-level proof evidence. ' + escape("; ".join(errors)) + '</p>')
     components = defaultdict(list)
     for filename, lines in mapped.items():
         component = "/".join(Path(filename).parts[:2])
@@ -269,6 +315,7 @@ input{padding:8px;width:min(600px,90%)}.notice{padding:10px;background:#fff1ca}
                       + f'</td><td>Unwind: {escape(run["unwind"])}; timeout: '
                       f'{escape(run["timeout"])}s per analysis{bound_note}<details><summary>Commands and logs</summary>'
                       f'<pre>{escape(run["version"])}\n{escape(run.get("error", ""))}\n'
+                      f'{escape(run["property_error"])}\n'
                       f'Safety exit: {escape(run["proof_exit"])}\n'
                       f'{escape(shlex.join(run["command"]))}\n{escape(run["proof_log"])}\n'
                       f'Coverage exit: {escape(run["coverage_exit"])}\n'
@@ -299,8 +346,7 @@ input{padding:8px;width:min(600px,90%)}.notice{padding:10px;background:#fff1ca}
             sections.append('<tr><td colspan="3">Source unavailable</td></tr>')
         for number, text in enumerate(source, 1):
             entries = lines.get(number, [])
-            reached = sum(c["status"] == "covered" for _, c in entries)
-            level = "" if not entries else "unknown" if any(c["status"] == "unknown" for _, c in entries) else "high" if reached == len(entries) else "low" if reached == 0 else "medium"
+            level = line_level(entries)
             checks = [c for _, c in entries if c.get("kind") == "property"]
             branches = [c for _, c in entries if c.get("kind") != "property"]
             details = ('<span class="no-proof">No proof evidence</span>'
@@ -312,7 +358,7 @@ input{padding:8px;width:min(600px,90%)}.notice{padding:10px;background:#fff1ca}
                 if branches:
                     missing = sum(c["status"] != "covered" for c in branches)
                     summaries.append(f"Branches reached: {len(branches) - missing} / {len(branches)}; {missing} not reached")
-                details += '<details><summary>' + '; '.join(summaries) + '</summary><ul>' 
+                details += '<details><summary>' + '; '.join(summaries) + '</summary><ul>'
                 for run, claim in entries:
                     if claim.get("kind") == "property":
                         label = {"covered": "Safety check passed", "uncovered": "Safety check failed",
@@ -374,7 +420,7 @@ def main():
     for path in args.input:
         bundles.append(json.loads(path.read_text()))
     args.output.mkdir(parents=True, exist_ok=True)
-    (args.output / "index.html").write_text(render(
+    write_report(args.output / "index.html", render(
         bundles, args.root.resolve(), args.revision, args.error))
     print(f"Report: {args.output / 'index.html'}")
 

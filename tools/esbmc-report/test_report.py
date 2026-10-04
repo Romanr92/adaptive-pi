@@ -1,6 +1,8 @@
 """Regression tests for issue #62's parser, evidence handling, and HTML output."""
 
 import json
+import re
+import shutil
 from pathlib import Path
 import subprocess
 import tempfile
@@ -137,7 +139,8 @@ class Issue62ReportTests(unittest.TestCase):
         log = (f"{self.source}, function main\n"
                "  PASSED [main.bounds.1] line 2 array bounds check\n"
                f"{self.root}/platform/demo/proofs/proof.cpp, function main\n"
-               "  PASSED [main.assertion.1] line 4 assertion contract\n")
+               "  PASSED [main.assertion.1] line 4 assertion contract\n"
+               "** 0 of 2 properties failed, 2 passed\n")
         run = {**self.run, "proof_log": log, "coverage": {"total": 0, "covered": 0, "claims": []}}
         output = report.render([{"runs": [run]}], self.root, "test")
         self.assertIn("Production safety checks passed: <span class=\"high\">1 / 1", output)
@@ -156,6 +159,80 @@ class Issue62ReportTests(unittest.TestCase):
         self.assertIn("Branches reached: 1 / 2; 1 not reached", output)
         self.assertIn('class="low">Branch not reached within bound</span>', output)
         self.assertNotIn("Safety checks passed: 1 / 2", output)
+
+    def test_property_ids_can_contain_subscript_operator_brackets(self):
+        """Arrange ESBMC operator[] results; parse; expect the complete identifier and inventory."""
+        log = (f"{self.source}, function operator[]\n"
+               "  PASSED [operator[].assertion.1] line 2 alignment check\n"
+               "** 0 of 1 properties failed, 1 passed\n")
+        properties, error = report.property_evidence({**self.run, "proof_log": log})
+        self.assertEqual(error, "")
+        self.assertEqual(properties[0]["condition"], "operator[].assertion.1: alignment check")
+        self.assertEqual(properties[0]["status"], "covered")
+
+    def test_incomplete_property_inventory_is_not_presented_as_proven(self):
+        """Arrange a truncated or inconsistent result table; render; expect inconclusive evidence."""
+        for footer in ("", "** 0 of 2 properties failed, 2 passed\n",
+                       "** 1 of 1 properties failed, 0 passed\n"):
+            with self.subTest(footer=footer):
+                log = f"{self.source}, function main\n  PASSED [bounds.1] line 2 bounds check\n" + footer
+                run = {**self.run, "proof_log": log}
+                output = report.render([{"runs": [run]}], self.root, "test")
+                self.assertIn("Safety check inconclusive</span>: bounds.1", output)
+                self.assertIn("Located safety-property inventories unavailable: 1", output)
+                self.assertIn("Incomplete report", output)
+
+    def test_failed_safety_checks_take_priority_over_other_line_evidence(self):
+        """Arrange mixed verdicts on a line; classify; expect failed checks red and unknown checks neutral."""
+        for statuses, expected in ((("covered", "uncovered"), "low"),
+                                   (("unknown", "uncovered"), "low"),
+                                   (("covered", "unknown"), "unknown"),
+                                   (("covered", "covered"), "high")):
+            with self.subTest(statuses=statuses):
+                entries = [(self.run, {"kind": "property", "status": status}) for status in statuses]
+                self.assertEqual(report.line_level(entries), expected)
+
+    def test_report_write_failure_preserves_previous_complete_html(self):
+        """Arrange an existing report and failed replacement; write; expect old HTML and no temporary file."""
+        output = self.root / "index.html"
+        output.write_text("old complete report")
+        with patch.object(Path, "replace", side_effect=OSError("cannot replace")):
+            with self.assertRaises(OSError):
+                report.write_report(output, "new complete report")
+        self.assertEqual(output.read_text(), "old complete report")
+        self.assertEqual(list(self.root.glob(".report-*.tmp")), [])
+        report.write_report(output, "new complete report")
+        self.assertEqual(output.read_text(), "new complete report")
+
+    def test_pages_fallback_works_without_python_and_preserves_valid_report(self):
+        """Arrange a site without report/Python; run the workflow fallback; expect both report links to work."""
+        repository = Path(__file__).resolve().parents[2]
+        tools = self.root / "tools/esbmc-report"
+        tools.mkdir(parents=True)
+        for name in ("unavailable.html", "site-index.html"):
+            shutil.copyfile(repository / "tools/esbmc-report" / name, tools / name)
+        site = self.root / "build/coverage-check/site"
+        (site / "coverage").mkdir(parents=True)
+        (site / "coverage/index.html").write_text("unit test coverage")
+        workflow = (repository / ".github/workflows/coverage-pages.yml").read_text()
+        step = workflow.split("      - name: Prepare report navigation and fallback\n", 1)[1]
+        script = re.search(r"        run: \|\n((?:          .*\n|\n)+)", step).group(1)
+        script = "\n".join(line[10:] for line in script.splitlines())
+        binaries = self.root / "bin"
+        binaries.mkdir()
+        for name in ("mkdir", "cp"):
+            (binaries / name).symlink_to(shutil.which(name))
+        for existing in (None, "completed ESBMC report"):
+            with self.subTest(existing=existing):
+                if existing:
+                    (site / "esbmc/index.html").write_text(existing)
+                subprocess.run([shutil.which("bash"), "-euo", "pipefail", "-c", script],
+                               cwd=self.root, env={"PATH": str(binaries)}, check=True,
+                               capture_output=True, text=True)
+                output = (site / "esbmc/index.html").read_text()
+                self.assertIn(existing or "ESBMC report unavailable", output)
+                self.assertEqual((site / "coverage/index.html").read_text(), "unit test coverage")
+                self.assertIn('href="esbmc/"', (site / "index.html").read_text())
 
     def test_issue62_timeout_retains_partial_log(self):
         """Arrange a timed-out subprocess; execute; expect unknown status and retained diagnostics."""

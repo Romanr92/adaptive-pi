@@ -106,7 +106,11 @@ JSON, logs, and command manifests as a downloadable artifact for 14 days.
 This reporting addition is informational and adds no required PR check. Proof
 failures and unavailable coverage appear in the report; installation or report
 step failures produce an unavailable-report page so unit-test coverage can still
-be deployed. Existing Host CI proof enforcement is unchanged.
+be deployed. The fallback is a static page independent of the Python generator.
+HTML publication uses an atomic replacement so a truncated file cannot count as
+a finished report. Artifact upload failure also does not block Pages deployment.
+Existing Host CI proof enforcement is unchanged; its tooling tests now include
+the report regressions and CMake integration.
 
 ## Verify the tool
 
@@ -118,6 +122,19 @@ Tests cover output parsing, malformed and incomplete data, aggregate counts,
 HTML escaping, source path containment, missing instrumentation, timeouts, and
 stale output rejection. For an end-to-end check, run the local command above
 and inspect its generated report.
+
+The external-project CMake integration test exercises the generated JSON command
+arrays, paths with spaces, quoted definitions, real proof/coverage execution, and
+HTML output. Run locally with exceptions disabled:
+
+```bash
+python3 scripts/esbmc/test_gate.py \
+  --esbmc build/debug-esbmc-proofs/tools/esbmc/bin/esbmc
+```
+
+Host CI passes `--report-exception-modes OFF ON` to cover both supported modes.
+Its cache key includes the report tool and tests so changes cannot reuse stale
+test results.
 
 ## Production safety properties versus branch coverage
 
@@ -132,7 +149,10 @@ properties. “No branch goals” does not mean nothing was verified. Conversely
 a passed check establishes only that particular property in the harness model;
 it is not a percentage of all code proven correct. Files without either kind of
 located evidence remain neutral. Passed properties from an incomplete or failed
-proof run are conservatively displayed as inconclusive.
+proof run are conservatively displayed as inconclusive. Missing or truncated
+property inventories are flagged even when the proof itself reports success;
+parsed property counts must match ESBMC's summary. Any failed safety property
+keeps its source row red even beside passed checks or reached branches.
 
 Source rows without a located safety check show **No proof evidence** (including
 rows with only branch-reachability evidence). This is not a claim that the line

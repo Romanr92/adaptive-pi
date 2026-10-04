@@ -44,9 +44,6 @@ jobs:
           ADAPTIVE_PI_ENABLE_ESBMC: "OFF"
         run: scripts/run-coverage.sh build/coverage-check ON
 
-      - name: Test ESBMC report tooling
-        run: python3 -m unittest discover -s tools/esbmc-report -p 'test_*.py' -v
-
       - name: Install ESBMC for informational report
         id: esbmc-install
         continue-on-error: true
@@ -82,19 +79,16 @@ jobs:
             --revision "$REPORT_REVISION" --output build/coverage-check/site/esbmc
 
       - name: Prepare report navigation and fallback
-        env:
-          REPORT_REVISION: ${{ github.event.pull_request.merge_commit_sha }}
         run: |
           if [[ ! -s build/coverage-check/site/esbmc/index.html ]]; then
-            python3 tools/esbmc-report/esbmc_cov_to_html.py \
-              --root "$PWD" --revision "$REPORT_REVISION" \
-              --error 'ESBMC report generation did not finish; inspect workflow logs.' \
-              --output build/coverage-check/site/esbmc
+            mkdir -p build/coverage-check/site/esbmc
+            cp tools/esbmc-report/unavailable.html build/coverage-check/site/esbmc/index.html
           fi
           cp tools/esbmc-report/site-index.html build/coverage-check/site/index.html
 
       - name: Retain ESBMC report and raw evidence
         if: always()
+        continue-on-error: true
         uses: actions/upload-artifact@v4
         with:
           name: esbmc-coverage-report

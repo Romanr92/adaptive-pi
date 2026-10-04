@@ -7,6 +7,7 @@ errors and timeouts. Run with --esbmc /absolute/path/to/the/pinned/esbmc.
 """
 
 import argparse
+import json
 import os
 from pathlib import Path
 import shutil
@@ -93,6 +94,55 @@ class GateIntegrationTests(unittest.TestCase):
         self.assertIn("| core-proof | PASSED |", summary)
         self.assertIn("| app-proof | PASSED |", summary)
         self.assertIn("'--z3'", summary)
+
+    def test_report_target_exports_commands_and_runs_from_external_project(self):
+        """Arrange an external project with spaces; build each requested mode; verify manifest and evidence."""
+        component = self.source / "platform/fixture"
+        (component / "src").mkdir(parents=True)
+        (component / "include").mkdir()
+        (component / "src/branch.cpp").write_text(
+            '#include "branch.hpp"\nint classify(int value) { if (value > 0) return 1; return 0; }\n')
+        (component / "include/branch.hpp").write_text('int classify(int value);\n')
+        self.proof("platform", "report-proof",
+                   '#include "branch.hpp"\n#include <cassert>\nextern int nondet_int();\n'
+                   'int main() { int x = nondet_int(); assert(classify(x) == (x > 0)); }\n')
+        (component / "proofs/CMakeLists.txt").write_text(
+            'add_esbmc_proof(report-proof SOURCES proof.cpp ../src/branch.cpp '
+            'INCLUDE_DIRECTORIES ../include DEFINITIONS [=[REPORT_LABEL="with spaces"]=] '
+            'UNWIND 4 TIMEOUT 30)\n')
+        for mode in self.report_exception_modes:
+            with self.subTest(exceptions=mode):
+                self.build = self.root / f"build with spaces {mode}"
+                output = self.root / f"report with spaces {mode}"
+                self.configure("-DADAPTIVE_PI_ESBMC_REQUIRE_PROOFS=OFF",
+                               "-DADAPTIVE_PI_ESBMC_RUN_AT_CONFIGURE=OFF",
+                               f"-DADAPTIVE_PI_ENABLE_EXCEPTIONS={mode}",
+                               f"-DADAPTIVE_PI_ESBMC_REPORT_DIR={output}")
+                manifest = json.loads((self.build / "esbmc/coverage.json").read_text())
+                command = manifest["proofs"][0]["command"]
+                self.assertEqual(manifest["root"], str(self.source))
+                self.assertEqual(manifest["exceptions"], mode)
+                self.assertEqual(command[0], str(self.esbmc))
+                self.assertIn(str(component / "src/branch.cpp"), command)
+                self.assertIn('-DREPORT_LABEL="with spaces"', command)
+                self.assertIn('-fexceptions' if mode == 'ON' else '-fno-exceptions', command)
+                self.assertIn(f'-DADAPTIVE_PI_EXCEPTIONS_ENABLED={int(mode == "ON")}', command)
+                self.invoke("cmake", "--build", str(self.build), "--target", "esbmc-coverage-report")
+                bundle = json.loads((output / "evidence/results.json").read_text())
+                self.assertEqual(len(bundle["runs"]), 1)
+                run = bundle["runs"][0]
+                self.assertEqual(run["command"], command)
+                self.assertEqual(run["exceptions"], mode)
+                self.assertEqual(run["proof_status"], "passed")
+                self.assertEqual(run["coverage_exit"], 0)
+                self.assertTrue(run["coverage"]["claims"])
+                self.assertTrue(any(c["file"] == str(component / "src/branch.cpp")
+                                    for c in run["coverage"]["claims"]))
+                self.assertTrue((Path(run["directory"]) / "cov-report.json").is_file())
+                html = (output / "index.html").read_text()
+                self.assertIn("platform/fixture/src/branch.cpp", html)
+                self.assertIn("Safety proofs passed: 1 / 1", html)
+                self.assertIn(f"Exceptions: {mode}", html)
 
     def test_deliberately_failing_proof_fails_configure_and_runs_remaining_proofs(self):
         self.proof("apps", "failing", "#include <cassert>\nint main() { assert(false); }\n")
@@ -321,7 +371,9 @@ class GateIntegrationTests(unittest.TestCase):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--esbmc", required=True, type=Path)
+    parser.add_argument("--report-exception-modes", nargs="+", choices=("OFF", "ON"), default=["OFF"])
     args = parser.parse_args()
+    GateIntegrationTests.report_exception_modes = args.report_exception_modes
     GateIntegrationTests.esbmc = args.esbmc.resolve()
     if not GateIntegrationTests.esbmc.is_file():
         parser.error("--esbmc must name an installed ESBMC executable")
