@@ -1,0 +1,4 @@
+#ifndef ADAPTIVE_PI_ARA_LOG_SINK_H_
+#define ADAPTIVE_PI_ARA_LOG_SINK_H_
+
+#endif /* ADAPTIVE_PI_ARA_LOG_SINK_H_ */
