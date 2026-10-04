@@ -5,7 +5,9 @@
 #include "ara/core/result.h"
 #include "ara/log/log_level.h"
 
+#include <cstddef>
 #include <functional>
+#include <memory>
 #include <string_view>
 
 namespace ara::log
@@ -28,13 +30,21 @@ namespace ara::log
       [[nodiscard]] std::string_view ContextId() const noexcept;
       [[nodiscard]] std::string_view ContextDescription() const noexcept;
       [[nodiscard]] LogLevel DefaultThreshold() const noexcept;
+      [[nodiscard]] bool IsEnabled(LogLevel level) const noexcept;
 
     private:
       friend class detail::LoggerRegistry;
 
-      // Construction and desctruction belong to the framework.
-      // Constructor and owned context storage follow next.
+      Logger(std::unique_ptr<char[]> context_id, std::size_t context_id_size, std::unique_ptr<char[]> description,
+             std::size_t description_size, LogLevel threshold) noexcept;
+
       ~Logger() = default;
+
+      std::unique_ptr<char[]> context_id_;
+      std::size_t context_id_size_;
+      std::unique_ptr<char[]> description_;
+      std::size_t description_size_;
+      const LogLevel threshold_;
   };
 
   // Creates and registers a logger, or returns an error.

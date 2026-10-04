@@ -43,6 +43,7 @@ implementation guidance are in [ADR 0007](../adr/0007-release-3-logging-contract
   SWS_LOG_00018](https://www.autosar.org/fileadmin/standards/R23-11/AP/AUTOSAR_AP_SWS_LogAndTrace.pdf).
 - Verification: Compile-time verification using `static_assert`, plus unit test
   `AP_R3_LOG_001_LogLevelsHaveExpectedValues`.
+- Unit Tests: `AP_R3_LOG_001_LogLevelsHaveExpectedValues.HasRequiredEncoding`
 - Deviation: None.
 
 ## AP-R3-LOG-002 - Logger context
@@ -65,6 +66,7 @@ implementation guidance are in [ADR 0007](../adr/0007-release-3-logging-contract
 - Verification: Unit test
   `AP_R3_LOG_002_LoggerRetainsContextProperties`, using a valid,
   caller-unique context ID.
+- Unit Tests:
 - Deviation: Application IDs, manifests, and cross-process registration are out
   of scope. The `CreateLogger()` API shall retain context ID, description, and
   threshold as separate inputs so a manifest-based creation overload can be
