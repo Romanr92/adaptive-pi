@@ -80,17 +80,17 @@ namespace
     const auto first_invalid = static_cast<LogLevel>(0x07);
     const auto largest_invalid = static_cast<LogLevel>(0xff);
     /* Act */
-    const auto first_attempt = []
+    const auto first_attempt = [](LogLevel invalid)
     {
-      (void)ara::log::TryCreateLogger("BADFIRST", "Invalid", first_invalid);
+      (void)ara::log::TryCreateLogger("BADFIRST", "Invalid", invalid);
     };
-    const auto largest_attempt = []
+    const auto largest_attempt = [](LogLevel invalid)
     {
-      (void)ara::log::TryCreateLogger("BADLAST", "Invalid", largest_invalid);
+      (void)ara::log::TryCreateLogger("BADLAST", "Invalid", invalid);
     };
     /* Expect */
-    EXPECT_DEATH(first_attempt(), "");
-    EXPECT_DEATH(largest_attempt(), "");
+    EXPECT_DEATH(first_attempt(first_invalid), "");
+    EXPECT_DEATH(largest_attempt(largest_invalid), "");
   }
 
   /* ============================== End Test_AP_R3_LOG_002 ============================= */
