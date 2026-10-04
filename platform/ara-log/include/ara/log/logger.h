@@ -58,7 +58,8 @@ namespace ara::log
 
       // Borrowed destination; the registry owns the sink.
       // A reference requires a destination at construction and cannot be rebound.
-      detail::Sink& sink_;
+      // Used by logging operations that will be introduced with issue #15.
+      [[maybe_unused]] detail::Sink& sink_;
 
       // Non-owning list link; the registry owns each node and preserves its address.
       Logger* next_ = nullptr;
