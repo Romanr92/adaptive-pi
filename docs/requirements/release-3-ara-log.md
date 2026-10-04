@@ -121,8 +121,12 @@ implementation guidance are in [ADR 0007](../adr/0007-release-3-logging-contract
 - AUTOSAR source:
   [Specification of Log and Trace, R23-11, §8.2.1, pp. 54-55,
   SWS_LOG_00021 and SWS_LOG_00263](https://www.autosar.org/fileadmin/standards/R23-11/AP/AUTOSAR_AP_SWS_LogAndTrace.pdf).
-- Verification: Unit test `AP_R3_LOG_004_DefaultSinkIsConsole`.
-- Unit Tests: `AP_R3_LOG_004_DefaultSinkIsConsole.FactorySelectsConsoleBackend`; `AP_R3_LOG_004_DefaultSinkIsConsole.SelectedSinkWritesExactBytesToStdout`
+- Verification: Unit test `AP_R3_LOG_004_DefaultSinkIsConsole` verifies the
+  console backend directly. Source inspection verifies that registration passes
+  the registry-owned console sink to each logger. Public-path verification of
+  output from a factory-created logger is deferred to issue #15, when logging
+  operations exist; direct backend tests alone do not establish factory selection.
+- Unit Tests: `AP_R3_LOG_004_DefaultSinkIsConsole.WritesExactBytesToStdout`
 - Deviation: Console is the only Release 3 sink. DLT, file, and remote sinks
   are out of scope. The logger shall write through an internal sink abstraction
   so additional sink types can be added later.

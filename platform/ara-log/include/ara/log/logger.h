@@ -17,9 +17,6 @@ namespace ara::log
   {
     class LoggerRegistry;
     class Sink;
-#ifdef ADAPTIVE_PI_GUNIT_TEST
-    struct LoggerTestAccess;
-#endif /* ADAPTIVE_PI_GUNIT_TEST */
   } // namespace detail
 
   // final prevents inheritance; the framework controls construction and lifetime.
@@ -43,11 +40,6 @@ namespace ara::log
     private:
       // Friendship gives only this class access to private construction and destruction.
       friend class detail::LoggerRegistry;
-
-#ifdef ADAPTIVE_PI_GUNIT_TEST
-      // Private test access; no sink controls are exposed through the application API.
-      friend struct detail::LoggerTestAccess;
-#endif /* ADAPTIVE_PI_GUNIT_TEST */
 
       Logger(std::unique_ptr<char[]> context_id, std::size_t context_id_size, std::unique_ptr<char[]> description,
              std::size_t description_size, LogLevel threshold, detail::Sink& sink) noexcept;
