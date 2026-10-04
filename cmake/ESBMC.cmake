@@ -3,11 +3,15 @@ include(CMakeParseArguments)
 set(ADAPTIVE_PI_ESBMC_CACHE_DIR "" CACHE PATH
     "Optional directory of successful proof results; empty always runs all proofs")
 
+set(ADAPTIVE_PI_ESBMC_REPORT_DIR "${PROJECT_SOURCE_DIR}/build/ESMBC-coverage" CACHE PATH
+    "Output directory for the informational ESBMC HTML report")
+
 set(esbmc_default ON)
 if(CMAKE_CROSSCOMPILING OR ADAPTIVE_PI_TARGET_BUILD)
     set(esbmc_default OFF)
 endif()
 option(ADAPTIVE_PI_ENABLE_ESBMC "Install ESBMC and run registered proofs at configure time" ${esbmc_default})
+option(ADAPTIVE_PI_ESBMC_RUN_AT_CONFIGURE "Run safety proofs during configuration" ON)
 option(ADAPTIVE_PI_ESBMC_REQUIRE_PROOFS "Fail if ESBMC is disabled or no proofs are registered" OFF)
 set(ADAPTIVE_PI_ESBMC_INSTALL_DIR "${CMAKE_BINARY_DIR}/tools/esbmc" CACHE PATH
     "Directory for the automatically installed host ESBMC distribution")
@@ -175,9 +179,23 @@ function(adaptive_pi_run_esbmc_proofs)
         COMMAND "${CMAKE_COMMAND}" "-DADAPTIVE_PI_ESBMC_MANIFEST=${manifest}" -P "${runner}"
         USES_TERMINAL VERBATIM
         COMMENT "Run all registered ESBMC proofs")
-    execute_process(
-        COMMAND "${CMAKE_COMMAND}" "-DADAPTIVE_PI_ESBMC_MANIFEST=${manifest}" -P "${runner}"
-        COMMAND_ERROR_IS_FATAL ANY)
+    adaptive_pi_esbmc_coverage_manifest("${CMAKE_BINARY_DIR}/esbmc/coverage.json" "${proofs}")
+    find_package(Python3 COMPONENTS Interpreter REQUIRED)
+    add_custom_target(esbmc-coverage-report
+        COMMAND "${Python3_EXECUTABLE}"
+            "${PROJECT_SOURCE_DIR}/tools/esbmc-report/esbmc_cov_to_html.py"
+            --manifest "${CMAKE_BINARY_DIR}/esbmc/coverage.json"
+            --root "${PROJECT_SOURCE_DIR}"
+            --output "${ADAPTIVE_PI_ESBMC_REPORT_DIR}"
+        USES_TERMINAL VERBATIM
+        COMMENT "Generate informational ESBMC proof and branch coverage report")
+    if(ADAPTIVE_PI_ESBMC_RUN_AT_CONFIGURE)
+        execute_process(
+            COMMAND "${CMAKE_COMMAND}" "-DADAPTIVE_PI_ESBMC_MANIFEST=${manifest}" -P "${runner}"
+            COMMAND_ERROR_IS_FATAL ANY)
+    elseif(ADAPTIVE_PI_ESBMC_REQUIRE_PROOFS)
+        message(FATAL_ERROR "The strict proof preset requires ADAPTIVE_PI_ESBMC_RUN_AT_CONFIGURE=ON.")
+    endif()
 endfunction()
 
 # Bracket arguments preserve paths, semicolons, and literal variable references.
@@ -189,4 +207,37 @@ function(adaptive_pi_esbmc_write_setting manifest name value)
         string(FIND "${value}" "]${delimiter}]" closing)
     endwhile()
     file(APPEND "${manifest}" "set(${name} [${delimiter}[${value}]${delimiter}])\n")
+endfunction()
+
+# Export command arrays without reparsing CMake syntax or shell command strings.
+function(adaptive_pi_esbmc_json_string output value)
+    string(REPLACE "\\" "\\\\" value "${value}")
+    string(REPLACE "\"" "\\\"" value "${value}")
+    string(REPLACE "\n" "\\n" value "${value}")
+    string(REPLACE "\r" "\\r" value "${value}")
+    string(REPLACE "\t" "\\t" value "${value}")
+    set(${output} "\"${value}\"" PARENT_SCOPE)
+endfunction()
+
+function(adaptive_pi_esbmc_coverage_manifest path proofs)
+    adaptive_pi_esbmc_json_string(root "${PROJECT_SOURCE_DIR}")
+    adaptive_pi_esbmc_json_string(executable "${ESBMC_EXECUTABLE}")
+    set(json "{\"root\":${root},\"executable\":${executable},\"exceptions\":\"${ADAPTIVE_PI_ENABLE_EXCEPTIONS}\",\"proofs\":[")
+    set(separator "")
+    foreach(name IN LISTS proofs)
+        get_property(command GLOBAL PROPERTY "ADAPTIVE_PI_ESBMC_${name}_COMMAND")
+        get_property(timeout GLOBAL PROPERTY "ADAPTIVE_PI_ESBMC_${name}_TIMEOUT")
+        get_property(directory GLOBAL PROPERTY "ADAPTIVE_PI_ESBMC_${name}_DIRECTORY")
+        adaptive_pi_esbmc_json_string(directory "${directory}")
+        string(APPEND json "${separator}{\"name\":\"${name}\",\"timeout\":${timeout},\"directory\":${directory},\"command\":[")
+        set(argument_separator "")
+        foreach(argument IN LISTS command)
+            adaptive_pi_esbmc_json_string(argument "${argument}")
+            string(APPEND json "${argument_separator}${argument}")
+            set(argument_separator ",")
+        endforeach()
+        string(APPEND json "]}")
+        set(separator ",")
+    endforeach()
+    file(WRITE "${path}" "${json}]}\n")
 endfunction()
