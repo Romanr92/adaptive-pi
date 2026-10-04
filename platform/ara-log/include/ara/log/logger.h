@@ -74,11 +74,17 @@ namespace ara::log
 
   // Result holds either a borrowed reference_wrapper or an ErrorCode.
   // Destroying this result does not destroy the framework-owned logger.
-  // Creates and registers a logger, or returns an error.
+  // AdaptivePi extension: creates and registers a logger, or returns kOperationFailed.
+  // The caller supplies a process-unique ID and a defined LogLevel threshold.
+  // Context strings are copied; a failed creation publishes no logger.
   [[nodiscard]] ara::core::Result<std::reference_wrapper<Logger>, ara::core::ErrorCode>
   TryCreateLogger(std::string_view context_id, std::string_view description, LogLevel threshold) noexcept;
 
-  // Retrievees a succesfully registred context with identical inputs.
+  // Retrieves a successfully registered context with identical inputs.
+  // AdaptivePi deviation: this operation does not create a context. Call
+  // TryCreateLogger first; missing registration or mismatched inputs terminate.
+  // Returned references remain valid until framework shutdown. Static-destruction
+  // logging is unsupported. See ADR 0007 for the two-operation protocol.
   [[nodiscard]] Logger& CreateLogger(std::string_view context_id, std::string_view description,
                                      LogLevel threshold) noexcept;
 
