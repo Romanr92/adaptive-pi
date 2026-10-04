@@ -9,6 +9,7 @@ errors and timeouts. Run with --esbmc /absolute/path/to/the/pinned/esbmc.
 import argparse
 import os
 from pathlib import Path
+import shutil
 import subprocess
 import sys
 import tempfile
@@ -196,6 +197,62 @@ class GateIntegrationTests(unittest.TestCase):
                 output = self.configure(cache, success=False)
                 self.assertNotIn("ESBMC REUSED", output)
                 self.assertEqual(list((self.root / 'cache').glob('*.log')), [])
+
+    def test_false_constant_names_run_and_cannot_hide_failures(self):
+        for name in ("OFF", "NO", "0", "FALSE", "IGNORE", "NOTFOUND", "proof-NOTFOUND", "off"):
+            with self.subTest(name=name):
+                self.proof("apps", name)
+                self.assertIn(f"ESBMC PASSED: {name}", self.configure())
+                self.proof("apps", name, "#include <cassert>\nint main() { assert(false); }\n")
+                output = self.configure(success=False)
+                self.assertIn("proofs failed or were inconclusive", output)
+                self.assertIn(f"ESBMC FAILED: {name}", output)
+
+    def test_false_constant_failure_with_another_passing_proof_fails(self):
+        self.proof("apps", "OFF", "#include <cassert>\nint main() { assert(false); }\n")
+        self.proof("platform", "passing")
+        self.assertIn("proofs failed or were inconclusive", self.configure(success=False))
+
+    def test_false_constant_unknown_argument_is_rejected(self):
+        self.proof("apps", "invalid", options="OFF")
+        self.assertIn("check argument names", self.configure(success=False))
+
+    def test_local_helper_header_change_invalidates_cache_at_build_time(self):
+        source = self.proof("apps", "helper", '#include "helper.hpp"\nint main() { check(); }\n')
+        header = source.parent / "helper.hpp"
+        header.write_text("#include <cassert>\ninline void check() { assert(true); }\n")
+        self.configure(f"-DADAPTIVE_PI_ESBMC_CACHE_DIR={self.root / 'cache'}")
+        header.write_text("#include <cassert>\ninline void check() { assert(false); }\n")
+        output = self.invoke("cmake", "--build", str(self.build), "--target", "run-esbmc", success=False)
+        self.assertIn("ESBMC FAILED: helper", output)
+        self.assertNotIn("ESBMC REUSED", output)
+
+    def test_corrupted_cache_result_is_not_reused(self):
+        self.proof("apps", "cached")
+        cache = self.root / "cache"
+        option = f"-DADAPTIVE_PI_ESBMC_CACHE_DIR={cache}"
+        self.configure(option)
+        entry, = cache.glob("*.log")
+        entry.write_text(entry.read_text().replace("Result: 0", "Result: 1"))
+        self.assertIn("ESBMC PASSED: cached", self.configure(option))
+
+    def test_success_substring_is_not_a_verification_verdict(self):
+        self.proof("apps", "result")
+        checker = self.checker("print('diagnostic: VERIFICATION SUCCESSFUL was expected')")
+        self.configure(executable=checker, success=False)
+
+    def test_missing_find_is_reported_before_download(self):
+        shim = self.root / "limited-path"
+        shim.mkdir()
+        for name in ("dirname", "uname", "curl", "unzip", "sha256sum", "flock", "realpath"):
+            (shim / name).symlink_to(shutil.which(name))
+        output = self.invoke(
+            shutil.which("bash"), str(REPOSITORY / "scripts/install-esbmc.sh"),
+            str(self.root / "installation"), success=False,
+            env=dict(os.environ, PATH=str(shim)),
+        )
+        self.assertIn("requires find", output)
+        self.assertNotIn("Downloading", output)
 
     def test_installer_reuses_existing_binary_without_downloading(self):
         destination = self.root / "installation"

@@ -77,6 +77,7 @@ sudo pacman -Syu --needed \
   inetutils \
   xterm \
   file \
+  findutils \
   which \
   unzip \
   texinfo \
@@ -108,6 +109,7 @@ Tool groups:
 | Tools | Used for |
 |---|---|
 | `base-devel git python python-pexpect python-gitpython python-jinja diffstat chrpath socat cpio rpcsvc-proto xz lz4 bzip2 gzip tar iputils inetutils xterm file which unzip texinfo gawk wget zstd` | Poky/BitBake host build, fetch, helper scripts, and headless QEMU dependencies |
+| `findutils` | Provides `find`, required by the ESBMC installer and repository scripts |
 | `python` | Python 3 runtime for publishing/installing platform releases and starting a downloaded QEMU image |
 | `qemu-system-aarch64 tmux openssh` | Running, persisting, and accessing the QEMU target |
 | `cmake ninja clang clang-tools-extra gtest` | Native AdaptivePi C++ builds, tests, formatting, and static analysis |
@@ -123,6 +125,7 @@ locale -a | grep -Fx 'en_US.utf8'
 tmux -V
 cmake --version
 ninja --version
+find --version
 ```
 
 `bitbake` is supplied by Poky, so it is expected to be unavailable until the

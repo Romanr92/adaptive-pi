@@ -30,7 +30,7 @@ case "$(uname -s):$(uname -m)" in
         ;;
 esac
 
-for tool in curl unzip sha256sum flock realpath; do
+for tool in curl unzip sha256sum flock realpath find; do
     if ! command -v "${tool}" >/dev/null 2>&1; then
         echo "ESBMC installation requires ${tool}." >&2
         exit 1
@@ -65,7 +65,8 @@ fi
 unzip -q "${staging_dir}/esbmc.zip" -d "${staging_dir}/unpacked"
 
 # Keep the complete distribution, including its bundled headers and licences.
-mapfile -t executables < <(find "${staging_dir}/unpacked" -type f -path '*/bin/esbmc')
+find "${staging_dir}/unpacked" -type f -path '*/bin/esbmc' > "${staging_dir}/executables"
+mapfile -t executables < "${staging_dir}/executables"
 if (( ${#executables[@]} != 1 )); then
     echo "Expected exactly one bin/esbmc in the release archive." >&2
     exit 1

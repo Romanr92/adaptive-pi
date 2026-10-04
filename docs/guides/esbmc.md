@@ -380,7 +380,7 @@ checks its pinned SHA-256, and installs the complete distribution under
 `<build-directory>/tools/esbmc`. No root privileges or PATH changes are needed.
 
 The installer supports Linux x86_64 and ARM64 hosts and requires Bash, curl,
-unzip, coreutils, and util-linux (`flock`). The Linux x86_64 release has been
+unzip, coreutils, findutils (`find`), and util-linux (`flock`). The Linux x86_64 release has been
 smoke-tested on the Arch development host. ARM64 installation has not been
 executed locally. Downloads come from the
 [official release](https://github.com/esbmc/esbmc/releases/tag/v8.5).
@@ -565,6 +565,8 @@ registered proof it computes a SHA-256 fingerprint from:
 
 - the harness and other `SOURCES`;
 - its component's `src/` and `include/` trees, and `INCLUDE_DIRECTORIES` trees;
+- local helper headers beside each source, recursively (`.h`, `.hh`, `.hpp`,
+  `.hxx`, `.inc`, `.inl`, `.ipp`);
 - explicitly declared `DEPENDS` files/directories;
 - its proof manifest, command arguments, timeout, and working directory;
 - the ESBMC executable and distributed include files;
@@ -575,7 +577,8 @@ These conservative dependencies include private headers and added/deleted files.
 A change within a shared component or include tree may rerun multiple proofs.
 That is intentional: unchanged harness text alone does not establish that the
 code being analysed is unchanged. When using external models, generated inputs,
-or data outside these paths, register them with `DEPENDS`. Do not hide include
+or data outside these paths, including local headers with other extensions,
+register them with `DEPENDS`. Do not hide include
 paths in arbitrary `OPTIONS` instead of `INCLUDE_DIRECTORIES`.
 
 Only successful results are stored. Matching evidence is copied into the current

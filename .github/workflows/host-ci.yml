@@ -101,7 +101,7 @@ jobs:
       - name: Install build and verification tools
         run: |
           sudo apt-get update
-          sudo apt-get install --yes clang ninja-build cmake curl unzip coreutils util-linux python3
+          sudo apt-get install --yes clang ninja-build cmake curl unzip coreutils findutils util-linux python3
 
       - name: Install pinned ESBMC distribution
         run: scripts/install-esbmc.sh build/debug-esbmc-proofs/tools/esbmc

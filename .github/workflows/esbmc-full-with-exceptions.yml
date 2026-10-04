@@ -17,7 +17,7 @@ jobs:
       - name: Install tools
         run: |
           sudo apt-get update
-          sudo apt-get install --yes clang ninja-build cmake curl unzip coreutils util-linux
+          sudo apt-get install --yes clang ninja-build cmake curl unzip coreutils findutils util-linux
       - name: Install pinned ESBMC
         run: scripts/install-esbmc.sh build/debug-esbmc-proofs/tools/esbmc
       - name: Run every registered proof with Z3
