@@ -6,7 +6,9 @@
 namespace ara::log
 {
 
-  // AP-R3-LOG-001
+  // Scoped enums require LogLevel:: names and do not implicitly convert to integers.
+  // The underlying byte type and explicit values define the required encoding.
+  /* Implements AP-R3-LOG-001 */
   enum class LogLevel : std::uint8_t
   {
     kOff = 0x00,

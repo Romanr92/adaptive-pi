@@ -18,21 +18,26 @@ namespace ara::log
     class LoggerRegistry;
   } // namespace detail
 
-  // AP-R3-LOG-002 and AP-R3-LOG-003
+  // final prevents inheritance; the framework controls construction and lifetime.
+  /* Implements AP-R3-LOG-002, AP-R3-LOG-003 */
   class Logger final
   {
     public:
+      // Deleted special members prevent applications from duplicating or relocating a logger.
       Logger(const Logger&) = delete;
       Logger& operator=(const Logger&) = delete;
       Logger(Logger&&) = delete;
       Logger& operator=(Logger&&) = delete;
 
+      // nodiscard diagnoses ignored results; noexcept promises no escaping exceptions.
+      // string_view borrows immutable characters owned by this logger, without copying them.
       [[nodiscard]] std::string_view ContextId() const noexcept;
       [[nodiscard]] std::string_view ContextDescription() const noexcept;
       [[nodiscard]] LogLevel DefaultThreshold() const noexcept;
       [[nodiscard]] bool IsEnabled(LogLevel level) const noexcept;
 
     private:
+      // Friendship gives only this class access to private construction and destruction.
       friend class detail::LoggerRegistry;
 
       Logger(std::unique_ptr<char[]> context_id, std::size_t context_id_size, std::unique_ptr<char[]> description,
@@ -40,13 +45,21 @@ namespace ara::log
 
       ~Logger() = default;
 
+      // Array unique_ptr owns the allocation and automatically calls delete[] at destruction.
+      // Lengths preserve bounded string views, including embedded null characters.
       std::unique_ptr<char[]> context_id_;
       std::size_t context_id_size_;
       std::unique_ptr<char[]> description_;
       std::size_t description_size_;
+      // const prevents changing the threshold after initialization.
       const LogLevel threshold_;
+
+      // Non-owning list link; the registry owns each node and preserves its address.
+      Logger* next_ = nullptr;
   };
 
+  // Result holds either a borrowed reference_wrapper or an ErrorCode.
+  // Destroying this result does not destroy the framework-owned logger.
   // Creates and registers a logger, or returns an error.
   [[nodiscard]] ara::core::Result<std::reference_wrapper<Logger>, ara::core::ErrorCode>
   TryCreateLogger(std::string_view context_id, std::string_view description, LogLevel threshold) noexcept;

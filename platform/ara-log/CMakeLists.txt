@@ -6,6 +6,8 @@ add_library(
         src/logger_registry.cpp
 )
 
+find_package(Threads REQUIRED)
+
 target_include_directories(
     adaptive_pi_ara_log
     PUBLIC
@@ -18,6 +20,8 @@ target_link_libraries(
   adaptive_pi_ara_log
   PUBLIC
       adaptive_pi_ara_core
+  PRIVATE
+      Threads::Threads
 )
 
 adaptive_pi_configure_target(adaptive_pi_ara_log)
