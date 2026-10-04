@@ -13,6 +13,8 @@
 namespace ara::log
 {
 
+  class LogStream;
+
   namespace detail
   {
     class LoggerRegistry;
@@ -36,6 +38,15 @@ namespace ara::log
       [[nodiscard]] std::string_view ContextDescription() const noexcept;
       [[nodiscard]] LogLevel DefaultThreshold() const noexcept;
       [[nodiscard]] bool IsEnabled(LogLevel level) const noexcept;
+
+      /* Implements AP-R3-LOG-005 */
+      [[nodiscard]] LogStream LogFatal() const noexcept;
+      [[nodiscard]] LogStream LogError() const noexcept;
+      [[nodiscard]] LogStream LogWarn() const noexcept;
+      [[nodiscard]] LogStream LogInfo() const noexcept;
+      [[nodiscard]] LogStream LogDebug() const noexcept;
+      [[nodiscard]] LogStream LogVerbose() const noexcept;
+      [[nodiscard]] LogStream WithLevel(LogLevel level) const noexcept;
 
     private:
       // Friendship gives only this class access to private construction and destruction.

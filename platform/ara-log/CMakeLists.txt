@@ -5,6 +5,7 @@ add_library(
         src/logger.cpp
         src/logger_registry.cpp
         src/console_sink.cpp
+        src/log_stream.cpp
 )
 
 find_package(Threads REQUIRED)

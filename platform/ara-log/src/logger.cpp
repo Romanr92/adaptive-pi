@@ -1,5 +1,7 @@
 #include "ara/log/logger.h"
 
+#include "ara/log/log_stream.h"
+
 #include <exception>
 #include <utility>
 
@@ -50,6 +52,48 @@ namespace ara::log
     return ((severity >= static_cast<std::uint8_t>(LogLevel::kFatal)) &&
             (severity <= static_cast<std::uint8_t>(LogLevel::kVerbose)) &&
             (threshold <= static_cast<std::uint8_t>(LogLevel::kVerbose)) && (severity <= threshold));
+  }
+
+  /* Implements AP-R3-LOG-005 */
+  LogStream Logger::WithLevel(LogLevel level) const noexcept
+  {
+    return LogStream{*this, level};
+  }
+
+  /* Implements AP-R3-LOG-005 */
+  LogStream Logger::LogFatal() const noexcept
+  {
+    return WithLevel(LogLevel::kFatal);
+  }
+
+  /* Implements AP-R3-LOG-005 */
+  LogStream Logger::LogError() const noexcept
+  {
+    return WithLevel(LogLevel::kError);
+  }
+
+  /* Implements AP-R3-LOG-005 */
+  LogStream Logger::LogWarn() const noexcept
+  {
+    return WithLevel(LogLevel::kWarn);
+  }
+
+  /* Implements AP-R3-LOG-005 */
+  LogStream Logger::LogInfo() const noexcept
+  {
+    return WithLevel(LogLevel::kInfo);
+  }
+
+  /* Implements AP-R3-LOG-005 */
+  LogStream Logger::LogDebug() const noexcept
+  {
+    return WithLevel(LogLevel::kDebug);
+  }
+
+  /* Implements AP-R3-LOG-005 */
+  LogStream Logger::LogVerbose() const noexcept
+  {
+    return WithLevel(LogLevel::kVerbose);
   }
 
 } // namespace ara::log
