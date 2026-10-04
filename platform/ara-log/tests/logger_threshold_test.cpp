@@ -22,7 +22,10 @@ namespace
   {
     out << value.name;
   }
-  /* Each case supplies an independently enumerated set of enabled severity bits. */
+  /* Parameterization checks each threshold against an independently enumerated enabled mask.
+   * GetParam() supplies the current ThresholdCase, including the unique context ID,
+   * configured threshold, and bit mask defining the expected enabled severities.
+   */
   class AP_R3_LOG_002_ThresholdFiltersDefinedLevels : public testing::TestWithParam<ThresholdCase>
   {
   };

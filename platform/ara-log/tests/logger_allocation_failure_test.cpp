@@ -63,7 +63,10 @@ namespace
   {
     out << value.name;
   }
-  /* Cases select ID-buffer, description-buffer, and Logger allocation failures. */
+  /* Parameterization exercises failure at each registration allocation stage.
+   * GetParam() supplies the current AllocationCase, including the unique context ID
+   * and failure index selecting the ID-buffer, description-buffer, or Logger allocation.
+   */
   class AP_R3_LOG_003_CreationFailureReturnsError : public testing::TestWithParam<AllocationCase>
   {
   };

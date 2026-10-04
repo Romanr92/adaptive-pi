@@ -35,7 +35,9 @@ namespace
     out << value.name << " expected=" << static_cast<unsigned>(value.expected);
   }
 
-  /* Each case supplies one required severity and its independently specified value. */
+  /* Parameterization checks every required severity against an independently specified value.
+   * GetParam() supplies the current LevelCase, including its severity and expected encoding.
+   */
   class AP_R3_LOG_001_LogLevelsHaveExpectedValues : public testing::TestWithParam<LevelCase>
   {
   };
