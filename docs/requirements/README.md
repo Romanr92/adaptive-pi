@@ -65,6 +65,10 @@ The Platform Types specification was reviewed for scope alignment. No Release 3
 requirement directly traces to it because Release 3 does not implement AUTOSAR
 model types, generated artifacts, or platform type definitions.
 
+Logging contract clarifications and implementation-issue allocation are recorded
+in [the logging baseline](release-3-ara-log.md) and
+[ADR 0007](../adr/0007-release-3-logging-contracts.md).
+
 ## Release 3 exclusions
 
 Release 3 excludes:

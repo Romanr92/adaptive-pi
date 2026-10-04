@@ -9,6 +9,20 @@ It includes non-modelled stream logging, manually authored modelled-message
 definitions, and compile-time trace routing. AdaptivePi does not generate C++
 definitions or routing configuration from ARXML.
 
+## Contract decisions and issue allocation
+
+The clarifications below are approved AdaptivePi design decisions adopted on
+2026-10-04. They do not assert additional AUTOSAR compatibility. Rationale and
+implementation guidance are in [ADR 0007](../adr/0007-release-3-logging-contracts.md).
+
+- Issue #3 implements LOG-001 through LOG-004, including concurrent creation,
+  owned context storage, reference stability, and creation-failure behavior.
+- Issue #15 implements LOG-005 through LOG-009 and LOG-002 threshold filtering.
+- Issue #16 implements LOG-010 and LOG-011, including attributes and the
+  interaction between threshold filtering and trace routing.
+- Issue #5 collects verification evidence for these clarified contracts in both
+  supported exception configurations and the ARM64 target build.
+
 ## AP-R3-LOG-001 - LogLevel
 
 - Status: Approved
@@ -29,6 +43,7 @@ definitions or routing configuration from ARXML.
   SWS_LOG_00018](https://www.autosar.org/fileadmin/standards/R23-11/AP/AUTOSAR_AP_SWS_LogAndTrace.pdf).
 - Verification: Compile-time verification using `static_assert`, plus unit test
   `AP_R3_LOG_001_LogLevelsHaveExpectedValues`.
+- Unit Tests: `AP_R3_LOG_001_LogLevelsHaveExpectedValues.HasRequiredEncoding`
 - Deviation: None.
 
 ## AP-R3-LOG-002 - Logger context
@@ -38,6 +53,12 @@ definitions or routing configuration from ARXML.
   and default log-level threshold.
 - Requirement: The caller is responsible for using context IDs that are unique
   within one application process.
+- Requirement: The framework shall retain owned copies of context ID and
+  description. Their values and the threshold shall remain immutable in Release 3.
+- Requirement: Logger output shall admit only defined severity values from
+  `kFatal` through the configured threshold, inclusive. A `kOff` threshold,
+  `kOff` message severity, or undefined enumeration value shall emit no logger
+  record. An undefined creation threshold is a caller precondition violation.
 - AUTOSAR source:
   [Specification of Log and Trace, R23-11, §7.2.4-7.2.5, pp. 20-21;
   §7.2.6, p. 22,
@@ -45,6 +66,7 @@ definitions or routing configuration from ARXML.
 - Verification: Unit test
   `AP_R3_LOG_002_LoggerRetainsContextProperties`, using a valid,
   caller-unique context ID.
+- Unit Tests: `AP_R3_LOG_002_LoggerRetainsContextProperties.RetainsAllInputs`; `AP_R3_LOG_002_ContextOwnsInputStrings.SurvivesInputMutationAndDestruction`; `AP_R3_LOG_002_ThresholdFiltersDefinedLevels.MatchesEnabledSeveritySet`; `AP_R3_LOG_002_InvalidCreationThreshold.Terminates`
 - Deviation: Application IDs, manifests, and cross-process registration are out
   of scope. The `CreateLogger()` API shall retain context ID, description, and
   threshold as separate inputs so a manifest-based creation overload can be
@@ -53,25 +75,58 @@ definitions or routing configuration from ARXML.
 ## AP-R3-LOG-003 - Logger creation and ownership
 
 - Status: Approved
-- Requirement: `CreateLogger()` shall create and return a logger owned by the
-  logging framework. Application code shall not directly construct a logger.
+- Requirement: `TryCreateLogger()` shall create and return a borrowed reference
+  to a logger owned by the logging framework. Application code shall not directly
+  construct a logger.
+- Requirement: `CreateLogger()` shall return `Logger&`. The returned reference
+  shall remain valid until process shutdown, including after further creations.
+  Applications shall not copy, move, destroy, or directly construct loggers.
+- Requirement: Registration through `TryCreateLogger()` and lookup through
+  `CreateLogger()` shall be safe when made concurrently. Duplicate registration
+  IDs violate the caller's uniqueness
+  precondition; Release 3 does not specify duplicate-ID behavior.
+- Requirement: The project-owned `TryCreateLogger()` operation shall return
+  `ara::core::Result<std::reference_wrapper<Logger>, ErrorCode>`. Resource
+  exhaustion shall return a project-owned creation error without terminating or
+  exposing an exception in either build mode. It shall not publish a partially
+  initialized logger or return a successful fallback. Application initialization
+  shall decide whether logging is mandatory; supervisor recovery is deferred to
+  Release 4.
+- Requirement: The reference-returning `CreateLogger()` shall be `noexcept` and
+  shall retrieve a context previously created successfully by `TryCreateLogger()`
+  with the same ID, description, and threshold. Missing registration or mismatched
+  inputs violate this AdaptivePi API's precondition and shall terminate. It shall
+  not perform fallible context creation. Logging during static object destruction
+  is outside the supported lifetime contract.
 - AUTOSAR source:
   [Specification of Log and Trace, R23-11, §7.2.6, p. 22,
   SWS_LOG_00005; §8.2.1, p. 54, SWS_LOG_00021; §8.3.2, p. 68,
   SWS_LOG_00172](https://www.autosar.org/fileadmin/standards/R23-11/AP/AUTOSAR_AP_SWS_LogAndTrace.pdf).
 - Verification: Unit test `AP_R3_LOG_003_CreateLoggerOwnsLogger`.
+- Unit Tests: `AP_R3_LOG_003_CreateLoggerOwnsLogger.ReferencesRemainStable`; `AP_R3_LOG_003_ConcurrentCreation.RegistersAndRetrievesUniqueContexts`; `AP_R3_LOG_003_LookupPreconditions.MissingContextTerminates`; `AP_R3_LOG_003_LookupPreconditions.MismatchedInputsTerminate`; `AP_R3_LOG_003_CreationFailureReturnsError.LeavesRegistryUsable`
 - Deviation: Release 3 has no logger deregistration or platform lifecycle
   management. Logger ownership shall be isolated behind the logging framework
-  so lifecycle registration can be added later.
+  so lifecycle registration can be added later. The recoverable factory and
+  pre-registration contract are explicit AdaptivePi deviations: AUTOSAR specifies
+  creation through a reference-returning, non-throwing `CreateLogger()` and does
+  not define this two-operation protocol.
 
 ## AP-R3-LOG-004 - Console sink
 
 - Status: Approved
 - Requirement: A created logger shall use the console sink.
+- Requirement: The production console sink shall write to standard output.
+  Sink replacement and failure injection shall be implementation-private test
+  facilities, unavailable through the public application API.
 - AUTOSAR source:
   [Specification of Log and Trace, R23-11, §8.2.1, pp. 54-55,
   SWS_LOG_00021 and SWS_LOG_00263](https://www.autosar.org/fileadmin/standards/R23-11/AP/AUTOSAR_AP_SWS_LogAndTrace.pdf).
-- Verification: Unit test `AP_R3_LOG_004_DefaultSinkIsConsole`.
+- Verification: Unit test `AP_R3_LOG_004_DefaultSinkIsConsole` verifies the
+  console backend directly. Source inspection verifies that registration passes
+  the registry-owned console sink to each logger. Public-path verification of
+  output from a factory-created logger is deferred to issue #15, when logging
+  operations exist; direct backend tests alone do not establish factory selection.
+- Unit Tests: `AP_R3_LOG_004_DefaultSinkIsConsole.WritesExactBytesToStdout`
 - Deviation: Console is the only Release 3 sink. DLT, file, and remote sinks
   are out of scope. The logger shall write through an internal sink abstraction
   so additional sink types can be added later.
@@ -89,6 +144,20 @@ definitions or routing configuration from ARXML.
   reaches the end of its lifetime.
 - Requirement: `LogStream::Flush()` shall submit the accumulated record and
   reset the stream for the next record.
+- Requirement: `LogStream` shall be non-copyable and move-constructible, with
+  move assignment unavailable. A move shall transfer pending-record ownership;
+  the moved-from stream shall be usable only for destruction and shall not submit.
+- Requirement: A stream with no accumulated message bytes shall submit no record.
+  Flush shall clear pending content after submission or discard. Repeated flush
+  and destruction after flush shall not submit duplicate records. Further
+  insertion after flush shall begin a new record.
+- Requirement: Supported insertion values shall comprise `bool`, `char`, integral
+  types other than wide character types, `float`, `double`, non-null null-terminated
+  character strings, `std::string`, and `std::string_view`. Unsupported types
+  shall fail compilation. Booleans shall render as `true` or `false`, characters
+  as characters, and integers in decimal. Floating-point values shall use
+  locale-independent general formatting with `max_digits10` precision; non-finite
+  values shall render as `nan`, `inf`, or `-inf`.
 - AUTOSAR source:
   [Specification of Log and Trace, R23-11, §7.3.1, pp. 22-26;
   §8.3.1, pp. 57-67; §8.3.2.1-8.3.2.8, pp. 68-71,
@@ -100,7 +169,11 @@ definitions or routing configuration from ARXML.
   `AP_R3_LOG_005_FlushAndDestructionSubmitRecord`.
 - Deviation: AdaptivePi supports a documented educational subset of stream
   insertion value types. Unsupported AUTOSAR formatting decorators may be added
-  later.
+  later. Move restrictions and suppression of empty records are AdaptivePi
+  policies, not a claim about AUTOSAR special-member requirements. Release 3
+  interprets flush as submission followed by a fresh logical record; the R23-11
+  flush note also says the buffer is not emptied, so our no-replay behavior is an
+  explicit clarification rather than a claim of identical buffer semantics.
 
 ## AP-R3-LOG-006 - AdaptivePi console record format
 
@@ -109,6 +182,14 @@ definitions or routing configuration from ARXML.
 
   `[TIMESTAMP][PID][TID][LEVEL][CONTEXT] message\n`
 
+- Requirement: TIMESTAMP shall use UTC `YYYY-MM-DDTHH:MM:SS.mmmZ`, truncating
+  to milliseconds. PID and TID shall be decimal Linux process and thread IDs.
+  LEVEL shall be `FATAL`, `ERROR`, `WARN`, `INFO`, `DEBUG`, or `VERBOSE`.
+  CONTEXT shall contain the context ID, not its description.
+- Requirement: Context IDs and messages shall escape backslash as `\\`, newline
+  as `\n`, and carriage return as `\r`. Context IDs shall additionally escape
+  brackets as `\[` and `\]`. Escaping shall occur once at console rendering;
+  each record shall end with exactly one physical newline.
 - AUTOSAR source: No direct AUTOSAR requirement specifies this exact console
   text format. It is an AdaptivePi decision inspired by AUTOSAR severity,
   context, and timestamp concepts:
@@ -127,6 +208,9 @@ definitions or routing configuration from ARXML.
   providers.
 - Requirement: Unit tests shall use controllable stub providers for timestamp,
   process ID, and thread ID so record formatting is deterministic.
+- Requirement: Metadata shall be sampled when a record is submitted. TID shall
+  identify the submitting thread. Filtered and empty records shall not request
+  metadata or write to the sink.
 - AUTOSAR source:
   [Specification of Log and Trace, R23-11, §7.4, pp. 35-36,
   SWS_LOG_00082 and SWS_LOG_00083](https://www.autosar.org/fileadmin/standards/R23-11/AP/AUTOSAR_AP_SWS_LogAndTrace.pdf).
@@ -141,6 +225,20 @@ definitions or routing configuration from ARXML.
 - Requirement: If an internal logging or sink failure occurs, the logging
   operation shall not throw an exception or return an error to application code.
   The affected log call shall be discarded.
+- Requirement: Record assembly, formatting, metadata acquisition, and sink
+  submission failures shall discard the affected record in both exception modes.
+  The implementation shall use bounded record storage without throwing allocation
+  in the logging path. The maximum accumulated message size shall be 4096 bytes
+  before console escaping; overflow shall discard the entire pending record.
+  Creation-time allocation is governed separately by LOG-003.
+- Requirement: Failure shall be represented internally through explicit status.
+  Exception-enabled builds shall contain provider exceptions at the logging
+  boundary. Sink implementations shall contain any internal exceptions within
+  their non-throwing `Write()` operation and return failure status.
+  Exception-disabled implementations shall use non-throwing operations and
+  explicit failure status. No failure shall recursively
+  log through the failed path. A failed sink write may already have emitted a
+  partial record; Release 3 does not guarantee rollback of console output.
 - AUTOSAR source:
   [Specification of Log and Trace, R23-11, §7.2.6, p. 22,
   SWS_LOG_00002](https://www.autosar.org/fileadmin/standards/R23-11/AP/AUTOSAR_AP_SWS_LogAndTrace.pdf).
@@ -160,6 +258,9 @@ definitions or routing configuration from ARXML.
   character interleaving with another record.
 - Requirement: The ordering of records emitted by different threads is
   unspecified.
+- Requirement: Separate streams may share one logger across threads. Concurrent
+  mutation of the same stream is outside the contract. Complete-record atomicity
+  applies to successful writes through this framework, not unrelated stdout writes.
 - AUTOSAR source:
   [Specification of Log and Trace, R23-11, §8.2.1, p. 54:
   `CreateLogger()` is reentrant; §8.3.1, pp. 57-67:
@@ -180,6 +281,22 @@ definitions or routing configuration from ARXML.
   the modelled-message definition shall fail during compilation.
 - Requirement: `Logger` shall provide `LogWith(...)` to log a modelled message
   together with supported message attributes.
+- Requirement: Message definitions shall provide deterministic message rendering
+  using the LOG-005 supported value types. Parameter matching shall compare types
+  after removal of references and top-level cv qualifiers, without implicit
+  numeric or string conversions.
+- Requirement: `LogWith(const std::tuple<Attrs...>&, const MsgId&,
+  const Params&...) noexcept` shall support typed `Location` (file identifier and
+  line number) and `Tag` (string value) attributes. Unsupported attribute types
+  shall be rejected at compilation. Release 3 shall accept at most one attribute
+  of each type; duplicate types shall be rejected at compilation.
+- Requirement: The logger message payload shall start with `id=<message-id>`;
+  rendered message text shall follow separated by one space when non-empty.
+  Attributes shall follow in tuple order as ` location="file:line"` or
+  ` tag="value"`, escaping backslash and double quote within values before
+  LOG-006 console escaping. Message IDs shall be non-empty ASCII letters, digits,
+  or underscore. Attribute and message rendering together shall obey the
+  LOG-008 message-size limit.
 - AUTOSAR source:
   [Specification of Log and Trace, R23-11, §7.3.2, pp. 26-29,
   SWS_LOG_00240 and SWS_LOG_00241; §8.3.2.9-8.3.2.10, p. 72,
@@ -190,7 +307,11 @@ definitions or routing configuration from ARXML.
   `AP_R3_LOG_010_LogsModelledMessageWithAttributes`.
 - Deviation: Modelled-message definitions and routing configuration shall be
   authored manually in C++. ARXML generation, manifests, DLT encoding, and
-  non-verbose DLT message transmission are out of scope.
+  non-verbose DLT message transmission are out of scope. Exact normalized type
+  matching, duplicate-attribute rejection, and console payload rendering are
+  AdaptivePi policies. The attribute model follows R23-11 §7.3.2.4, p. 34;
+  the tuple API follows §8.3.2.10, p. 72, SWS_LOG_00133. R23-11 leaves the
+  attribute eligibility trait incomplete (`Attr` is TBD).
 
 ## AP-R3-LOG-011 - Compile-time trace routing
 
@@ -201,6 +322,11 @@ definitions or routing configuration from ARXML.
   `ara::log::ext::TraceArti(const MsgId&, const Params&...) noexcept`.
 - Requirement: The logger shall invoke `TraceArti` only for a modelled message
   configured for trace routing.
+- Requirement: The context threshold shall filter only the logger destination.
+  Trace routing shall remain independent of that threshold, including `kOff`.
+  With both destinations enabled, logger filtering or failure shall not suppress
+  the trace invocation. Trace specializations shall honor their `noexcept`
+  contract; recovery from a violating specialization is outside Release 3.
 - AUTOSAR source:
   [Specification of Log and Trace, R23-11, §7.7.2, pp. 37-38,
   SWS_LOG_20001 to SWS_LOG_20004; Appendix B.1.1, p. 89,
@@ -213,3 +339,32 @@ definitions or routing configuration from ARXML.
 - Deviation: Routing configuration and `TraceArti` specializations are authored
   manually in C++. ARXML generation, external trace-tool integration, and
   runtime trace-configuration changes are out of scope.
+
+## Additional verification for clarified contracts
+
+- LOG-002: `AP_R3_LOG_002_ThresholdFiltersDefinedLevels`, `AP_R3_LOG_002_ContextOwnsInputStrings`.
+- LOG-003: `AP_R3_LOG_003_CreateLoggerOwnsLogger.ReferencesRemainStable`, `AP_R3_LOG_003_ConcurrentCreation`, `AP_R3_LOG_003_CreationFailureReturnsError`.
+- LOG-005: `AP_R3_LOG_005_EmptyAndRepeatedFlush`, `AP_R3_LOG_005_MoveTransfersPendingRecord`, `AP_R3_LOG_005_SupportedInsertionTypes`, `AP_R3_LOG_005_UnsupportedInsertionDoesNotCompile`.
+- LOG-006: `AP_R3_LOG_006_EscapesRecordContent`.
+- LOG-007: `AP_R3_LOG_007_SuppressedRecordsSkipProviders`.
+- LOG-008: `AP_R3_LOG_008_OverflowDiscardsRecord`, `AP_R3_LOG_008_ProviderFailureDiscardsRecord`, `AP_R3_LOG_008_FormattingFailureDiscardsRecord`, `AP_R3_LOG_008_ProviderExceptionIsContained`; `AP_R3_LOG_008_SinkContainsInternalException`.
+- LOG-009: `AP_R3_LOG_009_SharedLoggerSeparateStreams`.
+- LOG-010: `AP_R3_LOG_010_AttributeRendering`, `AP_R3_LOG_010_UnsupportedAndDuplicateAttributesDoNotCompile`, `AP_R3_LOG_010_ExactParameterTypes`, `AP_R3_LOG_010_ModelledMessageSizeLimit`.
+- LOG-011: `AP_R3_LOG_011_ThresholdDoesNotFilterTrace`, `AP_R3_LOG_011_LoggerFailureDoesNotSuppressTrace`.
+
+LOG-003 also requires compile-time construction/copy/move restrictions. Failure
+injection is private and deterministic; tests shall not exhaust host memory.
+Common tests run in both exception modes. Provider-exception and sink-internal
+exception-containment tests run only in exception-enabled CI; local execution
+remains exception-disabled. The sink-internal exception test shall throw inside
+an implementation-private sink, catch within its `noexcept Write()`, return
+failure status, and verify that the logging operation discards the record.
+A separate failing-sink test shall verify explicit failure status without
+exceptions in both modes. An exception escaping `noexcept Write()` violates the
+sink contract and is not a recoverable caller-side failure. These are
+planned checks, not evidence of implementation or successful execution.
+
+Creation verification shall additionally cover successful TryCreateLogger,
+CreateLogger retrieval identity, precondition death tests, and rollback after
+injected resource failure. Resource failure shall be tested in both modes;
+exception-enabled allocation-failure containment is an additional CI check.

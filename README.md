@@ -200,6 +200,7 @@ merge enforcement and the documented branch-administration permission limit.
 - [Yocto and PREEMPT_RT image build](docs/guides/yocto-qemu-preempt-rt-build-guide.md)
 - [SDK cross-build, deployment, and QEMU debugging](docs/guides/sdk-cross-build-and-qemu-deployment.md)
 - [Architecture Decision Records](docs/adr/)
+- [Logger foundation and factory contract](docs/guides/ara-log-foundation.md)
 - [Exception build policy](docs/adr/0006-exception-build-policy.md)
 - [Per-application unit tests](docs/guides/per-application-unit-tests.md)
 - [Step-by-step ESBMC proof training](docs/guides/esbmc-proof-training.md)
