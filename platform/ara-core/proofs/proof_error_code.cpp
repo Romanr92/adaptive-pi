@@ -24,6 +24,7 @@ namespace
  */
 int main()
 {
+  /* Arrange */
   const auto first_id = nondet_uint64();
   const auto second_id = nondet_uint64();
   const auto first_value = nondet_int32();
@@ -35,9 +36,11 @@ int main()
   const ara::core::ErrorDomain first_domain{first_id, "first"};
   const ara::core::ErrorDomain second_domain{second_id, "second"};
 #endif
+  /* Act */
   const ara::core::ErrorCode first{first_value, first_domain};
   const ara::core::ErrorCode second{second_value, second_domain};
 
+  /* Assert */
   assert(first.Value() == first_value);
   assert(second.Value() == second_value);
   /* Bind returned references explicitly for ESBMC 8.5 reference lowering. */

@@ -1,0 +1,47 @@
+name: ESBMC full proofs (without exceptions)
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  full-proofs:
+    name: Full ESBMC proofs (without exceptions)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - name: Check out selected ref
+        uses: actions/checkout@v4
+      - name: Install tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes clang ninja-build cmake curl unzip coreutils util-linux
+      - name: Install pinned ESBMC
+        run: scripts/install-esbmc.sh build/debug-esbmc-proofs/tools/esbmc
+      - name: Run every registered proof with Z3
+        run: |
+          cmake --preset debug-esbmc-proofs \
+            -DESBMC_EXECUTABLE="$PWD/build/debug-esbmc-proofs/tools/esbmc/bin/esbmc" \
+            -DADAPTIVE_PI_ENABLE_EXCEPTIONS=OFF \
+            -DADAPTIVE_PI_ESBMC_CACHE_DIR=
+      - name: Publish summary
+        if: always()
+        run: |
+          summary=build/debug-esbmc-proofs/esbmc/logs/summary.md
+          if [[ -f "$summary" ]]; then
+            cat "$summary" >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo 'No proof results produced; inspect earlier steps.' >> "$GITHUB_STEP_SUMMARY"
+          fi
+      - name: Retain proof evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: esbmc-full-without-exceptions
+          path: |
+            build/debug-esbmc-proofs/esbmc/logs/
+            build/debug-esbmc-proofs/esbmc/proofs.cmake
+          if-no-files-found: warn
+          retention-days: 14

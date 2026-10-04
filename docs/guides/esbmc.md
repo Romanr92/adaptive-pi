@@ -1,5 +1,7 @@
 # ESBMC: understanding, writing, and running bounded proofs
 
+For a practical first lesson, start with [step-by-step proof training](esbmc-proof-training.md).
+
 This guide explains how AdaptivePi uses ESBMC, how to choose useful properties,
 and how to write readable proof harnesses. The commands describe the current
 repository integration and its pinned ESBMC **8.5** release. Upstream online
@@ -15,6 +17,7 @@ manuals evolve; check the installed binary's `--help` before adopting new option
 - [Install and run ESBMC](#install-and-run-esbmc)
 - [Register component proofs](#register-component-proofs)
 - [Results and quality-gate mode](#results-and-quality-gate-mode)
+- [Pull-request gate and branch protection](#pull-request-gate-and-branch-protection)
 - [Investigate a failed or inconclusive proof](#investigate-a-failed-or-inconclusive-proof)
 
 ## What ESBMC is
@@ -88,6 +91,25 @@ a normal runtime definition. Repeated calls can produce independent values.
 The solver can reason about many combinations without executing a native test
 once for each integer. See the [verification constructs reference](https://esbmc.github.io/docs/constructs/).
 
+AdaptivePi explicitly selects **Z3** with `--z3` for every registered proof,
+in both configure-time and build-target execution. Z3 is the SMT solver;
+ESBMC performs the program analysis and supplies the constraints. The pinned
+Linux x86_64 distribution includes Z3 support; no separate `z3` command or
+Python package is needed. Its observed solver version is **Z3 v4.13.3**.
+CMake checks `--list-solvers` and rejects installations without Z3, and the
+registration helper rejects alternative solver selections in `OPTIONS`.
+There is no automatic fallback to ESBMC's default Bitwuzla solver.
+
+To inspect the evidence after running the preset:
+
+```bash
+rg 'Solving with solver|VERIFICATION SUCCESSFUL' \
+  build/debug-esbmc-proofs/esbmc/logs/*.log
+```
+
+A property simplified before solving may not print a solver invocation. Its
+recorded command must still contain `--z3`. Both current proofs exercise Z3.
+
 The practical limit is the size and complexity of the generated problem.
 Symbolic inputs do not make arbitrary loops, containers, or thread schedules
 cheap to analyse.
@@ -100,6 +122,7 @@ options available in the pinned version.
 
 | Capability | Current repository use | Recommended application |
 |---|---|---|
+| SMT solving | Explicit `--z3`; availability checked at configuration | Keep Z3 consistent between local and CI runs |
 | User assertions and invariants | Assertions in the two registered harnesses | First choice: precise relationships between inputs, outputs, and state |
 | Pointer and array bounds checking | Enabled by ESBMC's defaults | Retain for every harness; particularly useful for views, buffers, and parsers |
 | Memory-leak checking | `--memory-leak-check` in the shared runner | Retain; useful when a harness exercises allocation/ownership paths |
@@ -428,7 +451,7 @@ property, input assumptions, bound, timeout, additional options, and excluded
 behaviour beside its harness. Do not use options that suppress the property
 being checked or unwinding failures to manufacture a passing result.
 
-The runner uses C++17, enables memory-leak checks, retains ESBMC's default
+The runner selects Z3 (`--z3`), uses C++17, enables memory-leak checks, retains ESBMC's default
 pointer/bounds checks and unwinding assertions, and passes the selected
 `ADAPTIVE_PI_ENABLE_EXCEPTIONS` mode as both a frontend flag and macro. ESBMC
 8.5 has `--no-pointer-check`, not `--pointer-check`; pointer checking is on by
@@ -443,10 +466,13 @@ prints its name and command, writes the command, exit result, stdout, and stderr
 to `<build-directory>/esbmc/logs/<proof-name>.log`, and fails the command if any
 proof times out, cannot execute, returns a nonzero status, or lacks ESBMC's
 `VERIFICATION SUCCESSFUL` result. Configuration and the `run-esbmc` build target
-use the same generated command manifest and runner. The target always reruns
-proofs, including after editing a harness without changing its manifest.
+use the same generated command manifest and runner. `logs/summary.md` lists
+per-proof verdicts and expanded commands. Console output stays concise; full
+counterexamples remain in individual logs. With the default empty cache directory, the target always reruns proofs.
+CI enables input-based reuse as described below; it still checks fingerprints
+after editing a harness without changing its manifest.
 
-For a strict local or future CI quality gate:
+For the strict local quality gate used by CI:
 
 ```bash
 cmake --preset debug-esbmc-proofs
@@ -459,7 +485,7 @@ and an empty proof suite. Other native configurations run registered proofs too;
 if none are registered, they warn that no project properties were verified.
 
 The initial suite contains two supplementary proofs, both verified locally with
-ESBMC 8.5 on Linux x86_64 and exceptions disabled:
+ESBMC 8.5 / Z3 v4.13.3 on Linux x86_64 and exceptions disabled:
 
 | Proof | Property | Unwind / timeout | Result |
 |---|---|---|---|
@@ -469,10 +495,11 @@ ESBMC 8.5 on Linux x86_64 and exceptions disabled:
 See each component's `proofs/README.md` for assumptions and exclusions.
 These do not establish the Release 4 harness baseline tracked by
 [issue #41](https://github.com/Romanr92/adaptive-pi/issues/41).
-This integration implements the installation and local CMake runner portion of
-[issue #42](https://github.com/Romanr92/adaptive-pi/issues/42), including the
-component-local layout discussed in its comment. It does not establish the PR
-workflow or branch-protection gate; those require the supported proof baseline.
+The [Host CI workflow](../../.github/workflows/host-ci.yml) runs the current
+registered suite in its **ESBMC proofs** job. This implements the gate for the
+available baseline; Release 4 manifest/lifecycle/restart proofs remain dependent
+on #41. No claim is made that those future properties are already checked.
+See the branch-protection procedure below for merge enforcement.
 
 Use `-DADAPTIVE_PI_ENABLE_ESBMC=OFF` to disable installation and proofs for a
 build. ESBMC defaults to off for target/cross builds; if explicitly enabled,
@@ -483,6 +510,164 @@ Passing bounded proofs establishes only the documented properties under their
 assumptions and bounds. It does not verify the complete application, operating
 system, hardware, or excluded third-party code, and does not replace unit tests
 or target verification.
+
+## Pull-request gate and branch protection
+
+The stable check name is **ESBMC proofs**, job `esbmc-proofs` in **Host CI**.
+It runs on every pull request without path filters, and on `merge_group` and
+pushes to the default branch (to maintain shared evidence for later PRs). It has a 20-minute job timeout and uses the
+same manifests, per-proof bounds, and Z3 runner as the local preset.
+
+The job installs the checksum-pinned distribution, runs the gate integration
+checks when their inputs changed or evidence is missing, runs affected proofs
+in the exception-disabled preset, and verifies the exception-enabled
+configuration in a separate build directory. Build/unit-test jobs explicitly
+disable ESBMC so verification dependencies and logs belong to the named gate.
+The existing native tests and AArch64 build remain separate checks.
+
+The reproducible CI commands for the default mode are:
+
+```bash
+scripts/install-esbmc.sh build/debug-esbmc-proofs/tools/esbmc
+python3 scripts/esbmc/test_gate.py \
+  --esbmc "$PWD/build/debug-esbmc-proofs/tools/esbmc/bin/esbmc"
+cmake --preset debug-esbmc-proofs \
+  -DESBMC_EXECUTABLE="$PWD/build/debug-esbmc-proofs/tools/esbmc/bin/esbmc" \
+  -DADAPTIVE_PI_ESBMC_CACHE_DIR="$PWD/build/esbmc-result-cache"
+```
+
+The explicit executable path prevents a preinstalled version on a CI runner
+from replacing the pinned tool. For the exception-enabled CI configuration,
+the workflow uses the same configure preset with
+`-B build/ci-esbmc-proofs-exceptions -DADAPTIVE_PI_ENABLE_EXCEPTIONS=ON` and the
+same executable and result cache. Local verification normally stays exception-disabled.
+
+The integration checks use temporary projects and both real ESBMC/Z3 proofs and
+controlled process-failure fixtures. They verify discovery in both roots,
+a deliberately failing assertion, continued execution of remaining proofs,
+harness edits detected by the build target, timeout, missing source/executable,
+empty suite, disabled strict mode, solver enforcement, invalid result handling,
+installer reuse, and checksum rejection. They exit nonzero if a bad proof is
+accepted. They do not edit the project's real harnesses or require network
+access after ESBMC is installed.
+
+On success or failure, the job publishes available summaries and uploads
+`esbmc-proof-results` for 14 days, containing both configurations' logs and
+command manifests. An installation or configuration failure may occur before
+any summary exists; the job reports that absence rather than claiming success.
+Uploading diagnostics does not override a failed step. See GitHub's
+[artifact documentation](https://docs.github.com/en/actions/tutorials/store-and-share-data).
+
+### Incremental CI and manual full runs
+
+CI does not run a proof again merely because another PR update arrived. For each
+registered proof it computes a SHA-256 fingerprint from:
+
+- the harness and other `SOURCES`;
+- its component's `src/` and `include/` trees, and `INCLUDE_DIRECTORIES` trees;
+- explicitly declared `DEPENDS` files/directories;
+- its proof manifest, command arguments, timeout, and working directory;
+- the ESBMC executable and distributed include files;
+- shared runner/registration code, root CMake configuration and presets, and the
+  installer script.
+
+These conservative dependencies include private headers and added/deleted files.
+A change within a shared component or include tree may rerun multiple proofs.
+That is intentional: unchanged harness text alone does not establish that the
+code being analysed is unchanged. When using external models, generated inputs,
+or data outside these paths, register them with `DEPENDS`. Do not hide include
+paths in arbitrary `OPTIONS` instead of `INCLUDE_DIRECTORIES`.
+
+Only successful results are stored. Matching evidence is copied into the current
+logs and labelled **REUSED**; new or changed inputs are executed and labelled
+**PASSED** or **FAILED**. Exception modes have different command fingerprints
+and cannot reuse each other's evidence. Configure-time and build-target checks
+use the same mechanism. PR CI configures each mode once; it no longer immediately
+builds the proof target for a duplicate execution.
+
+GitHub Actions caches retain these small result logs between runs. Default-branch
+pushes update a shared baseline; later PRs can restore that baseline and their
+own previous results. PR caches are scoped by GitHub and are not promoted to the
+default branch. Cache absence, expiry, eviction, or restricted cache access means
+fresh verification, never an unverified pass. Therefore “only changed proofs” is
+the warm-cache behaviour, not a promise to skip verification without evidence.
+See [GitHub cache scope](https://docs.github.com/en/actions/reference/workflows-and-actions/dependency-caching).
+
+The gate-integration tests have a separate exact-input cache. They rerun when
+verification infrastructure changes or their successful result is unavailable.
+The normal local preset keeps reuse off unless you explicitly set
+`ADAPTIVE_PI_ESBMC_CACHE_DIR`. Set it to an empty value to force full execution.
+
+Two dedicated manual workflows always run **all** registered proofs with Z3:
+
+| Actions entry | File | Exception mode |
+|---|---|---|
+| ESBMC full proofs (without exceptions) | `esbmc-full-without-exceptions.yml` | OFF |
+| ESBMC full proofs (with exceptions) | `esbmc-full-with-exceptions.yml` | ON |
+
+In GitHub **Actions**, select the desired entry, choose **Run workflow**, select
+a branch, and start it. These workflows have no proof-result cache, explicitly
+clear `ADAPTIVE_PI_ESBMC_CACHE_DIR`, configure once, and upload summaries and logs.
+Their manual controls become available after the workflow files exist on the
+default branch. They are separate from the stable required PR check
+**ESBMC proofs**.
+
+### Administration limitation and required-check setup
+
+On 2026-10-04, reading
+`GET /repos/Romanr92/adaptive-pi/branches/main/protection` through the available
+GitHub integration returned **403: Resource not accessible by integration**.
+The connection does not provide repository administration access or a
+branch-protection write tool. Consequently, existing main-branch protection
+could not be verified or changed. This is a connection permission limitation,
+not evidence that the repository is unprotected or that its owner lacks access.
+
+An administrator, or a role allowed to edit repository rules, should:
+
+1. Ensure the workflow changes are present on the PR and obtain a successful
+   **ESBMC proofs** run. Check names may need a recent successful run before
+   appearing in the required-check selector.
+2. In repository **Settings → Branches**, edit the protection rule for `main`
+   (or the equivalent active branch ruleset). Preserve existing protections.
+3. Enable required status checks and add **ESBMC proofs** from GitHub Actions,
+   alongside the existing required checks. Require the branch to be up to date
+   if that is the repository policy.
+4. Apply the rule to `main`, save it, and verify on a PR that a failed or pending
+   ESBMC check prevents merging. Review bypass permissions deliberately.
+5. If using a merge queue, verify that the check also reports on its merge-group
+   commit; the workflow includes that trigger.
+
+See GitHub's [branch protection instructions](https://docs.github.com/en/repositories/configuring-branches-and-merges-in-your-repository/managing-protected-branches/managing-a-branch-protection-rule)
+and [required-check troubleshooting](https://docs.github.com/en/pull-requests/how-tos/merge-and-close-pull-requests/troubleshooting-required-status-checks).
+
+Until automated enforcement is confirmed, the maintainer must manually require
+a successful **Host CI → ESBMC proofs** check for the PR's latest tested revision,
+including its test-merge revision when GitHub uses one. Inspect the summary for
+both supported exception configurations and the expected registered proofs;
+`REUSED` means previously successful evidence with matching inputs.
+Do not merge when the job is missing, skipped, cancelled, pending, or failing;
+rerun after relevant changes. Record the run URL/revision in the normal PR
+review record. A passing run on an older commit is insufficient.
+
+### Issue #42 implementation audit
+
+| Item | Evidence / remaining boundary |
+|---|---|
+| Install if absent, reuse if present | `scripts/install-esbmc.sh`, checksum pin and integration checks |
+| CMake runs every registered proof | Component manifests under both roots; shared configure/build runner |
+| Explicit Z3 selection | `--z3`, solver availability check, conflicting-option rejection, real solver logs |
+| PR job and consistent local commands | **Host CI → ESBMC proofs**, strict preset and shared command manifest |
+| Failure, timeout, execution-error rejection | Integration checks including a real failing assertion and a build-after-edit failure |
+| Concise diagnostics and retained evidence | Per-proof status/command, summary, and uploaded logs |
+| Main-branch enforcement | Administration API returned 403; administrator setup and manual procedure documented above |
+| Future Release 4 harnesses | Still tracked by #41; no absent production modules are fabricated |
+| Remote acceptance evidence | Confirm a passing PR run on the final revision and merge blocking after administrator setup; local checks alone do not establish this |
+
+The issue comment's `components/` blueprint is implemented using the existing
+`platform/` and `apps/` roots. Its proposed `--pointer-check` is represented by
+ESBMC 8.5's enabled-by-default pointer checks. Its illustrative IPC and Execution
+Manager harnesses remain future #41 work. The issue body's required-check goal
+takes precedence over the comment's earlier description of an optional CI job.
 
 ## Investigate a failed or inconclusive proof
 

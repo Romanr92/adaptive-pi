@@ -12,14 +12,19 @@ extern std::size_t nondet_size();
  */
 int main()
 {
-  const auto name = adaptive_pi::platform_test::ApplicationName();
-  const auto version = adaptive_pi::platform_test::Version();
+  /* Arrange */
   constexpr char expected_name[] = "platform-test-service";
   constexpr char expected_version[] = "0.2.0";
+  const auto index = nondet_size();
+
+  /* Act */
+  const auto name = adaptive_pi::platform_test::ApplicationName();
+  const auto version = adaptive_pi::platform_test::Version();
+
+  /* Assert */
   assert(name.size() == sizeof(expected_name) - 1);
   assert(version.size() == sizeof(expected_version) - 1);
 
-  const auto index = nondet_size();
   if (index < name.size())
   {
     assert(name[index] == expected_name[index]);

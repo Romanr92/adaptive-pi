@@ -26,4 +26,6 @@ cmake --build --preset debug-esbmc-proofs
 
 The exact command and result are recorded in
 `build/debug-esbmc-proofs/esbmc/logs/platform-test-service-build-info.log`.
-Baseline: ESBMC 8.5, Linux x86_64, exceptions disabled: **passed**.
+Baseline: ESBMC 8.5 with explicit `--z3` (Z3 v4.13.3), Linux x86_64,
+exceptions disabled: **passed**. Exception-enabled execution is a separate
+CI check; local evidence does not establish that result.
