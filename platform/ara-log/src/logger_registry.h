@@ -2,6 +2,7 @@
 #define ADAPTIVE_PI_ARA_LOG_LOGGER_REGISTRY_H_
 
 #include "ara/log/logger.h"
+#include "console_sink.h"
 
 #include <pthread.h>
 
@@ -35,6 +36,9 @@ namespace ara::log::detail
       // This mutex protects head_ and list traversal; callers must stop before destruction.
       pthread_mutex_t mutex_ = PTHREAD_MUTEX_INITIALIZER;
       Logger* head_ = nullptr;
+
+      // Owned by the registry; remains alive until all registered loggers are deleted.
+      ConsoleSink console_sink_;
   };
 
 } // namespace ara::log::detail

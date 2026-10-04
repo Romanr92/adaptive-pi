@@ -55,8 +55,8 @@ namespace ara::log::detail
 
     // Separate object allocation keeps this address stable as the registry grows.
     // Construction takes ownership of the buffers and performs no allocation.
-    Logger* logger = new (std::nothrow)
-      Logger{std::move(id_buffer), context_id.size(), std::move(description_buffer), description.size(), threshold};
+    Logger* logger = new (std::nothrow) Logger{std::move(id_buffer), context_id.size(), std::move(description_buffer),
+                                               description.size(),   threshold,         console_sink_};
 
     if (logger == nullptr)
     {

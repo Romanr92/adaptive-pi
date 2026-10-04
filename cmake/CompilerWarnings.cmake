@@ -1,4 +1,13 @@
 function(adaptive_pi_configure_target target_name)
+    # Keep conditional test declarations consistent across libraries and consumers.
+    # Leave the macro undefined in builds without unit tests.
+    if(BUILD_TESTING)
+        target_compile_definitions(
+            ${target_name}
+            PUBLIC ADAPTIVE_PI_GUNIT_TEST=1
+        )
+    endif()
+
     if(CMAKE_CXX_COMPILER_ID MATCHES "Clang|GNU")
         target_compile_options(
             ${target_name}

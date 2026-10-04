@@ -4,6 +4,7 @@ add_library(
         src/ara_log.cpp
         src/logger.cpp
         src/logger_registry.cpp
+        src/console_sink.cpp
 )
 
 find_package(Threads REQUIRED)

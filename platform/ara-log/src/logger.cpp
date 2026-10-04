@@ -10,9 +10,9 @@ namespace ara::log
   // it does not allocate or copy the characters.
   /* Implements AP-R3-LOG-002 */
   Logger::Logger(std::unique_ptr<char[]> context_id, std::size_t context_id_size, std::unique_ptr<char[]> description,
-                 std::size_t description_size, LogLevel threshold) noexcept
+                 std::size_t description_size, LogLevel threshold, detail::Sink& sink) noexcept
       : context_id_{std::move(context_id)}, context_id_size_{context_id_size}, description_{std::move(description)},
-        description_size_{description_size}, threshold_{threshold}
+        description_size_{description_size}, threshold_{threshold}, sink_{sink}
   {
     // An invalid enum value violates the creation contract; terminate does not throw.
     if (static_cast<std::uint8_t>(threshold_) > static_cast<std::uint8_t>(LogLevel::kVerbose))

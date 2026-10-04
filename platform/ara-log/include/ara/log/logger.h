@@ -16,6 +16,10 @@ namespace ara::log
   namespace detail
   {
     class LoggerRegistry;
+    class Sink;
+#ifdef ADAPTIVE_PI_GUNIT_TEST
+    struct LoggerTestAccess;
+#endif /* ADAPTIVE_PI_GUNIT_TEST */
   } // namespace detail
 
   // final prevents inheritance; the framework controls construction and lifetime.
@@ -40,8 +44,13 @@ namespace ara::log
       // Friendship gives only this class access to private construction and destruction.
       friend class detail::LoggerRegistry;
 
+#ifdef ADAPTIVE_PI_GUNIT_TEST
+      // Private test access; no sink controls are exposed through the application API.
+      friend struct detail::LoggerTestAccess;
+#endif /* ADAPTIVE_PI_GUNIT_TEST */
+
       Logger(std::unique_ptr<char[]> context_id, std::size_t context_id_size, std::unique_ptr<char[]> description,
-             std::size_t description_size, LogLevel threshold) noexcept;
+             std::size_t description_size, LogLevel threshold, detail::Sink& sink) noexcept;
 
       ~Logger() = default;
 
@@ -51,8 +60,13 @@ namespace ara::log
       std::size_t context_id_size_;
       std::unique_ptr<char[]> description_;
       std::size_t description_size_;
+
       // const prevents changing the threshold after initialization.
       const LogLevel threshold_;
+
+      // Borrowed destination; the registry owns the sink.
+      // A reference requires a destination at construction and cannot be rebound.
+      detail::Sink& sink_;
 
       // Non-owning list link; the registry owns each node and preserves its address.
       Logger* next_ = nullptr;
