@@ -110,6 +110,7 @@ git ls-files -z -- '*.c' '*.cc' '*.cpp' '*.cxx' '*.h' '*.hh' '*.hpp' '*.hxx' '*.
 |---|---|
 | `debug-app` | Native Arch/Linux application build |
 | `debug-unit-tests` | Native unit-test build and execution |
+| `debug-esbmc-proofs` | ESBMC installation and all registered platform/application proofs |
 | `debug-qemu-app` | Yocto SDK cross-build for the ARM64 QEMU guest |
 
 ## Project structure
@@ -146,7 +147,10 @@ maturity of the platform rather than treating quality as a final activity.
 
 ESBMC will not be used as a blanket check for the whole project. It will verify
 selected bounded safety properties where model checking is useful and practical.
-Before it becomes a required check, its harnesses and bounds must be stable.
+Host CI runs the registered baseline through the named **ESBMC proofs** job
+using Z3. Release 4 harness expansion remains tracked by #41. See the
+[ESBMC guide](docs/guides/esbmc.md#pull-request-gate-and-branch-protection) for
+merge enforcement and the documented branch-administration permission limit.
 
 ## Next releases
 
@@ -198,6 +202,8 @@ Before it becomes a required check, its harnesses and bounds must be stable.
 - [Architecture Decision Records](docs/adr/)
 - [Exception build policy](docs/adr/0006-exception-build-policy.md)
 - [Per-application unit tests](docs/guides/per-application-unit-tests.md)
+- [Step-by-step ESBMC proof training](docs/guides/esbmc-proof-training.md)
+- [ESBMC concepts, proof authoring, and execution](docs/guides/esbmc.md)
 - [Publishing and installing a complete Yocto platform](docs/guides/publish-platform-release.md)
 - [Publishing a versioned Yocto SDK](docs/guides/publish-yocto-sdk.md)
 

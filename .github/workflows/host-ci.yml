@@ -5,6 +5,7 @@ on:
     branches:
       - "**"
   pull_request:
+  merge_group:
 
 permissions:
   contents: read
@@ -47,13 +48,13 @@ jobs:
           sudo apt-get install --yes clang clang-tidy ninja-build
 
       - name: Configure Debug Application
-        run: cmake --preset debug-app -DADAPTIVE_PI_ENABLE_EXCEPTIONS=OFF
+        run: cmake --preset debug-app -DADAPTIVE_PI_ENABLE_EXCEPTIONS=OFF -DADAPTIVE_PI_ENABLE_ESBMC=OFF
 
       - name: Build Debug Application
         run: cmake --build build/debug-app --parallel
 
       - name: Configure Debug Unit Tests
-        run: cmake --preset debug-unit-tests -DADAPTIVE_PI_ENABLE_EXCEPTIONS=OFF
+        run: cmake --preset debug-unit-tests -DADAPTIVE_PI_ENABLE_EXCEPTIONS=OFF -DADAPTIVE_PI_ENABLE_ESBMC=OFF
 
       - name: Build and run unit tests
         run: cmake --build build/debug-unit-tests --parallel
@@ -76,7 +77,8 @@ jobs:
         run: |
           cmake --preset debug-unit-tests \
             -B build/ci-unit-tests-exceptions \
-            -DADAPTIVE_PI_ENABLE_EXCEPTIONS=ON
+            -DADAPTIVE_PI_ENABLE_EXCEPTIONS=ON \
+            -DADAPTIVE_PI_ENABLE_ESBMC=OFF
 
       # Build the full exception-enabled test tree so every discovered CTest
       # executable is present before execution.
@@ -85,6 +87,87 @@ jobs:
 
       - name: Run exception-enabled unit tests
         run: ctest --test-dir build/ci-unit-tests-exceptions --output-on-failure
+
+  esbmc-proofs:
+    if: github.event_name == 'pull_request' || github.event_name == 'merge_group' || (github.event_name == 'push' && github.ref == format('refs/heads/{0}', github.event.repository.default_branch))
+    name: ESBMC proofs
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+
+      - name: Install build and verification tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes clang ninja-build cmake curl unzip coreutils findutils util-linux python3
+
+      - name: Install pinned ESBMC distribution
+        run: scripts/install-esbmc.sh build/debug-esbmc-proofs/tools/esbmc
+
+      - name: Restore gate integration test result
+        id: gate-tests
+        uses: actions/cache@v4
+        with:
+          path: build/esbmc-gate-tests
+          key: esbmc-gate-tests-v1-ubuntu24-${{ runner.arch }}-${{ hashFiles('cmake/**', 'scripts/esbmc/**', 'scripts/install-esbmc.sh', '.github/workflows/host-ci.yml') }}
+
+      - name: Verify gate failure handling
+        if: steps.gate-tests.outputs.cache-hit != 'true'
+        run: |
+          python3 scripts/esbmc/test_gate.py \
+            --esbmc "$PWD/build/debug-esbmc-proofs/tools/esbmc/bin/esbmc"
+          mkdir -p build/esbmc-gate-tests
+          echo passed > build/esbmc-gate-tests/result
+
+      - name: Restore successful proof results
+        uses: actions/cache@v4
+        with:
+          path: build/esbmc-result-cache
+          key: esbmc-results-v1-ubuntu24-${{ runner.arch }}-${{ github.run_id }}-${{ github.run_attempt }}
+          restore-keys: |
+            esbmc-results-v1-ubuntu24-${{ runner.arch }}-
+
+      - name: Configure and verify affected ESBMC proofs with Z3
+        run: |
+          cmake --preset debug-esbmc-proofs \
+            -DESBMC_EXECUTABLE="$PWD/build/debug-esbmc-proofs/tools/esbmc/bin/esbmc" \
+            -DADAPTIVE_PI_ESBMC_CACHE_DIR="$PWD/build/esbmc-result-cache"
+
+      - name: Verify exception-enabled proofs
+        run: |
+          cmake --preset debug-esbmc-proofs \
+            -B build/ci-esbmc-proofs-exceptions \
+            -DESBMC_EXECUTABLE="$PWD/build/debug-esbmc-proofs/tools/esbmc/bin/esbmc" \
+            -DADAPTIVE_PI_ENABLE_EXCEPTIONS=ON \
+            -DADAPTIVE_PI_ESBMC_CACHE_DIR="$PWD/build/esbmc-result-cache"
+
+      - name: Publish proof summary
+        if: always()
+        run: |
+          for mode in debug-esbmc-proofs ci-esbmc-proofs-exceptions; do
+            echo "## Configuration: $mode" >> "$GITHUB_STEP_SUMMARY"
+            summary="build/$mode/esbmc/logs/summary.md"
+            if [[ -f "$summary" ]]; then
+              cat "$summary" >> "$GITHUB_STEP_SUMMARY"
+            else
+              echo 'No proof summary was produced for this configuration. Check preceding steps; this is not verification success.' >> "$GITHUB_STEP_SUMMARY"
+            fi
+          done
+
+      - name: Retain proof commands and logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: esbmc-proof-results
+          path: |
+            build/debug-esbmc-proofs/esbmc/logs/
+            build/debug-esbmc-proofs/esbmc/proofs.cmake
+            build/ci-esbmc-proofs-exceptions/esbmc/logs/
+            build/ci-esbmc-proofs-exceptions/esbmc/proofs.cmake
+          if-no-files-found: warn
+          retention-days: 14
 
   cross-build-qemu-target:
     name: Cross-build QEMU target
