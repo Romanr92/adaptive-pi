@@ -23,7 +23,7 @@ jobs:
       id-token: write
     environment:
       name: github-pages
-      url: https://romanr92.github.io/adaptive-pi/coverage/
+      url: https://romanr92.github.io/adaptive-pi/
 
     steps:
       - name: Configure GitHub Pages
@@ -37,10 +37,67 @@ jobs:
       - name: Install build and coverage tools
         run: |
           sudo apt-get update
-          sudo apt-get install --yes clang clang-tidy ninja-build gcovr llvm
+          sudo apt-get install --yes clang clang-tidy ninja-build gcovr llvm cmake python3 curl unzip
 
       - name: Build, test, and generate coverage
+        env:
+          ADAPTIVE_PI_ENABLE_ESBMC: "OFF"
         run: scripts/run-coverage.sh build/coverage-check ON
+
+      - name: Install ESBMC for informational report
+        id: esbmc-install
+        continue-on-error: true
+        run: scripts/install-esbmc.sh build/tools/esbmc
+
+      - name: Generate ESBMC report in both exception modes
+        continue-on-error: true
+        timeout-minutes: 20
+        env:
+          ESBMC_INSTALLED: ${{ steps.esbmc-install.outcome }}
+          REPORT_REVISION: ${{ github.event.pull_request.merge_commit_sha }}
+        run: |
+          inputs=()
+          errors=()
+          for mode in OFF ON; do
+            build_dir="build/esbmc-report-${mode}"
+            if [[ "$ESBMC_INSTALLED" == success ]] &&
+               cmake -S . -B "$build_dir" -G Ninja \
+                 -DBUILD_TESTING=OFF \
+                 -DADAPTIVE_PI_ENABLE_CLANG_TIDY=OFF \
+                 -DADAPTIVE_PI_ENABLE_EXCEPTIONS="$mode" \
+                 -DADAPTIVE_PI_ESBMC_RUN_AT_CONFIGURE=OFF \
+                 -DADAPTIVE_PI_ESBMC_REPORT_DIR="$PWD/$build_dir/esbmc/report" \
+                 -DESBMC_EXECUTABLE="$PWD/build/tools/esbmc/bin/esbmc" &&
+               cmake --build "$build_dir" --target esbmc-coverage-report; then
+              inputs+=(--input "$build_dir/esbmc/report/evidence/results.json")
+            else
+              errors+=(--error "Report unavailable for exceptions $mode; inspect workflow logs.")
+            fi
+          done
+          python3 tools/esbmc-report/esbmc_cov_to_html.py \
+            "${inputs[@]}" "${errors[@]}" --root "$PWD" \
+            --revision "$REPORT_REVISION" --output build/coverage-check/site/esbmc
+
+      - name: Prepare report navigation and fallback
+        run: |
+          if [[ ! -s build/coverage-check/site/esbmc/index.html ]]; then
+            mkdir -p build/coverage-check/site/esbmc
+            cp tools/esbmc-report/unavailable.html build/coverage-check/site/esbmc/index.html
+          fi
+          cp tools/esbmc-report/site-index.html build/coverage-check/site/index.html
+
+      - name: Retain ESBMC report and raw evidence
+        if: always()
+        continue-on-error: true
+        uses: actions/upload-artifact@v4
+        with:
+          name: esbmc-coverage-report
+          path: |
+            build/coverage-check/site/esbmc/
+            build/esbmc-report-*/esbmc/report/evidence/
+            build/esbmc-report-*/esbmc/coverage.json
+          if-no-files-found: warn
+          retention-days: 14
 
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3

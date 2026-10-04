@@ -1,4 +1,17 @@
 {
+  "python.analysis.exclude": [
+    "**/yocto/build/**",
+    "**/yocto/downloads/**",
+    "**/yocto/sstate-cache/**"
+  ],
+  "python.analysis.indexing": false,
+  "python.analysis.diagnosticMode": "openFilesOnly",
+  "files.watcherExclude": {
+    "**/yocto/build/**": true,
+    "**/yocto/downloads/**": true,
+    "**/yocto/sstate-cache/**": true
+  },
+
   "cmake.useCMakePresets": "always",
   "cmake.configurePreset": "debug-app",
   "cmake.buildBeforeRun": true,

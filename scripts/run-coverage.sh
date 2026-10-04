@@ -25,6 +25,7 @@ cmake --fresh -S "${project_root}" -B "${build_dir}" -G Ninja \
     -DCMAKE_C_FLAGS='--coverage -O0 -g' \
     -DCMAKE_EXE_LINKER_FLAGS='--coverage' \
     -DCMAKE_SHARED_LINKER_FLAGS='--coverage' \
+    -DADAPTIVE_PI_ENABLE_ESBMC="${ADAPTIVE_PI_ENABLE_ESBMC:-ON}" \
     -DADAPTIVE_PI_ENABLE_CLANG_TIDY=OFF \
     -DADAPTIVE_PI_WARNINGS_AS_ERRORS=ON
 

@@ -238,3 +238,60 @@ Yocto, QEMU, CMake, and Git commands in the Arch WSL shell. In VS Code, use
 | `--location` is unsupported | Update WSL, restart Windows, and retry. |
 | BitBake cannot find `en_US.UTF-8` | Run `locale -a`, repeat the locale commands in section 4 if necessary, then open a new WSL shell. |
 | Yocto is unexpectedly slow | Confirm the checkout is under `~/workspace`, not below `/mnt/c` or `/mnt/d`. |
+| Pylance reports `JavaScript heap out of memory` | Exclude the generated Yocto trees from analysis and file watching as described below. |
+
+### Pylance runs out of memory while scanning Yocto
+
+The generated Yocto tree can exhaust Pylance's Node heap. In the VS Code
+window connected to WSL, open **Command Palette → Preferences: Open Workspace
+Settings (JSON)**. The repository's `.vscode/settings.json` includes these
+settings:
+
+```json
+"python.analysis.exclude": [
+  "**/yocto/build/**",
+  "**/yocto/downloads/**",
+  "**/yocto/sstate-cache/**"
+],
+"python.analysis.indexing": false,
+"python.analysis.diagnosticMode": "openFilesOnly",
+"files.watcherExclude": {
+  "**/yocto/build/**": true,
+  "**/yocto/downloads/**": true,
+  "**/yocto/sstate-cache/**": true
+}
+```
+
+For an existing workspace, add these entries inside the outer `{ }`, preserving
+other settings and separating entries with commas. If `files.watcherExclude`
+already exists, merge the three patterns into it. Preserve any existing
+`python.analysis.exclude` entries as well.
+
+Run **Command Palette → Developer: Reload Window**, then monitor
+**View → Output → Pylance** for a few minutes. Confirm that
+`JavaScript heap out of memory` errors stop and no new crash dumps appear.
+Keep existing dumps until the fix is confirmed.
+
+### Optional: disable future WSL crash dumps
+
+In Windows, edit `%UserProfile%\.wslconfig` and add this entry under the existing
+`[wsl2]` section, preserving the resource settings from section 3:
+
+```ini
+[wsl2]
+maxCrashDumpCount=0
+```
+
+If `[wsl2]` already exists, add only `maxCrashDumpCount=0` beneath it; do not
+create a second section. Save the file, stop any running Yocto builds and other
+WSL work, then apply the change from PowerShell:
+
+```powershell
+wsl --shutdown
+```
+
+Reopen WSL and reconnect VS Code. This disables future WSL crash dumps; it does
+not fix Pylance's memory exhaustion or disable Pylance/Node dumps. Keep the
+workspace exclusions above and use Pylance's output to verify the fix even
+when WSL dump creation is disabled. Existing dumps are not deleted by this
+setting.

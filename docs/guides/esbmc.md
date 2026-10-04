@@ -17,6 +17,7 @@ manuals evolve; check the installed binary's `--help` before adopting new option
 - [Install and run ESBMC](#install-and-run-esbmc)
 - [Register component proofs](#register-component-proofs)
 - [Results and quality-gate mode](#results-and-quality-gate-mode)
+- [Local HTML report and post-merge publication](#local-html-report-and-post-merge-publication)
 - [Pull-request gate and branch protection](#pull-request-gate-and-branch-protection)
 - [Investigate a failed or inconclusive proof](#investigate-a-failed-or-inconclusive-proof)
 
@@ -516,6 +517,49 @@ Passing bounded proofs establishes only the documented properties under their
 assumptions and bounds. It does not verify the complete application, operating
 system, hardware, or excluded third-party code, and does not replace unit tests
 or target verification.
+
+## Local HTML report and post-merge publication
+
+Create an informational proof and branch-coverage report from the repository root:
+
+```bash
+python3 tools/esbmc-report/esbmc_cov_to_html.py --run
+```
+
+Open `build/ESMBC-coverage/index.html` in your browser. This runs the registered
+harnesses with exceptions disabled and records their safety-proof results and
+separate bounded branch-reachability results. To reuse a particular ESBMC binary,
+append `--esbmc /path/to/esbmc`. CMake otherwise reuses or installs ESBMC.
+The tool requires Python 3.10+, CMake 3.25+, Ninja, and a host C++ compiler.
+
+After reconfiguring an existing ESBMC-enabled build, you can also use:
+
+```bash
+cmake --build build/debug-esbmc-proofs --target esbmc-coverage-report
+```
+
+Both commands default to `build/ESMBC-coverage/`. The standalone Python command
+can produce a report when a safety proof fails; the strict CMake preset still
+requires successful configure-time proofs. The report contains component/file
+summaries and expandable evidence beside numbered source lines. Safety-property
+results from the proof logs appear separately from branch reachability. A source
+line can have passed safety checks even with no branch goals. Green indicates
+passed checks or reached goals as labelled in the details, not complete proof of
+every operation on the line.
+Only production sources contribute to coverage; proof harnesses, tests, and
+external libraries are excluded from totals and source views. Harness verdicts
+remain in the proof summary. Uninstrumented lines are neutral; full line-execution
+coverage is unavailable.
+
+After a PR merges into `main`, **Coverage Pages** creates both exception modes
+and publishes the combined report under `esbmc/`, with a second link on the
+existing Pages homepage. This report is informational and does not add a PR
+quality gate. Unknown, failed, or timed-out runs remain visible; an unavailable
+report does not block the unit-test coverage deployment.
+
+See the [report tool documentation](../../tools/esbmc-report/README.md) for
+output overrides, saved-result merging, interpretation of bounds and assertion
+guards, retained artifacts, and test commands.
 
 ## Pull-request gate and branch protection
 

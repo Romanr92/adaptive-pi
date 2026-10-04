@@ -8,7 +8,7 @@ The project deliberately does **not** use proprietary AUTOSAR implementation cod
 
 ## Current status
 
-Coverage report: https://romanr92.github.io/adaptive-pi/
+Coverage and ESBMC reports: https://romanr92.github.io/adaptive-pi/
 
 **Release 2 complete — SDK cross-build, QEMU deployment, and remote debugging** ✅
 
@@ -203,6 +203,7 @@ merge enforcement and the documented branch-administration permission limit.
 - [Exception build policy](docs/adr/0006-exception-build-policy.md)
 - [Per-application unit tests](docs/guides/per-application-unit-tests.md)
 - [Step-by-step ESBMC proof training](docs/guides/esbmc-proof-training.md)
+- [Local ESBMC HTML coverage reports](tools/esbmc-report/README.md)
 - [ESBMC concepts, proof authoring, and execution](docs/guides/esbmc.md)
 - [Publishing and installing a complete Yocto platform](docs/guides/publish-platform-release.md)
 - [Publishing a versioned Yocto SDK](docs/guides/publish-yocto-sdk.md)
