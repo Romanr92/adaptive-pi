@@ -66,7 +66,7 @@ implementation guidance are in [ADR 0007](../adr/0007-release-3-logging-contract
 - Verification: Unit test
   `AP_R3_LOG_002_LoggerRetainsContextProperties`, using a valid,
   caller-unique context ID.
-- Unit Tests:
+- Unit Tests:; `AP_R3_LOG_002_ThresholdFiltersDefinedLevels.MatchesEnabledSeveritySet`; `AP_R3_LOG_002_InvalidCreationThreshold.Terminates`
 - Deviation: Application IDs, manifests, and cross-process registration are out
   of scope. The `CreateLogger()` API shall retain context ID, description, and
   threshold as separate inputs so a manifest-based creation overload can be
@@ -75,13 +75,15 @@ implementation guidance are in [ADR 0007](../adr/0007-release-3-logging-contract
 ## AP-R3-LOG-003 - Logger creation and ownership
 
 - Status: Approved
-- Requirement: `CreateLogger()` shall create and return a logger owned by the
-  logging framework. Application code shall not directly construct a logger.
+- Requirement: `TryCreateLogger()` shall create and return a borrowed reference
+  to a logger owned by the logging framework. Application code shall not directly
+  construct a logger.
 - Requirement: `CreateLogger()` shall return `Logger&`. The returned reference
   shall remain valid until process shutdown, including after further creations.
   Applications shall not copy, move, destroy, or directly construct loggers.
-- Requirement: Calls to `CreateLogger()` with caller-unique IDs shall be safe
-  when made concurrently. Duplicate IDs violate the caller's uniqueness
+- Requirement: Registration through `TryCreateLogger()` and lookup through
+  `CreateLogger()` shall be safe when made concurrently. Duplicate registration
+  IDs violate the caller's uniqueness
   precondition; Release 3 does not specify duplicate-ID behavior.
 - Requirement: The project-owned `TryCreateLogger()` operation shall return
   `ara::core::Result<std::reference_wrapper<Logger>, ErrorCode>`. Resource
@@ -101,6 +103,7 @@ implementation guidance are in [ADR 0007](../adr/0007-release-3-logging-contract
   SWS_LOG_00005; §8.2.1, p. 54, SWS_LOG_00021; §8.3.2, p. 68,
   SWS_LOG_00172](https://www.autosar.org/fileadmin/standards/R23-11/AP/AUTOSAR_AP_SWS_LogAndTrace.pdf).
 - Verification: Unit test `AP_R3_LOG_003_CreateLoggerOwnsLogger`.
+- Unit Tests: `AP_R3_LOG_003_CreateLoggerOwnsLogger.ReferencesRemainStable`; `AP_R3_LOG_003_ConcurrentCreation.RegistersAndRetrievesUniqueContexts`; `AP_R3_LOG_003_LookupPreconditions.MissingContextTerminates`; `AP_R3_LOG_003_LookupPreconditions.MismatchedInputsTerminate`; `AP_R3_LOG_003_CreationFailureReturnsError.LeavesRegistryUsable`
 - Deviation: Release 3 has no logger deregistration or platform lifecycle
   management. Logger ownership shall be isolated behind the logging framework
   so lifecycle registration can be added later. The recoverable factory and

@@ -1,24 +1,25 @@
-add_executable(
-    ara_log_level_test
-    log_level_test.cpp
-)
-
-target_link_libraries(
-    ara_log_level_test
-    PRIVATE
-        adaptive_pi_ara_log
-        GTest::gtest_main
-)
-
-adaptive_pi_configure_target(ara_log_level_test)
-
+# Separate executables group level checks and logger context/ownership checks.
 include(GoogleTest)
 
-gtest_discover_tests(ara_log_level_test)
+foreach(test_target IN ITEMS ara_log_level_test ara_log_context_test ara_log_allocation_test)
+    if(test_target STREQUAL "ara_log_level_test")
+        set(test_source log_level_test.cpp)
+    elseif(test_target STREQUAL "ara_log_allocation_test")
+        set(test_source logger_allocation_failure_test.cpp)
+    else()
+        set(test_source logger_context_test.cpp logger_ownership_test.cpp logger_threshold_test.cpp)
+    endif()
 
-set_property(
-    GLOBAL
-    APPEND
-    PROPERTY ADAPTIVE_PI_UNIT_TEST_TARGETS
-    ara_log_level_test
+    add_executable(${test_target} ${test_source})
+    target_link_libraries(${test_target} PRIVATE adaptive_pi_ara_log GTest::gtest_main Threads::Threads)
+    adaptive_pi_configure_target(${test_target})
+    gtest_discover_tests(${test_target})
+    set_property(GLOBAL APPEND PROPERTY ADAPTIVE_PI_UNIT_TEST_TARGETS ${test_target})
+endforeach()
+
+# Itanium C++ ABI symbols used by the supported Linux GCC/Clang builds.
+# Wrapping is confined to this executable; no production allocation hooks are added.
+target_link_options(ara_log_allocation_test PRIVATE
+    "LINKER:--wrap=_ZnwmRKSt9nothrow_t"
+    "LINKER:--wrap=_ZnamRKSt9nothrow_t"
 )
