@@ -97,7 +97,7 @@ ESBMC performs the program analysis and supplies the constraints. The pinned
 Linux x86_64 distribution includes Z3 support; no separate `z3` command or
 Python package is needed. Its observed solver version is **Z3 v4.13.3**.
 CMake checks `--list-solvers` and rejects installations without Z3, and the
-registration helper rejects alternative solver selections in `OPTIONS`.
+registration helper rejects overrides of solver and safety settings in `OPTIONS`.
 There is no automatic fallback to ESBMC's default Bitwuzla solver.
 
 To inspect the evidence after running the preset:
@@ -446,7 +446,13 @@ Names must be globally unique and contain only letters, digits, underscores, or
 hyphens. `SOURCES` may include implementation files required by the harness;
 compiled CMake libraries are not automatically linked into ESBMC. Include paths
 and source paths are relative to the proof manifest. `DEFINITIONS` accepts
-macros without `-D`; `OPTIONS` accepts additional ESBMC arguments. Document each
+macros as `NAME` or `NAME=value`, without `-D`. `NDEBUG` (even `NDEBUG=0`),
+`assert`, `ADAPTIVE_PI_EXCEPTIONS_ENABLED`, and compiler-reserved names starting
+with `__` or an underscore followed by an uppercase letter are rejected.
+`OPTIONS` accepts only `--overflow-check` and `--unsigned-overflow-check`.
+Solver, language, bounds, exception flags, entry point, and default safety checks
+cannot be overridden through `OPTIONS`. Extend the allowlist only after reviewing
+the new option and adding gate tests. Document each
 property, input assumptions, bound, timeout, additional options, and excluded
 behaviour beside its harness. Do not use options that suppress the property
 being checked or unwinding failures to manufacture a passing result.

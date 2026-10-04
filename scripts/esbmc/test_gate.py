@@ -142,9 +142,46 @@ class GateIntegrationTests(unittest.TestCase):
 
     def test_solver_without_z3_and_conflicting_option_fail(self):
         self.proof("platform", "solver", options="OPTIONS --bitwuzla")
-        self.assertIn("conflicts with the required Z3 solver", self.configure(success=False))
+        self.assertIn("unsupported OPTIONS argument", self.configure(success=False))
         checker = self.checker("sys.exit(0)", solvers="bitwuzla")
         self.assertIn("must provide the Z3 solver", self.configure(executable=checker, success=False))
+
+    def test_unsafe_and_runner_owned_options_are_rejected_before_verification(self):
+        checker = self.checker("raise RuntimeError('checker must not run')")
+        for option in (
+            "--no-pointer-check", "--no-unwinding-assertions", "--no-assertions",
+            "--no-bounds-check", "--no-div-by-zero-check", "--unwind 1",
+            "--unwind=1", "--z3", "--std c++11", "-fexceptions",
+            "-fno-exceptions", "-DNDEBUG", "--function other_entry",
+            "--overflow-check --no-assertions", "--unknown-future-option",
+        ):
+            with self.subTest(option=option):
+                self.proof("apps", "unsafe", options=f"OPTIONS {option}")
+                output = self.configure(executable=checker, success=False)
+                self.assertIn("unsupported OPTIONS argument", output)
+                self.assertNotIn("checker must not run", output)
+                self.assertFalse((self.build / "esbmc/logs/unsafe.log").exists())
+
+    def test_reserved_and_malformed_definitions_are_rejected(self):
+        for definition in (
+            "NDEBUG", "NDEBUG=0", "NDEBUG=1", "assert=ignored",
+            "ADAPTIVE_PI_EXCEPTIONS_ENABLED=1", "ADAPTIVE_PI_EXCEPTIONS_ENABLED=0",
+            "__EXCEPTIONS=1", "__cplusplus=201703L", "-DNDEBUG", "assert(x)=0",
+        ):
+            with self.subTest(definition=definition):
+                self.proof("apps", "unsafe", options=f'DEFINITIONS "{definition}"')
+                output = self.configure(success=False)
+                self.assertTrue("reserved definition" in output or "DEFINITIONS requires" in output, output)
+                self.assertFalse((self.build / "esbmc/logs/unsafe.log").exists())
+
+    def test_additional_checks_and_custom_definition_verify_with_real_solver(self):
+        self.proof(
+            "apps", "safe-options",
+            "#include <cassert>\nint main() { assert(PROOF_LIMIT == 4); }\n",
+            options="DEFINITIONS PROOF_LIMIT=4 OPTIONS --overflow-check --unsigned-overflow-check",
+        )
+        self.configure()
+        self.assertIn("Solving with solver Z3", self.log("safe-options"))
 
     def test_cache_reuses_unchanged_proof_but_runs_changed_harness(self):
         app = self.proof("apps", "app")
