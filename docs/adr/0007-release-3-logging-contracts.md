@@ -18,7 +18,8 @@ compatibility. The normative contracts and planned checks remain in
 
 ### Logger foundation — issue #3
 
-CreateLogger returns a borrowed Logger reference. The framework owns immutable
+TryCreateLogger creates and registers a logger; CreateLogger retrieves its
+borrowed reference. The framework owns immutable
 copies of context inputs and keeps references stable until process shutdown.
 Applications cannot construct, copy, move, or destroy loggers. Framework storage
 must therefore keep object addresses stable as the registry grows. Registry
@@ -105,7 +106,8 @@ and lifecycle management outside Release 3. Private failure injection and
 metadata stubs provide deterministic tests without host resource exhaustion.
 
 Issue #3 owns creation concurrency tests even though concurrent record emission
-belongs to #15. Issue #15 owns threshold behavior tests; #16 owns trace/filter
+belongs to #15. Issue #3 verifies the threshold eligibility predicate; #15
+verifies filtering of emitted records; #16 owns trace/filter
 interaction tests. The requirement inventory records additional planned test
 names. Issue #5 collects evidence, including common tests in both exception
 modes, enabled-only exception containment tests in CI, and ARM64 cross-build.
@@ -130,3 +132,13 @@ our precise matching algorithm. Move-only stream rules are project choices,
 not verified AUTOSAR special-member restrictions. Flush starts a new stream,
 but the source note says it does not empty the buffer. Our fresh-record,
 no-duplicate contract deliberately resolves that ambiguity for this backend.
+
+## Foundation API documentation and sink verification
+
+The [logger-foundation guide](../guides/ara-log-foundation.md) documents the
+accepted creation/retrieval sequence and its failure and lifetime contracts.
+Component tests exercise ConsoleSink directly through the private Sink interface.
+Source inspection verifies that LoggerRegistry passes its owned console sink to
+each created logger. There is no test-only friend or accessor in Logger's public
+header. Public-path output verification follows in issue #15 once logging
+operations exist; direct backend tests do not prove factory sink selection.
