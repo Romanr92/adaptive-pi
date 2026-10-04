@@ -71,9 +71,20 @@ This provides an explicit failure path in the default exception-disabled build.
 A noexcept annotation alone would turn an escaping exception into termination,
 which does not satisfy the discard contract.
 
-Internal providers and sinks use explicit failure status. Enabled builds also
-contain internal exceptions; disabled builds use non-throwing paths. No failure
-logs recursively. Creation failure is deliberately separate from record failure.
+Internal providers and sinks use explicit failure status. Sink::Write remains
+noexcept: enabled-build sink implementations catch their internal exceptions
+before returning failure status. Provider exceptions are contained at the
+logging boundary. Disabled builds use non-throwing paths and explicit status;
+try/catch code is excluded with the existing exception configuration guard.
+An exception escaping a noexcept sink terminates before any caller-side handler
+can recover and therefore violates the sink contract. The current fwrite-based
+console sink reports write status without an exception handler.
+
+Issue #15 verifies explicit sink failure in both modes, provider exception
+containment in enabled CI, and a private sink that catches an internally thrown
+exception and returns failure status. Logging discards records on that status.
+No failure logs recursively. Creation failure is deliberately separate from
+record failure.
 
 ### Modelled messages and routing — issue #16
 

@@ -66,7 +66,7 @@ implementation guidance are in [ADR 0007](../adr/0007-release-3-logging-contract
 - Verification: Unit test
   `AP_R3_LOG_002_LoggerRetainsContextProperties`, using a valid,
   caller-unique context ID.
-- Unit Tests:; `AP_R3_LOG_002_ThresholdFiltersDefinedLevels.MatchesEnabledSeveritySet`; `AP_R3_LOG_002_InvalidCreationThreshold.Terminates`
+- Unit Tests: `AP_R3_LOG_002_LoggerRetainsContextProperties.RetainsAllInputs`; `AP_R3_LOG_002_ContextOwnsInputStrings.SurvivesInputMutationAndDestruction`; `AP_R3_LOG_002_ThresholdFiltersDefinedLevels.MatchesEnabledSeveritySet`; `AP_R3_LOG_002_InvalidCreationThreshold.Terminates`
 - Deviation: Application IDs, manifests, and cross-process registration are out
   of scope. The `CreateLogger()` API shall retain context ID, description, and
   threshold as separate inputs so a manifest-based creation overload can be
@@ -228,9 +228,11 @@ implementation guidance are in [ADR 0007](../adr/0007-release-3-logging-contract
   before console escaping; overflow shall discard the entire pending record.
   Creation-time allocation is governed separately by LOG-003.
 - Requirement: Failure shall be represented internally through explicit status.
-  Exception-enabled builds shall contain exceptions from internal providers and
-  sinks at the logging boundary; exception-disabled implementations shall use
-  non-throwing operations and explicit failure status. No failure shall recursively
+  Exception-enabled builds shall contain provider exceptions at the logging
+  boundary. Sink implementations shall contain any internal exceptions within
+  their non-throwing `Write()` operation and return failure status.
+  Exception-disabled implementations shall use non-throwing operations and
+  explicit failure status. No failure shall recursively
   log through the failed path. A failed sink write may already have emitted a
   partial record; Release 3 does not guarantee rollback of console output.
 - AUTOSAR source:
@@ -337,19 +339,25 @@ implementation guidance are in [ADR 0007](../adr/0007-release-3-logging-contract
 ## Additional verification for clarified contracts
 
 - LOG-002: `AP_R3_LOG_002_ThresholdFiltersDefinedLevels`, `AP_R3_LOG_002_ContextOwnsInputStrings`.
-- LOG-003: `AP_R3_LOG_003_ReferencesRemainStable`, `AP_R3_LOG_003_ConcurrentCreation`, `AP_R3_LOG_003_CreationFailureReturnsError`.
+- LOG-003: `AP_R3_LOG_003_CreateLoggerOwnsLogger.ReferencesRemainStable`, `AP_R3_LOG_003_ConcurrentCreation`, `AP_R3_LOG_003_CreationFailureReturnsError`.
 - LOG-005: `AP_R3_LOG_005_EmptyAndRepeatedFlush`, `AP_R3_LOG_005_MoveTransfersPendingRecord`, `AP_R3_LOG_005_SupportedInsertionTypes`, `AP_R3_LOG_005_UnsupportedInsertionDoesNotCompile`.
 - LOG-006: `AP_R3_LOG_006_EscapesRecordContent`.
 - LOG-007: `AP_R3_LOG_007_SuppressedRecordsSkipProviders`.
-- LOG-008: `AP_R3_LOG_008_OverflowDiscardsRecord`, `AP_R3_LOG_008_ProviderFailureDiscardsRecord`, `AP_R3_LOG_008_FormattingFailureDiscardsRecord`, `AP_R3_LOG_008_ThrowingProviderAndSinkAreContained`.
+- LOG-008: `AP_R3_LOG_008_OverflowDiscardsRecord`, `AP_R3_LOG_008_ProviderFailureDiscardsRecord`, `AP_R3_LOG_008_FormattingFailureDiscardsRecord`, `AP_R3_LOG_008_ProviderExceptionIsContained`; `AP_R3_LOG_008_SinkContainsInternalException`.
 - LOG-009: `AP_R3_LOG_009_SharedLoggerSeparateStreams`.
 - LOG-010: `AP_R3_LOG_010_AttributeRendering`, `AP_R3_LOG_010_UnsupportedAndDuplicateAttributesDoNotCompile`, `AP_R3_LOG_010_ExactParameterTypes`, `AP_R3_LOG_010_ModelledMessageSizeLimit`.
 - LOG-011: `AP_R3_LOG_011_ThresholdDoesNotFilterTrace`, `AP_R3_LOG_011_LoggerFailureDoesNotSuppressTrace`.
 
 LOG-003 also requires compile-time construction/copy/move restrictions. Failure
 injection is private and deterministic; tests shall not exhaust host memory.
-Common tests run in both exception modes. Throwing-provider/sink tests run only
-in exception-enabled CI; local execution remains exception-disabled. These are
+Common tests run in both exception modes. Provider-exception and sink-internal
+exception-containment tests run only in exception-enabled CI; local execution
+remains exception-disabled. The sink-internal exception test shall throw inside
+an implementation-private sink, catch within its `noexcept Write()`, return
+failure status, and verify that the logging operation discards the record.
+A separate failing-sink test shall verify explicit failure status without
+exceptions in both modes. An exception escaping `noexcept Write()` violates the
+sink contract and is not a recoverable caller-side failure. These are
 planned checks, not evidence of implementation or successful execution.
 
 Creation verification shall additionally cover successful TryCreateLogger,
