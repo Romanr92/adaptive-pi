@@ -75,3 +75,10 @@ by source inspection; output through the public logger API is deferred to issue
 Common tests are included in both exception configurations. Default local runs
 use exceptions disabled; exception-enabled execution is verified in CI.
 Requirement statuses and passing CI evidence remain separate from test existence.
+
+Allocation-failure injection uses a separate test executable with 64-bit Linux
+GCC/Clang ABI symbols and ELF linker wrapping. CMake checks linker support and
+omits that executable on unsupported hosts, including AppleClang/Mach-O, with
+an explicit configure message. Portable foundation tests remain enabled; an
+omitted injection target is not passing failure-path evidence. Linux CI supplies
+that verification in both exception modes.
