@@ -180,13 +180,12 @@ function(adaptive_pi_run_esbmc_proofs)
         USES_TERMINAL VERBATIM
         COMMENT "Run all registered ESBMC proofs")
     adaptive_pi_esbmc_coverage_manifest("${CMAKE_BINARY_DIR}/esbmc/coverage.json" "${proofs}")
-    find_package(Python3 3.10 COMPONENTS Interpreter REQUIRED)
     add_custom_target(esbmc-coverage-report
-        COMMAND "${Python3_EXECUTABLE}"
-            "${CMAKE_CURRENT_FUNCTION_LIST_DIR}/../tools/esbmc-report/esbmc_cov_to_html.py"
-            --manifest "${CMAKE_BINARY_DIR}/esbmc/coverage.json"
-            --root "${PROJECT_SOURCE_DIR}"
-            --output "${ADAPTIVE_PI_ESBMC_REPORT_DIR}"
+        COMMAND "${CMAKE_COMMAND}"
+            "-DADAPTIVE_PI_ESBMC_COVERAGE_MANIFEST=${CMAKE_BINARY_DIR}/esbmc/coverage.json"
+            "-DADAPTIVE_PI_ESBMC_SOURCE_ROOT=${PROJECT_SOURCE_DIR}"
+            "-DADAPTIVE_PI_ESBMC_REPORT_DIR=${ADAPTIVE_PI_ESBMC_REPORT_DIR}"
+            -P "${CMAKE_CURRENT_FUNCTION_LIST_DIR}/RunESBMCCoverage.cmake"
         USES_TERMINAL VERBATIM
         COMMENT "Generate informational ESBMC proof and branch coverage report")
     if(ADAPTIVE_PI_ESBMC_RUN_AT_CONFIGURE)

@@ -95,6 +95,27 @@ class GateIntegrationTests(unittest.TestCase):
         self.assertIn("| app-proof | PASSED |", summary)
         self.assertIn("'--z3'", summary)
 
+    def test_strict_gate_rejects_disabled_configure_time_proofs(self):
+        """Arrange a registered proof and strict mode; disable configure proofs; expect rejection."""
+        self.proof("platform", "strict-proof")
+        output = self.configure("-DADAPTIVE_PI_ESBMC_RUN_AT_CONFIGURE=OFF", success=False)
+        self.assertIn("requires ADAPTIVE_PI_ESBMC_RUN_AT_CONFIGURE=ON", output)
+
+    def test_proof_gate_does_not_discover_python(self):
+        """Arrange disabled Python discovery; configure and run proofs; expect the strict gate to pass."""
+        self.proof("platform", "without-python")
+        self.configure("-DCMAKE_DISABLE_FIND_PACKAGE_Python3=TRUE")
+        self.invoke("cmake", "--build", str(self.build), "--target", "run-esbmc")
+        self.assertIn("VERIFICATION SUCCESSFUL", self.log("without-python"))
+        output = self.invoke(
+            "cmake", "-DCMAKE_DISABLE_FIND_PACKAGE_Python3=TRUE",
+            f"-DADAPTIVE_PI_ESBMC_COVERAGE_MANIFEST={self.build / 'esbmc/coverage.json'}",
+            f"-DADAPTIVE_PI_ESBMC_SOURCE_ROOT={self.source}",
+            f"-DADAPTIVE_PI_ESBMC_REPORT_DIR={self.root / 'report'}",
+            "-P", str(REPOSITORY / "cmake/RunESBMCCoverage.cmake"), success=False)
+        self.assertIn("Python3", output)
+        self.assertFalse((self.root / "report/index.html").exists())
+
     def test_report_target_exports_commands_and_runs_from_external_project(self):
         """Arrange an external project with spaces; build each requested mode; verify manifest and evidence."""
         component = self.source / "platform/fixture"

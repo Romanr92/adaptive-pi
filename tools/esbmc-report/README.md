@@ -42,7 +42,9 @@ cmake --build build/debug-esbmc-proofs --target esbmc-coverage-report
 Reconfigure that build once if the target is not yet present. The target writes
 to `build/ESMBC-coverage/` by default. Override with the CMake cache setting
 `ADAPTIVE_PI_ESBMC_REPORT_DIR`. The ordinary strict proof preset still runs and
-requires successful proofs during configuration. For an informational report
+requires successful proofs during configuration. Python is discovered only when
+`esbmc-coverage-report` executes; configuring and running ordinary safety proofs
+does not require Python. For an informational report
 even when proofs fail, use the Python `--run` command above; it disables
 configure-time proof execution in its own configuration and records each result.
 
@@ -103,7 +105,10 @@ publishes `/esbmc/` alongside `/coverage/` in the same Pages deployment. The
 homepage links to both reports. The workflow also retains the ESBMC HTML, raw
 JSON, logs, and command manifests as a downloadable artifact for 14 days.
 
-This reporting addition is informational and adds no required PR check. Proof
+Generated coverage percentages and report availability are informational and do
+not gate merges. The report-tool regression tests and CMake integration tests
+run inside the existing required **ESBMC proofs** CI job; a tooling-test failure
+does fail that check. No separate required report check is added. Proof
 failures and unavailable coverage appear in the report; installation or report
 step failures produce an unavailable-report page so unit-test coverage can still
 be deployed. The fallback is a static page independent of the Python generator.
