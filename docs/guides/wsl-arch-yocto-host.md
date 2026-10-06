@@ -85,6 +85,7 @@ processors=4
 swap=8GB
 swapFile=D:\\WSL\\swap\\swap.vhdx
 nestedVirtualization=true
+maxCrashDumpCount=1
 
 [experimental]
 # Reclaim unused memory back to Windows dynamically.
@@ -93,6 +94,13 @@ autoMemoryReclaim=dropcache
 
 Get-Content $wslConfig
 ```
+
+`maxCrashDumpCount=1` keeps at most one WSL crash dump. It is included to
+limit disk use if WSL repeatedly crashes while retaining a dump to investigate;
+it does not disable crash dumps. This is separate from the VS Code Python
+language server running out of memory while indexing generated Yocto files.
+The workspace exclusions in the troubleshooting section address that indexing
+problem.
 
 This is a starting allocation for a 32 GiB Windows host. To create or edit the
 file manually instead, run `notepad $wslConfig`, paste the same content, save,
@@ -269,29 +277,29 @@ already exists, merge the three patterns into it. Preserve any existing
 
 Run **Command Palette → Developer: Reload Window**, then monitor
 **View → Output → Pylance** for a few minutes. Confirm that
-`JavaScript heap out of memory` errors stop and no new crash dumps appear.
-Keep existing dumps until the fix is confirmed.
+`JavaScript heap out of memory` errors stop. WSL crash dumps are separate
+diagnostic artifacts and may still be created; keep them if you need to
+investigate a WSL crash.
 
-### Optional: disable future WSL crash dumps
+### Locate and remove old WSL crash dumps
 
-In Windows, edit `%UserProfile%\.wslconfig` and add this entry under the existing
-`[wsl2]` section, preserving the resource settings from section 3:
-
-```ini
-[wsl2]
-maxCrashDumpCount=0
-```
-
-If `[wsl2]` already exists, add only `maxCrashDumpCount=0` beneath it; do not
-create a second section. Save the file, stop any running Yocto builds and other
-WSL work, then apply the change from PowerShell:
+By default, WSL crash dumps are stored in
+`%LOCALAPPDATA%\Temp\wsl-crashes` (under the current Windows user's
+`AppData\Local\Temp`). If `.wslconfig` sets `crashDumpFolder`, check that
+folder instead. To inspect the default folder and open it in File Explorer,
+run these commands in PowerShell:
 
 ```powershell
-wsl --shutdown
+$crashDumpFolder = Join-Path $env:LOCALAPPDATA 'Temp\wsl-crashes'
+Get-ChildItem -LiteralPath $crashDumpFolder -Force |
+  Sort-Object LastWriteTime -Descending |
+  Select-Object Name, Length, LastWriteTime
+explorer.exe $crashDumpFolder
 ```
 
-Reopen WSL and reconnect VS Code. This disables future WSL crash dumps; it does
-not fix Pylance's memory exhaustion or disable Pylance/Node dumps. Keep the
-workspace exclusions above and use Pylance's output to verify the fix even
-when WSL dump creation is disabled. Existing dumps are not deleted by this
-setting.
+After checking the filenames and sizes, delete only the old dump files you no
+longer need from that folder in File Explorer to reclaim Windows disk space.
+Do not delete a dump you still need for investigating a WSL crash. The
+`maxCrashDumpCount=1` setting limits future retained WSL dumps; it does not
+remove dumps that already exist. Keep this limit at `1` so a future WSL crash
+can still be investigated.
