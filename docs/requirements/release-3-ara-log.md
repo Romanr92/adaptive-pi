@@ -167,6 +167,7 @@ implementation guidance are in [ADR 0007](../adr/0007-release-3-logging-contract
   `AP_R3_LOG_005_SeverityMethodsCreateCorrectStreams`,
   `AP_R3_LOG_005_StreamInsertionBuildsRecord`, and
   `AP_R3_LOG_005_FlushAndDestructionSubmitRecord`.
+- Unit Tests: `AP_R3_LOG_005_StreamInsertionBuildsRecord.FormatsSupportedValues`; `AP_R3_LOG_005_MoveTransfersPendingRecord.DestinationDestructionSubmitsOnce`; `AP_R3_LOG_005_MoveTransfersPendingRecord.SourceDestructionLeavesDestinationPending`
 - Deviation: AdaptivePi supports a documented educational subset of stream
   insertion value types. Unsupported AUTOSAR formatting decorators may be added
   later. Move restrictions and suppression of empty records are AdaptivePi

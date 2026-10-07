@@ -1,7 +1,7 @@
 # Separate executables group level checks and logger context/ownership checks.
 include(GoogleTest)
 
-set(ara_log_test_targets ara_log_level_test ara_log_context_test)
+set(ara_log_test_targets ara_log_level_test ara_log_context_test ara_log_stream_test)
 
 # The allocation wrappers use the 64-bit Linux Itanium ABI and an ELF linker.
 # AppleClang/Mach-O and other unsupported hosts still build the portable tests.
@@ -22,6 +22,8 @@ endif()
 foreach(test_target IN LISTS ara_log_test_targets)
     if(test_target STREQUAL "ara_log_level_test")
         set(test_source log_level_test.cpp)
+    elseif(test_target STREQUAL "ara_log_stream_test")
+        set(test_source log_stream_test.cpp)
     elseif(test_target STREQUAL "ara_log_allocation_test")
         set(test_source logger_allocation_failure_test.cpp)
     else()
