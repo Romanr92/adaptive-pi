@@ -28,6 +28,8 @@ Cover, in this order:
 
 Use short C++ snippets or pseudocode when they make a concept easier to understand. Do not present a sketch as finished, compiling project code. If the user requests a brief answer, prioritize the specific question over this full structure.
 
+In explanatory code snippets, use C-style `/* ... */` comments only for requirement traceability (for example, `/* Implements AP-R3-LOG-005 */`). Use short, concise `//` comments for explanations, focusing on purpose or non-obvious behavior. Unit-test edits follow the separate write-unit-tests skill's comment conventions.
+
 ## Teach and review all supported builds
 
 - Read `docs/adr/0006-exception-build-policy.md` and inspect current presets, target settings, and CI jobs. Implementation guidance shall cover every supported configuration affected by the requirement, including exceptions disabled and enabled.

@@ -190,4 +190,28 @@ namespace ara::log
     other.enabled_ = false;
   }
 
+  /* Implements AP-R3-LOG-005 */
+  void LogStream::Flush() noexcept
+  {
+    // Submit only active, enabled, valid streams with accumulated bytes.
+    // A moved-from stream has a null logger pointer and cannot submit.
+    if ((logger_ != nullptr) && (enabled_) && (!failed_) && (size_ != c_empty_message_size))
+    {
+      // Borrow exactly size_ bytes without allocation or copying.
+      // Submit must consume them before returning.
+      logger_->Submit(level_, std::string_view{buffer_.data(), size_});
+    }
+
+    // Reset after submission or discard
+    size_ = c_empty_message_size;
+    failed_ = false;
+  }
+
+  /* Implements AP-R3-LOG-005 */
+  LogStream::~LogStream() noexcept
+  {
+    // Submit remaining content.
+    Flush();
+  }
+
 } // namespace ara::log

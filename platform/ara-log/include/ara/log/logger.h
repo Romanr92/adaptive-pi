@@ -19,6 +19,7 @@ namespace ara::log
   {
     class LoggerRegistry;
     class Sink;
+    class MetadataProvider;
   } // namespace detail
 
   // final prevents inheritance; the framework controls construction and lifetime.
@@ -51,11 +52,19 @@ namespace ara::log
     private:
       // Friendship gives only this class access to private construction and destruction.
       friend class detail::LoggerRegistry;
+      // Allow LogStream to call the logger's private submission operation.
+      friend class LogStream;
 
       Logger(std::unique_ptr<char[]> context_id, std::size_t context_id_size, std::unique_ptr<char[]> description,
-             std::size_t description_size, LogLevel threshold, detail::Sink& sink) noexcept;
+             std::size_t description_size, LogLevel threshold, detail::Sink& sink,
+             detail::MetadataProvider& metadata_provider) noexcept;
 
       ~Logger() = default;
+
+      // Borrow message bytes for this call; do not retain the view.
+      // const preserves the logger's context and threshold.
+      // noexcept prohibits escaping exceptions; the implementation must contain failures.
+      void Submit(LogLevel level, std::string_view message) const noexcept;
 
       // Array unique_ptr owns the allocation and automatically calls delete[] at destruction.
       // Lengths preserve bounded string views, including embedded null characters.
@@ -71,6 +80,9 @@ namespace ara::log
       // A reference requires a destination at construction and cannot be rebound.
       // Used by logging operations that will be introduced with issue #15.
       [[maybe_unused]] detail::Sink& sink_;
+
+      // Borrowed from the registry.
+      detail::MetadataProvider& metadata_provider_;
 
       // Non-owning list link; the registry owns each node and preserves its address.
       Logger* next_ = nullptr;

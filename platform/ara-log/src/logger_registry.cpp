@@ -1,6 +1,8 @@
 #include "logger_registry.h"
 
 #include "ara/core/adaptive_pi_error_domain.h"
+#include "ara/core/config.h"
+#include "metadata_provider.h"
 
 #include <cstddef>
 #include <cstring>
@@ -55,8 +57,9 @@ namespace ara::log::detail
 
     // Separate object allocation keeps this address stable as the registry grows.
     // Construction takes ownership of the buffers and performs no allocation.
-    Logger* logger = new (std::nothrow) Logger{std::move(id_buffer), context_id.size(), std::move(description_buffer),
-                                               description.size(),   threshold,         console_sink_};
+    Logger* logger = new (std::nothrow)
+      Logger{std::move(id_buffer), context_id.size(), std::move(description_buffer), description.size(), threshold,
+             console_sink_,        metadata_provider_};
 
     if (logger == nullptr)
     {

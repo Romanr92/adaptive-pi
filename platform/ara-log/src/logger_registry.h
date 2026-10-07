@@ -3,6 +3,7 @@
 
 #include "ara/log/logger.h"
 #include "console_sink.h"
+#include "linux_metadata_provider.h"
 
 #include <pthread.h>
 
@@ -39,6 +40,9 @@ namespace ara::log::detail
 
       // Owned by the registry; remains alive until all registered loggers are deleted.
       ConsoleSink console_sink_;
+
+      // Shared production provider.
+      LinuxMetadataProvider metadata_provider_;
   };
 
 } // namespace ara::log::detail
