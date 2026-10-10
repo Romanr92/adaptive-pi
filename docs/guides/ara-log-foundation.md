@@ -2,7 +2,7 @@
 
 Release 3 provides a project-owned educational logging foundation, not a claim
 of AUTOSAR API compatibility. Its baseline is
-[LOG-001 through LOG-009](../requirements/release-3-ara-log.md); the accepted
+[LOG-001 through LOG-010](../requirements/release-3-ara-log.md); the accepted
 factory deviation is explained in [ADR 0007](../adr/0007-release-3-logging-contracts.md).
 
 ## Create once, then borrow
@@ -92,6 +92,94 @@ or internal metadata, formatting, or sink failure discards the affected record.
 Separate streams may share a logger concurrently. Successful console writes
 preserve complete records; thread ordering is unspecified.
 
+## Modelled messages
+
+A modelled message defines its identifier, severity, parameter types, and
+renderer in manually authored C++. Release 3 does not generate definitions
+from ARXML.
+
+```cpp
+#include "ara/log/logger.h"
+
+#include <cstdint>
+#include <string_view>
+#include <tuple>
+
+struct RetryMessage
+{
+  static constexpr std::string_view kId{"RETRY"};
+  static constexpr ara::log::LogLevel kLevel{
+      ara::log::LogLevel::kWarn};
+
+  using ParameterTypes = std::tuple<std::uint32_t>;
+
+  static void Render(ara::log::MessageWriter& writer,
+                     const std::uint32_t& attempt) noexcept
+  {
+    constexpr std::string_view c_attempt_label{"attempt="};
+    writer << c_attempt_label << attempt;
+  }
+};
+```
+
+After successfully registering a logger with a threshold admitting Warn:
+
+```cpp
+logger.Log(RetryMessage{}, std::uint32_t{2});
+```
+
+The message payload is:
+
+```text
+id=RETRY attempt=2
+```
+
+Message IDs must be non-empty ASCII letters, digits, or underscores.
+`kLevel` has type `LogLevel`. `ParameterTypes` is a tuple declaring parameter
+types in call order. Arguments must match after removing references and
+top-level cv qualifiers; implicit numeric and string conversions are rejected.
+
+`Render()` returns `void` and must be `noexcept`. It receives a borrowed
+`MessageWriter` supporting the same insertion types and formatting as stream
+logging. The renderer must finish synchronously and must not retain the writer.
+The writer provides no flush operation; Logger controls record submission.
+
+The payload starts with `id=<message-id>`. One space precedes non-empty
+rendered text. A renderer producing no text emits only the ID and any
+attributes. Context threshold filtering applies before rendering.
+
+### Message attributes
+
+`LogWith()` accepts a tuple containing at most one `Location` and one `Tag`.
+Unsupported attribute types and duplicate types fail compilation.
+
+```cpp
+const auto attributes = std::make_tuple(
+    ara::log::Location{"startup.cpp", 42},
+    ara::log::Tag{"initialization"});
+
+logger.LogWith(attributes, RetryMessage{}, std::uint32_t{2});
+```
+
+The payload before console escaping is:
+
+```text
+id=RETRY attempt=2 location="startup.cpp:42" tag="initialization"
+```
+
+Attributes appear in tuple order. Location file identifiers and Tag values
+are borrowed string views; their backing storage must remain valid throughout
+the call.
+
+Attribute values escape backslashes and double quotes first. Console
+rendering then applies the existing console escaping rules to the complete
+payload.
+
+The ID, rendered text, separators, and attributes share the 4096-byte message
+limit before console escaping. Attribute escaping counts toward that limit.
+Overflow or internal logging failure discards the entire record without
+returning an application error. These rules apply in both exception modes.
+
 ## Verification limits
 
 Foundation tests cover level encoding, context retention and ownership,
@@ -106,6 +194,12 @@ and complete headers/payloads. No test-only friendship is present in Logger.
 Common tests are included in both exception configurations. Default local runs
 use exceptions disabled; exception-enabled execution is verified in CI.
 Requirement statuses and passing CI evidence remain separate from test existence.
+
+LOG-010 tests cover modelled payloads, supported rendering values, exact
+parameter matching, attribute eligibility, tuple order, escaping, and size
+limits. Compiler checks include successful controls and rejected public calls.
+Local exception-disabled checks passed; exception-enabled CI and ARM64
+verification remain pending for these changes.
 
 Allocation-failure injection uses a separate test executable with 64-bit Linux
 GCC/Clang ABI symbols and ELF linker wrapping. CMake checks linker support and
