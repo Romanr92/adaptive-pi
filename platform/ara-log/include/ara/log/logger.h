@@ -12,6 +12,9 @@
 #include <functional>
 #include <memory>
 #include <string_view>
+#include <tuple>
+#include <type_traits>
+#include <utility>
 
 namespace ara::log
 {
@@ -54,11 +57,22 @@ namespace ara::log
       template <typename MsgId, typename... Params>
       void Log(const MsgId& message, const Params&... params) const noexcept
       {
+        LogWith(std::tuple<>{}, message, params...);
+      }
+
+      /* Implements AP-R3-LOG-010 */
+      template <typename... Attrs, typename MsgId, typename... Params>
+      void LogWith(const std::tuple<Attrs...>& attributes, const MsgId& message, const Params&... params) const noexcept
+      {
         using Message = detail::NormalizedType<MsgId>;
 
         constexpr bool c_parameters_match = detail::kParameterMatch<typename Message::ParameterTypes, Params...>;
 
+        constexpr bool c_attributes_valid = detail::kValidAttributes<Attrs...>;
+
         static_assert(c_parameters_match, "Modelled message parameter types must match exactly");
+
+        static_assert(c_attributes_valid, "Attributes must be unique Location or Tag types");
 
         static_assert(detail::IsValidMessageId(Message::kId),
                       "Message ID must be non-empty ASCII letters, digits, or underscores");
@@ -67,7 +81,7 @@ namespace ara::log
                       "Message severity must have type LogLevel");
 
         // Avoid instantiating the renderer for mismatched parameters.
-        if constexpr (c_parameters_match)
+        if constexpr (c_parameters_match && c_attributes_valid)
         {
           static_assert(std::is_same_v<decltype(message.Render(std::declval<MessageWriter&>(), params...)), void>,
                         "Message Render must return void");
@@ -87,6 +101,13 @@ namespace ara::log
 
           MessageWriter writer{stream};
           message.Render(writer, params...);
+
+          std::apply(
+            [&stream](const auto&... attribute) noexcept
+            {
+              (AppendAttribute(stream, attribute), ...);
+            },
+            attributes);
         }
       }
 
@@ -127,6 +148,13 @@ namespace ara::log
 
       // Non-owning list link; the registry owns each node and preserves its address.
       Logger* next_ = nullptr;
+
+      /* Supports AP-R3-LOG-010 */
+      static void AppendAttributeValue(LogStream& stream, std::string_view value) noexcept;
+
+      static void AppendAttribute(LogStream& stream, const Location& location) noexcept;
+
+      static void AppendAttribute(LogStream& stream, const Tag& tag) noexcept;
   };
 
   // Result holds either a borrowed reference_wrapper or an ErrorCode.
