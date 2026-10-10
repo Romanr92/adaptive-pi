@@ -287,10 +287,11 @@ Requirement statuses and passing CI evidence remain separate from test existence
 LOG-010 tests cover modelled payloads, supported rendering values, exact
 parameter matching, attribute eligibility, tuple order, escaping, and size
 limits. Compiler checks include successful controls and rejected public calls.
-Local exception-disabled checks pass. PR #68's Host CI run for commit
-`8347611` passed both host exception configurations and the existing target
-build. The new routing edge cases and smoke-test CI step added afterward still
-need CI evidence for their revision.
+Local exception-disabled checks pass. PR #68's
+[Host CI run for commit `c93d667`](https://github.com/Romanr92/adaptive-pi/actions/runs/38094314624)
+passed formatting, both host exception configurations, ESBMC proofs, and the
+ARM64 cross-build including the modelled logging smoke executable. Changes
+after that revision require their own CI evidence.
 
 LOG-011 tests cover all four routes, original trace argument identity, logger
 filtering (including trace-only routing at Off), assembly overflow, console

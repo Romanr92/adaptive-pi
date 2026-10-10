@@ -155,6 +155,11 @@ namespace ara::log
 
     for (const char character : value)
     {
+      if (stream.failed_)
+      {
+        return;
+      }
+
       if ((character == c_escape) || character == c_quote)
       {
         stream << c_escape;

@@ -172,7 +172,8 @@ namespace
   /* Verify the configured destinations and original trace arguments.
    * 1. Arrange: Register a logger and prepare a message with the selected compile-time route.
    * 2. Act: Submit the modelled message through LogWith with a Tag.
-   * 3. Expect: Only enabled destinations run and logger output contains one complete record.
+   * 3. Expect: Trace receives the original arguments once; rendering, metadata reads,
+   *    sink writes, and logger output remain absent.
    */
   TEST_F(RoutingFixture, AP_R3_LOG_011_RoutesToTraceArtifact)
   {
@@ -220,7 +221,8 @@ namespace
   /* Verify the configured destinations and original trace arguments.
    * 1. Arrange: Register a logger and prepare a message with the selected compile-time route.
    * 2. Act: Submit the modelled message through LogWith with a Tag.
-   * 3. Expect: Only enabled destinations run and logger output contains one complete record.
+   * 3. Expect: Neither destination runs; rendering, metadata reads, sink writes,
+   *    trace calls, and logger output remain absent.
    */
   TEST_F(RoutingFixture, AP_R3_LOG_011_DiscardsDisabledTraceMessage)
   {
