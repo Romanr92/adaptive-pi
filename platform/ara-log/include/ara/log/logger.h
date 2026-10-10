@@ -4,6 +4,7 @@
 #include "ara/core/error_code.h"
 #include "ara/core/result.h"
 #include "ara/log/log_level.h"
+#include "ara/log/log_stream.h"
 
 #include <cstddef>
 #include <functional>
@@ -12,8 +13,6 @@
 
 namespace ara::log
 {
-
-  class LogStream;
 
   namespace detail
   {

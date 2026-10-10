@@ -4,6 +4,7 @@
 
 #include <algorithm>
 #include <array>
+#include <clocale>
 #include <condition_variable>
 #include <cstdio>
 #include <gtest/gtest.h>
@@ -97,6 +98,21 @@ namespace
         std::locale::global(previous);
       }
   };
+  /* Save LC_NUMERIC so locale selection and skipped tests restore process-global state. */
+  class CNumericLocaleFixture : public LoggingContractFixture
+  {
+    protected:
+      std::string previous_numeric;
+      void SetUp() override
+      {
+        LoggingContractFixture::SetUp();
+        previous_numeric = std::setlocale(LC_NUMERIC, nullptr);
+      }
+      void TearDown() override
+      {
+        EXPECT_NE(std::setlocale(LC_NUMERIC, previous_numeric.c_str()), nullptr);
+      }
+  };
   /* ================================== End Fixtures =================================== */
   /* =============================== Test_AP_R3_LOG_005 ================================ */
 
@@ -154,7 +170,16 @@ ValueBoundaryCase{"MutableCString", [](LogStream& stream) { char text[] = "mutab
 ValueBoundaryCase{"StringNullByte", [](LogStream& stream) { stream << std::string{"a\0b", 3}; }, std::string{"a\0b", 3}},
 ValueBoundaryCase{"ViewNullByte", [](LogStream& stream) { stream << std::string_view{"a\0b", 3}; }, std::string{"a\0b", 3}},
 ValueBoundaryCase{"FloatNonFinite", [](LogStream& stream) { stream << std::numeric_limits<float>::infinity() << ' ' << -std::numeric_limits<float>::infinity() << ' ' << std::numeric_limits<double>::quiet_NaN(); }, "inf -inf nan"},
-ValueBoundaryCase{"FloatNegativeZero", [](LogStream& stream) { stream << -0.0F; }, "-0"}), ValueBoundaryCaseName);
+ValueBoundaryCase{"FloatNegativeZero", [](LogStream& stream) { stream << -0.0F; }, "-0"} ,
+ValueBoundaryCase{"FloatMinimum", [](LogStream& stream) { stream << std::numeric_limits<float>::min(); }, "1.17549435e-38"},
+ValueBoundaryCase{"FloatMaximum", [](LogStream& stream) { stream << std::numeric_limits<float>::max(); }, "3.40282347e+38"},
+ValueBoundaryCase{"FloatSubnormal", [](LogStream& stream) { stream << std::numeric_limits<float>::denorm_min(); }, "1.40129846e-45"},
+ValueBoundaryCase{"DoubleMinimum", [](LogStream& stream) { stream << std::numeric_limits<double>::min(); }, "2.2250738585072014e-308"},
+ValueBoundaryCase{"DoubleMaximum", [](LogStream& stream) { stream << std::numeric_limits<double>::max(); }, "1.7976931348623157e+308"},
+ValueBoundaryCase{"DoubleSubnormal", [](LogStream& stream) { stream << std::numeric_limits<double>::denorm_min(); }, "4.9406564584124654e-324"},
+ValueBoundaryCase{"NegativeFloatMaximum", [](LogStream& stream) { stream << -std::numeric_limits<float>::max(); }, "-3.40282347e+38"},
+ValueBoundaryCase{"NegativeDoubleMaximum", [](LogStream& stream) { stream << -std::numeric_limits<double>::max(); }, "-1.7976931348623157e+308"}
+), ValueBoundaryCaseName);
   /* ----------------------------------------------------------------------------------- */
   /* Verify numeric insertion ignores locale grouping and decimal punctuation.
    * 1. Arrange: Use the fixture's comma decimal separator and grouped integer locale.
@@ -195,6 +220,25 @@ ValueBoundaryCase{"FloatNegativeZero", [](LogStream& stream) { stream << -0.0F; 
     EXPECT_EQ(writes_after_flush, 1U);
     EXPECT_EQ(sink.writes, 1U);
     EXPECT_EQ(sink.record.View(), "[1970-01-01T00:00:00.000Z][12][34][INFO][VALUES] original\n");
+  }
+  /* ----------------------------------------------------------------------------------- */
+  /* Verify floating insertion ignores a real comma-decimal C numeric locale.
+   * 1. Arrange: Select de_DE UTF-8 and confirm the C decimal separator is a comma.
+   * 2. Act: Submit finite float and double values through the injected logger.
+   * 3. Expect: The payload still uses dot decimal separators and max_digits10 precision.
+   */
+  TEST_F(CNumericLocaleFixture, AP_R3_LOG_005_CLocaleIndependentFormatting)
+  {
+    /* Arrange */
+    if (std::setlocale(LC_NUMERIC, "de_DE.UTF-8") == nullptr && std::setlocale(LC_NUMERIC, "de_DE.utf8") == nullptr)
+    {
+      GTEST_SKIP() << "de_DE UTF-8 locale unavailable; both Host CI jobs provision it.";
+    }
+    ASSERT_STREQ(std::localeconv()->decimal_point, ",");
+    /* Act */
+    logger->LogInfo() << 0.1F << ' ' << 0.1;
+    /* Expect */
+    EXPECT_EQ(sink.record.View(), "[1970-01-01T00:00:00.000Z][12][34][INFO][VALUES] 0.100000001 0.10000000000000001\n");
   }
   /* ============================= End Test_AP_R3_LOG_005 ============================== */
   /* =============================== Test_AP_R3_LOG_002 ================================ */

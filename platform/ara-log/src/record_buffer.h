@@ -18,10 +18,10 @@ namespace ara::log::detail
     private:
       // Proposed capacity; checked appends must reject oversized records
       static constexpr std::size_t c_record_capacity = 16384;
-      static constexpr std::size_t c_redcord_zero = 0;
+      static constexpr std::size_t c_record_zero = 0;
 
       std::array<char, c_record_capacity> buffer_{};
-      std::size_t size_ = c_redcord_zero;
+      std::size_t size_ = c_record_zero;
   };
 } // namespace ara::log::detail
 

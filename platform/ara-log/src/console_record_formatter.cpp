@@ -94,9 +94,9 @@ namespace ara::log::detail
     }
 
     /* Implements AP-R3-LOG-006 UTC timestamp rendering */
-    [[nodiscard]] bool AppendTimestamp(RecordBuffer& output, std::int64_t unix_miliseconds) noexcept
+    [[nodiscard]] bool AppendTimestamp(RecordBuffer& output, std::int64_t unix_milliseconds) noexcept
     {
-      constexpr std::int64_t c_milis_per_second = 1000;
+      constexpr std::int64_t c_milliseconds_per_second = 1000;
 
       // std::tm stores years since 1900 and months starting at zero.
       constexpr int c_tm_year_base = 1900;
@@ -107,8 +107,8 @@ namespace ara::log::detail
       constexpr int c_maximum_year = 9999;
 
       // Normalize negative timestamps so the remainder is always 0-999.
-      auto seconds = unix_miliseconds / c_milis_per_second;
-      auto miliseconds = unix_miliseconds % c_milis_per_second;
+      auto seconds = unix_milliseconds / c_milliseconds_per_second;
+      auto milliseconds = unix_milliseconds % c_milliseconds_per_second;
 
       // 24 timestamp characters plus the snprintf null terminator.
       constexpr std::size_t c_timestamp_length = 24;
@@ -117,10 +117,10 @@ namespace ara::log::detail
       // UTC timestamp: YYYY-MM-DDTHH:MM:SS.mmmZ.
       constexpr char c_timestamp_format[] = "%04d-%02d-%02dT%02d:%02d:%02d.%03dZ";
 
-      if (miliseconds < 0)
+      if (milliseconds < 0)
       {
         --seconds;
-        miliseconds += c_milis_per_second;
+        milliseconds += c_milis_per_second;
       }
 
       // Supported Linux host and ARM64 targets use signed 64-bit time_t.
@@ -145,7 +145,7 @@ namespace ara::log::detail
 
       const int written = std::snprintf(text.data(), text.size(), c_timestamp_format, utc.tm_year + c_tm_year_base,
                                         utc.tm_mon + c_tm_month_adjustment, utc.tm_mday, utc.tm_hour, utc.tm_min,
-                                        utc.tm_sec, static_cast<int>(miliseconds));
+                                        utc.tm_sec, static_cast<int>(milliseconds));
 
       if (written != static_cast<int>(c_timestamp_length))
       {

@@ -28,7 +28,7 @@ namespace ara::log
       LogStream(const LogStream&) = delete;
       LogStream& operator=(const LogStream&) = delete;
 
-      // Transfers responsability for submitting the pending record.
+      // Transfers responsibility for submitting the pending record.
       LogStream(LogStream&& other) noexcept;
       LogStream& operator=(LogStream&&) = delete;
 
@@ -98,7 +98,7 @@ namespace ara::log
 
       LogStream(const Logger& logger, LogLevel level) noexcept;
 
-      // Appendcs bytes only when the pending record remains vaild.
+      // Appends bytes only when the pending record remains vaild.
       void Append(std::string_view value) noexcept;
 
       // LOG-008 establishes this limit; no heal allocattion is needed.

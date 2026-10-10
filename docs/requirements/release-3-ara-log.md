@@ -167,7 +167,7 @@ implementation guidance are in [ADR 0007](../adr/0007-release-3-logging-contract
   `AP_R3_LOG_005_SeverityMethodsCreateCorrectStreams`,
   `AP_R3_LOG_005_StreamInsertionBuildsRecord`, and
   `AP_R3_LOG_005_FlushAndDestructionSubmitRecord`.
-- Unit Tests: `AP_R3_LOG_005_EmptyStreams.EmitsNoOutput`; `AP_R3_LOG_005_StreamInsertionBuildsRecord.MatchesContract`; `AP_R3_LOG_005_FlushAndDestructionSubmitRecord.MatchesContract`; `AP_R3_LOG_005_SeverityMethodsCreateCorrectStreams.MatchesContract`; `AP_R3_LOG_005_SupportedInsertionTypes.RendersBoundaryValues`; `LocaleFixture.AP_R3_LOG_005_LocaleIndependentFormatting`; `LoggingContractFixture.AP_R3_LOG_005_FlushConsumesCopiedMessage`
+- Unit Tests: `AP_R3_LOG_005_EmptyStreams.EmitsNoOutput`; `AP_R3_LOG_005_StreamInsertionBuildsRecord.MatchesContract`; `AP_R3_LOG_005_FlushAndDestructionSubmitRecord.MatchesContract`; `AP_R3_LOG_005_SeverityMethodsCreateCorrectStreams.MatchesContract`; `AP_R3_LOG_005_SupportedInsertionTypes.RendersBoundaryValues`; `LocaleFixture.AP_R3_LOG_005_LocaleIndependentFormatting`; `LoggingContractFixture.AP_R3_LOG_005_FlushConsumesCopiedMessage`; `CNumericLocaleFixture.AP_R3_LOG_005_CLocaleIndependentFormatting`
 - Deviation: AdaptivePi supports a documented educational subset of stream
   insertion value types. Unsupported AUTOSAR formatting decorators may be added
   later. Move restrictions and suppression of empty records are AdaptivePi
