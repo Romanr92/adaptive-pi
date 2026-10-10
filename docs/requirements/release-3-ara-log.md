@@ -248,7 +248,7 @@ implementation guidance are in [ADR 0007](../adr/0007-release-3-logging-contract
 - Verification: Component unit test
   `AP_R3_LOG_008_SinkFailureDoesNotThrow`, using an implementation-private test
   sink that fails on write.
-- Unit Tests: `AP_R3_LOG_008_FormattingFailureDiscardsRecord.MatchesContract`; `AP_R3_LOG_008_RecordBufferCapacity.MatchesContract`; `AP_R3_LOG_008_OverflowDiscardsRecord.MatchesContract`; `AP_R3_LOG_008_RecordBufferAppend.PreservesContentOnFailure`; `AP_R3_LOG_008_FormattingFailureDiscardsOutput.WritesNothing`
+- Unit Tests: `AP_R3_LOG_008_FormattingFailureDiscardsRecord.MatchesContract`; `AP_R3_LOG_008_RecordBufferCapacity.MatchesContract`; `AP_R3_LOG_008_OverflowDiscardsRecord.MatchesContract`; `AP_R3_LOG_008_RecordBufferAppend.PreservesContentOnFailure`; `AP_R3_LOG_008_FormattingFailureDiscardsOutput.WritesNothing`; `AP_R3_LOG_008_RecoveryAfterFailure.DiscardsFailedRecordAndResumes`; `LoggingFailureFixture.AP_R3_LOG_008_SinkContainsInternalException`; `LoggingFailureFixture.AP_R3_LOG_008_ProviderFailureDiscardsRecord`; `LoggingFailureFixture.AP_R3_LOG_008_SinkFailureDoesNotThrow`; `LoggingFailureFixture.AP_R3_LOG_008_ProviderExceptionIsContained`
 - Deviation: The failing sink exists only to verify this requirement.
   Production recovery, persistence, and diagnostics are out of scope. The sink
   abstraction shall preserve failure information internally so diagnostics can
