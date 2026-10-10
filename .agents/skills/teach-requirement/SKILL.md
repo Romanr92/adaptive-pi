@@ -30,6 +30,8 @@ Use short C++ snippets or pseudocode when they make a concept easier to understa
 
 In explanatory code snippets, use C-style `/* ... */` comments only for requirement traceability (for example, `/* Implements AP-R3-LOG-005 */`). Use short, concise `//` comments for explanations, focusing on purpose or non-obvious behavior. Unit-test edits follow the separate write-unit-tests skill's comment conventions.
 
+In implementation guidance and explanatory C++ snippets, replace magic numbers with descriptive `constexpr` constants for capacities, unit conversions, platform offsets, and format bounds. Name fixed format strings with `constexpr` as well. Add concise comments explaining non-obvious values and format structure. Keep obvious values such as zero in empty-state checks literal; do not create constants that merely rename a number without explaining its role.
+
 ## Teach and review all supported builds
 
 - Read `docs/adr/0006-exception-build-policy.md` and inspect current presets, target settings, and CI jobs. Implementation guidance shall cover every supported configuration affected by the requirement, including exceptions disabled and enabled.

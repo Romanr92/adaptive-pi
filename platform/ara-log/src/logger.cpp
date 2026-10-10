@@ -2,7 +2,9 @@
 
 #include "ara/core/config.h"
 #include "ara/log/log_stream.h"
+#include "console_record_formatter.h"
 #include "metadata_provider.h"
+#include "sink.h"
 
 #include <exception>
 #include <utility>
@@ -89,7 +91,18 @@ namespace ara::log
       return;
     }
 
-    // Render and submit the record here.
+    detail::RecordBuffer record{};
+
+    if (!detail::RenderConsoleRecord(metadata, level, ContextId(), message, record))
+    {
+      return;
+    }
+
+    const auto status = sink_.Write(record.View());
+    if (status != detail::SinkStatus::kSuccess)
+    {
+      return;
+    }
   }
 
   /* Implements AP-R3-LOG-005 */
