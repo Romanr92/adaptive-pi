@@ -63,6 +63,282 @@ namespace
       std::string previous_timezone_;
   };
   /* ================================== End Fixtures =================================== */
+  /* =============================== Test_AP_R3_LOG_002 ================================ */
+  struct ThresholdCase
+  {
+      const char* name;   // Case description
+      LogLevel threshold; // Input log threshold
+      LogLevel severity;  // Input message severity
+      bool emitted;       // Expected record emission
+  };
+  void operator<<(std::ostream& out, const ThresholdCase& value)
+  {
+    out << value.name;
+  }
+  /* Case data supplies WithLevel admission and suppression at the console boundary; GetParam() selects the scenario. */
+  class AP_R3_LOG_002_EmittedThresholdFiltering : public testing::TestWithParam<ThresholdCase>
+  {
+  };
+  /* ----------------------------------------------------------------------------------- */
+  /* Verify WithLevel admission and suppression at the console boundary.
+   * 1. Arrange: Register a unique logger with the selected threshold.
+   * 2. Act: Insert a message through WithLevel using the selected severity.
+   * 3. Expect: Verify one record for admitted severities and no output for suppressed ones.
+   */
+  TEST_P(AP_R3_LOG_002_EmittedThresholdFiltering, MatchesContract)
+  {
+    /* Arrange */
+    const auto& parameter = GetParam();
+    const std::string context = std::string{"FILTER_"} + parameter.name;
+    auto result = ara::log::TryCreateLogger(context, "Filtering test", parameter.threshold);
+    ASSERT_TRUE(result.HasValue());
+    /* Act */
+    testing::internal::CaptureStdout();
+    result.Value().get().WithLevel(parameter.severity) << "message";
+    const int status = std::fflush(stdout);
+    const std::string output = testing::internal::GetCapturedStdout();
+    /* Expect */
+    EXPECT_EQ(status, 0);
+    EXPECT_EQ(!output.empty(), parameter.emitted);
+    EXPECT_EQ(std::count(output.begin(), output.end(), '\n'), parameter.emitted ? 1 : 0);
+  }
+  std::string ThresholdCaseName(const testing::TestParamInfo<ThresholdCase>& info)
+  {
+    return info.param.name;
+  }
+  INSTANTIATE_TEST_SUITE_P(Cases, AP_R3_LOG_002_EmittedThresholdFiltering,
+                           testing::Values(ThresholdCase{"AtThreshold", LogLevel::kInfo, LogLevel::kInfo, true},
+                                           ThresholdCase{"BelowThreshold", LogLevel::kInfo, LogLevel::kFatal, true},
+                                           ThresholdCase{"AboveThreshold", LogLevel::kInfo, LogLevel::kDebug, false},
+                                           ThresholdCase{"OffThreshold", LogLevel::kOff, LogLevel::kFatal, false},
+                                           ThresholdCase{"OffSeverity", LogLevel::kVerbose, LogLevel::kOff, false},
+                                           ThresholdCase{"UndefinedSeverity", LogLevel::kVerbose,
+                                                         static_cast<LogLevel>(255), false}),
+                           ThresholdCaseName);
+  /* ============================= End Test_AP_R3_LOG_002 ============================== */
+  /* =============================== Test_AP_R3_LOG_005 ================================ */
+  struct InsertionCase
+  {
+      const char* name;                     // Case description
+      void (*insert)(ara::log::LogStream&); // Input insertion operation
+      std::string expected;                 // Expected rendered message
+  };
+  void operator<<(std::ostream& out, const InsertionCase& value)
+  {
+    out << value.name;
+  }
+  /* Case data supplies supported insertion payloads through a factory-created console logger; GetParam() selects the
+   * scenario. */
+  class AP_R3_LOG_005_StreamInsertionBuildsRecord : public testing::TestWithParam<InsertionCase>
+  {
+  };
+  /* ----------------------------------------------------------------------------------- */
+  /* Verify supported insertion payloads through a factory-created console logger.
+   * 1. Arrange: Register a verbose-threshold logger with a unique context.
+   * 2. Act: Insert the selected values and let the non-empty stream destruct.
+   * 3. Expect: Verify the exact severity, context, payload suffix, and one physical newline.
+   */
+  TEST_P(AP_R3_LOG_005_StreamInsertionBuildsRecord, MatchesContract)
+  {
+    /* Arrange */
+    const auto& parameter = GetParam();
+    const std::string context = std::string{"INSERT_"} + parameter.name;
+    auto result = ara::log::TryCreateLogger(context, "Insertion test", LogLevel::kVerbose);
+    ASSERT_TRUE(result.HasValue());
+    /* Act */
+    testing::internal::CaptureStdout();
+    {
+      auto stream = result.Value().get().LogInfo();
+      parameter.insert(stream);
+    }
+    const int status = std::fflush(stdout);
+    const std::string output = testing::internal::GetCapturedStdout();
+    const std::string suffix = std::string{"[INFO]["} + context + "] " + parameter.expected + "\n";
+    /* Expect */
+    EXPECT_EQ(status, 0);
+    ASSERT_GE(output.size(), suffix.size());
+    EXPECT_EQ(output.substr(output.size() - suffix.size()), suffix);
+    EXPECT_EQ(std::count(output.begin(), output.end(), '\n'), 1);
+  }
+  std::string InsertionCaseName(const testing::TestParamInfo<InsertionCase>& info)
+  {
+    return info.param.name;
+  }
+  INSTANTIATE_TEST_SUITE_P(Cases, AP_R3_LOG_005_StreamInsertionBuildsRecord,
+                           testing::Values(InsertionCase{"StringsAndBool",
+                                                         [](auto& s)
+                                                         {
+                                                           const std::string text{"owned"};
+                                                           s << true << ' ' << false << ' ' << "literal " << text << ' '
+                                                             << std::string_view{"view"};
+                                                         },
+                                                         "true false literal owned view"},
+                                           InsertionCase{"Integers",
+                                                         [](auto& s)
+                                                         {
+                                                           s << static_cast<signed char>(-12) << ' '
+                                                             << static_cast<unsigned char>(255) << ' '
+                                                             << std::numeric_limits<long long>::min() << ' '
+                                                             << std::numeric_limits<unsigned long long>::max();
+                                                         },
+                                                         "-12 255 -9223372036854775808 18446744073709551615"},
+                                           InsertionCase{"FloatingPrecision",
+                                                         [](auto& s)
+                                                         {
+                                                           s << 0.1F << ' ' << 0.1;
+                                                         },
+                                                         "0.100000001 0.10000000000000001"},
+                                           InsertionCase{"NonFinite",
+                                                         [](auto& s)
+                                                         {
+                                                           s << std::numeric_limits<float>::quiet_NaN() << ' '
+                                                             << std::numeric_limits<double>::infinity() << ' '
+                                                             << -std::numeric_limits<double>::infinity();
+                                                         },
+                                                         "nan inf -inf"},
+                                           InsertionCase{"NegativeZero",
+                                                         [](auto& s)
+                                                         {
+                                                           s << -0.0;
+                                                         },
+                                                         "-0"}),
+                           InsertionCaseName);
+  /* ----------------------------------------------------------------------------------- */
+  struct LifecycleCase
+  {
+      const char* name;          // Case description
+      void (*exercise)(Logger&); // Input stream lifecycle operation
+      int records;               // Expected record count
+  };
+  void operator<<(std::ostream& out, const LifecycleCase& value)
+  {
+    out << value.name;
+  }
+  /* Case data supplies non-empty flush, destruction, reuse, and move ownership; GetParam() selects the scenario. */
+  class AP_R3_LOG_005_FlushAndDestructionSubmitRecord : public testing::TestWithParam<LifecycleCase>
+  {
+  };
+  /* ----------------------------------------------------------------------------------- */
+  /* Verify non-empty flush, destruction, reuse, and move ownership.
+   * 1. Arrange: Register a unique info-threshold logger.
+   * 2. Act: Exercise the selected non-empty flush, move, reuse, or destruction sequence.
+   * 3. Expect: Verify the exact number and payload of emitted records.
+   */
+  TEST_P(AP_R3_LOG_005_FlushAndDestructionSubmitRecord, MatchesContract)
+  {
+    /* Arrange */
+    const auto& parameter = GetParam();
+    const std::string context = std::string{"LIFE_"} + parameter.name;
+    auto result = ara::log::TryCreateLogger(context, "Lifecycle test", LogLevel::kInfo);
+    ASSERT_TRUE(result.HasValue());
+    /* Act */
+    testing::internal::CaptureStdout();
+    parameter.exercise(result.Value().get());
+    const int status = std::fflush(stdout);
+    const std::string output = testing::internal::GetCapturedStdout();
+    /* Expect */
+    EXPECT_EQ(status, 0);
+    EXPECT_EQ(std::count(output.begin(), output.end(), '\n'), parameter.records);
+    const std::string marker = std::string{"[INFO]["} + context + "] pending\n";
+    std::size_t position = 0;
+    for (int index = 0; index < parameter.records; ++index)
+    {
+      position = output.find(marker, position);
+      ASSERT_NE(position, std::string::npos);
+      position += marker.size();
+    }
+  }
+  std::string LifecycleCaseName(const testing::TestParamInfo<LifecycleCase>& info)
+  {
+    return info.param.name;
+  }
+  INSTANTIATE_TEST_SUITE_P(Cases, AP_R3_LOG_005_FlushAndDestructionSubmitRecord,
+                           testing::Values(LifecycleCase{"Destruction",
+                                                         [](Logger& l)
+                                                         {
+                                                           l.LogInfo() << "pending";
+                                                         },
+                                                         1},
+                                           LifecycleCase{"RepeatedFlush",
+                                                         [](Logger& l)
+                                                         {
+                                                           auto s = l.LogInfo();
+                                                           s << "pending";
+                                                           s.Flush();
+                                                           s.Flush();
+                                                         },
+                                                         1},
+                                           LifecycleCase{"Reuse",
+                                                         [](Logger& l)
+                                                         {
+                                                           auto s = l.LogInfo();
+                                                           s << "pending";
+                                                           s.Flush();
+                                                           s << "pending";
+                                                         },
+                                                         2},
+                                           LifecycleCase{"Move",
+                                                         [](Logger& l)
+                                                         {
+                                                           auto source = l.LogInfo();
+                                                           source << "pending";
+                                                           auto destination = std::move(source);
+                                                         },
+                                                         1}),
+                           LifecycleCaseName);
+  /* ----------------------------------------------------------------------------------- */
+  struct SeverityCase
+  {
+      const char* name;                                       // Case description
+      ara::log::LogStream (Logger::*method)() const noexcept; // Input severity method
+      const char* level;                                      // Expected severity name
+  };
+  void operator<<(std::ostream& out, const SeverityCase& value)
+  {
+    out << value.name;
+  }
+  /* Case data supplies severity factory methods emitting their configured level; GetParam() selects the scenario. */
+  class AP_R3_LOG_005_SeverityMethodsCreateCorrectStreams : public testing::TestWithParam<SeverityCase>
+  {
+  };
+  /* ----------------------------------------------------------------------------------- */
+  /* Verify severity factory methods emitting their configured level.
+   * 1. Arrange: Register a unique logger admitting every defined severity.
+   * 2. Act: Invoke the selected severity method and insert a message.
+   * 3. Expect: Verify its exact severity and payload with one physical newline.
+   */
+  TEST_P(AP_R3_LOG_005_SeverityMethodsCreateCorrectStreams, MatchesContract)
+  {
+    /* Arrange */
+    const auto& parameter = GetParam();
+    const std::string context = std::string{"SEVERITY_"} + parameter.name;
+    auto result = ara::log::TryCreateLogger(context, "Severity test", LogLevel::kVerbose);
+    ASSERT_TRUE(result.HasValue());
+    /* Act */
+    testing::internal::CaptureStdout();
+    (result.Value().get().*parameter.method)() << "message";
+    const int status = std::fflush(stdout);
+    const std::string output = testing::internal::GetCapturedStdout();
+    const std::string suffix = std::string{"["} + parameter.level + "][" + context + "] message\n";
+    /* Expect */
+    EXPECT_EQ(status, 0);
+    ASSERT_GE(output.size(), suffix.size());
+    EXPECT_EQ(output.substr(output.size() - suffix.size()), suffix);
+    EXPECT_EQ(std::count(output.begin(), output.end(), '\n'), 1);
+  }
+  std::string SeverityCaseName(const testing::TestParamInfo<SeverityCase>& info)
+  {
+    return info.param.name;
+  }
+  INSTANTIATE_TEST_SUITE_P(Cases, AP_R3_LOG_005_SeverityMethodsCreateCorrectStreams,
+                           testing::Values(SeverityCase{"Fatal", &Logger::LogFatal, "FATAL"},
+                                           SeverityCase{"Error", &Logger::LogError, "ERROR"},
+                                           SeverityCase{"Warn", &Logger::LogWarn, "WARN"},
+                                           SeverityCase{"Info", &Logger::LogInfo, "INFO"},
+                                           SeverityCase{"Debug", &Logger::LogDebug, "DEBUG"},
+                                           SeverityCase{"Verbose", &Logger::LogVerbose, "VERBOSE"}),
+                           SeverityCaseName);
+  /* ============================= End Test_AP_R3_LOG_005 ============================== */
   /* =============================== Test_AP_R3_LOG_006 ================================ */
   struct FormatCase
   {
@@ -221,6 +497,40 @@ namespace
                                                               "PUBLIC_LITERAL", R"(\\n\\r\\\\)"}),
                            PublicEscapingCaseName);
   /* ============================= End Test_AP_R3_LOG_006 ============================== */
+  /* =============================== Test_AP_R3_LOG_007 ================================ */
+  /* Verify that a moved stream samples the submitting thread's Linux IDs.
+   * 1. Arrange: Create a pending stream on the main thread and capture stdout.
+   * 2. Act: Move the stream to a worker and flush it there.
+   * 3. Expect: The emitted PID and TID identify the process and worker thread.
+   */
+  TEST(AP_R3_LOG_007_SubmissionThreadMetadata, UsesSubmittingThread)
+  {
+    /* Arrange */
+    auto result = ara::log::TryCreateLogger("METADATA_WORKER", "Metadata test", LogLevel::kInfo);
+    ASSERT_TRUE(result.HasValue());
+    auto stream = result.Value().get().LogInfo();
+    stream << "moved";
+    long submitting_tid = 0;
+    testing::internal::CaptureStdout();
+    /* Act */
+    std::thread worker{[pending = std::move(stream), &submitting_tid]() mutable
+                       {
+                         submitting_tid = ::syscall(SYS_gettid);
+                         pending.Flush();
+                       }};
+    worker.join();
+    const int status = std::fflush(stdout);
+    const std::string output = testing::internal::GetCapturedStdout();
+    /* Expect */
+    EXPECT_EQ(status, 0);
+    EXPECT_NE(submitting_tid, ::syscall(SYS_gettid));
+    const std::string suffix =
+      "][" + std::to_string(::getpid()) + "][" + std::to_string(submitting_tid) + "][INFO][METADATA_WORKER] moved\n";
+    ASSERT_GE(output.size(), suffix.size());
+    EXPECT_EQ(output.substr(output.size() - suffix.size()), suffix);
+    EXPECT_EQ(std::count(output.begin(), output.end(), '\n'), 1);
+  }
+  /* ============================= End Test_AP_R3_LOG_007 ============================== */
   /* =============================== Test_AP_R3_LOG_008 ================================ */
   struct FailureCase
   {
@@ -266,8 +576,7 @@ namespace
                     FailureCase{"YearTooLarge", {253402300800000LL, 1, 2}, LogLevel::kInfo, "CTX"},
                     FailureCase{"EscapedContextOverflow", {0, 1, 2}, LogLevel::kInfo, std::string(8192, '[')}),
     FailureCaseName);
-  /* ============================= End Test_AP_R3_LOG_008 ============================== */
-  /* =============================== Test_AP_R3_LOG_008 ================================ */
+  /* ----------------------------------------------------------------------------------- */
   struct CapacityCase
   {
       const char* name;  // Case description
@@ -309,286 +618,7 @@ namespace
                            testing::Values(CapacityCase{"Empty", 0, true}, CapacityCase{"ExactCapacity", 16384, true},
                                            CapacityCase{"Overflow", 16385, false}),
                            CapacityCaseName);
-  /* ============================= End Test_AP_R3_LOG_008 ============================== */
-  /* =============================== Test_AP_R3_LOG_005 ================================ */
-  struct InsertionCase
-  {
-      const char* name;                     // Case description
-      void (*insert)(ara::log::LogStream&); // Input insertion operation
-      std::string expected;                 // Expected rendered message
-  };
-  void operator<<(std::ostream& out, const InsertionCase& value)
-  {
-    out << value.name;
-  }
-  /* Case data supplies supported insertion payloads through a factory-created console logger; GetParam() selects the
-   * scenario. */
-  class AP_R3_LOG_005_StreamInsertionBuildsRecord : public testing::TestWithParam<InsertionCase>
-  {
-  };
   /* ----------------------------------------------------------------------------------- */
-  /* Verify supported insertion payloads through a factory-created console logger.
-   * 1. Arrange: Register a verbose-threshold logger with a unique context.
-   * 2. Act: Insert the selected values and let the non-empty stream destruct.
-   * 3. Expect: Verify the exact severity, context, payload suffix, and one physical newline.
-   */
-  TEST_P(AP_R3_LOG_005_StreamInsertionBuildsRecord, MatchesContract)
-  {
-    /* Arrange */
-    const auto& parameter = GetParam();
-    const std::string context = std::string{"INSERT_"} + parameter.name;
-    auto result = ara::log::TryCreateLogger(context, "Insertion test", LogLevel::kVerbose);
-    ASSERT_TRUE(result.HasValue());
-    /* Act */
-    testing::internal::CaptureStdout();
-    {
-      auto stream = result.Value().get().LogInfo();
-      parameter.insert(stream);
-    }
-    const int status = std::fflush(stdout);
-    const std::string output = testing::internal::GetCapturedStdout();
-    const std::string suffix = std::string{"[INFO]["} + context + "] " + parameter.expected + "\n";
-    /* Expect */
-    EXPECT_EQ(status, 0);
-    ASSERT_GE(output.size(), suffix.size());
-    EXPECT_EQ(output.substr(output.size() - suffix.size()), suffix);
-    EXPECT_EQ(std::count(output.begin(), output.end(), '\n'), 1);
-  }
-  std::string InsertionCaseName(const testing::TestParamInfo<InsertionCase>& info)
-  {
-    return info.param.name;
-  }
-  INSTANTIATE_TEST_SUITE_P(Cases, AP_R3_LOG_005_StreamInsertionBuildsRecord,
-                           testing::Values(InsertionCase{"StringsAndBool",
-                                                         [](auto& s)
-                                                         {
-                                                           const std::string text{"owned"};
-                                                           s << true << ' ' << false << ' ' << "literal " << text << ' '
-                                                             << std::string_view{"view"};
-                                                         },
-                                                         "true false literal owned view"},
-                                           InsertionCase{"Integers",
-                                                         [](auto& s)
-                                                         {
-                                                           s << static_cast<signed char>(-12) << ' '
-                                                             << static_cast<unsigned char>(255) << ' '
-                                                             << std::numeric_limits<long long>::min() << ' '
-                                                             << std::numeric_limits<unsigned long long>::max();
-                                                         },
-                                                         "-12 255 -9223372036854775808 18446744073709551615"},
-                                           InsertionCase{"FloatingPrecision",
-                                                         [](auto& s)
-                                                         {
-                                                           s << 0.1F << ' ' << 0.1;
-                                                         },
-                                                         "0.100000001 0.10000000000000001"},
-                                           InsertionCase{"NonFinite",
-                                                         [](auto& s)
-                                                         {
-                                                           s << std::numeric_limits<float>::quiet_NaN() << ' '
-                                                             << std::numeric_limits<double>::infinity() << ' '
-                                                             << -std::numeric_limits<double>::infinity();
-                                                         },
-                                                         "nan inf -inf"},
-                                           InsertionCase{"NegativeZero",
-                                                         [](auto& s)
-                                                         {
-                                                           s << -0.0;
-                                                         },
-                                                         "-0"}),
-                           InsertionCaseName);
-  /* ============================= End Test_AP_R3_LOG_005 ============================== */
-  /* =============================== Test_AP_R3_LOG_005 ================================ */
-  struct LifecycleCase
-  {
-      const char* name;          // Case description
-      void (*exercise)(Logger&); // Input stream lifecycle operation
-      int records;               // Expected record count
-  };
-  void operator<<(std::ostream& out, const LifecycleCase& value)
-  {
-    out << value.name;
-  }
-  /* Case data supplies non-empty flush, destruction, reuse, and move ownership; GetParam() selects the scenario. */
-  class AP_R3_LOG_005_FlushAndDestructionSubmitRecord : public testing::TestWithParam<LifecycleCase>
-  {
-  };
-  /* ----------------------------------------------------------------------------------- */
-  /* Verify non-empty flush, destruction, reuse, and move ownership.
-   * 1. Arrange: Register a unique info-threshold logger.
-   * 2. Act: Exercise the selected non-empty flush, move, reuse, or destruction sequence.
-   * 3. Expect: Verify the exact number and payload of emitted records.
-   */
-  TEST_P(AP_R3_LOG_005_FlushAndDestructionSubmitRecord, MatchesContract)
-  {
-    /* Arrange */
-    const auto& parameter = GetParam();
-    const std::string context = std::string{"LIFE_"} + parameter.name;
-    auto result = ara::log::TryCreateLogger(context, "Lifecycle test", LogLevel::kInfo);
-    ASSERT_TRUE(result.HasValue());
-    /* Act */
-    testing::internal::CaptureStdout();
-    parameter.exercise(result.Value().get());
-    const int status = std::fflush(stdout);
-    const std::string output = testing::internal::GetCapturedStdout();
-    /* Expect */
-    EXPECT_EQ(status, 0);
-    EXPECT_EQ(std::count(output.begin(), output.end(), '\n'), parameter.records);
-    const std::string marker = std::string{"[INFO]["} + context + "] pending\n";
-    std::size_t position = 0;
-    for (int index = 0; index < parameter.records; ++index)
-    {
-      position = output.find(marker, position);
-      ASSERT_NE(position, std::string::npos);
-      position += marker.size();
-    }
-  }
-  std::string LifecycleCaseName(const testing::TestParamInfo<LifecycleCase>& info)
-  {
-    return info.param.name;
-  }
-  INSTANTIATE_TEST_SUITE_P(Cases, AP_R3_LOG_005_FlushAndDestructionSubmitRecord,
-                           testing::Values(LifecycleCase{"Destruction",
-                                                         [](Logger& l)
-                                                         {
-                                                           l.LogInfo() << "pending";
-                                                         },
-                                                         1},
-                                           LifecycleCase{"RepeatedFlush",
-                                                         [](Logger& l)
-                                                         {
-                                                           auto s = l.LogInfo();
-                                                           s << "pending";
-                                                           s.Flush();
-                                                           s.Flush();
-                                                         },
-                                                         1},
-                                           LifecycleCase{"Reuse",
-                                                         [](Logger& l)
-                                                         {
-                                                           auto s = l.LogInfo();
-                                                           s << "pending";
-                                                           s.Flush();
-                                                           s << "pending";
-                                                         },
-                                                         2},
-                                           LifecycleCase{"Move",
-                                                         [](Logger& l)
-                                                         {
-                                                           auto source = l.LogInfo();
-                                                           source << "pending";
-                                                           auto destination = std::move(source);
-                                                         },
-                                                         1}),
-                           LifecycleCaseName);
-  /* ============================= End Test_AP_R3_LOG_005 ============================== */
-  /* =============================== Test_AP_R3_LOG_005 ================================ */
-  struct SeverityCase
-  {
-      const char* name;                                       // Case description
-      ara::log::LogStream (Logger::*method)() const noexcept; // Input severity method
-      const char* level;                                      // Expected severity name
-  };
-  void operator<<(std::ostream& out, const SeverityCase& value)
-  {
-    out << value.name;
-  }
-  /* Case data supplies severity factory methods emitting their configured level; GetParam() selects the scenario. */
-  class AP_R3_LOG_005_SeverityMethodsCreateCorrectStreams : public testing::TestWithParam<SeverityCase>
-  {
-  };
-  /* ----------------------------------------------------------------------------------- */
-  /* Verify severity factory methods emitting their configured level.
-   * 1. Arrange: Register a unique logger admitting every defined severity.
-   * 2. Act: Invoke the selected severity method and insert a message.
-   * 3. Expect: Verify its exact severity and payload with one physical newline.
-   */
-  TEST_P(AP_R3_LOG_005_SeverityMethodsCreateCorrectStreams, MatchesContract)
-  {
-    /* Arrange */
-    const auto& parameter = GetParam();
-    const std::string context = std::string{"SEVERITY_"} + parameter.name;
-    auto result = ara::log::TryCreateLogger(context, "Severity test", LogLevel::kVerbose);
-    ASSERT_TRUE(result.HasValue());
-    /* Act */
-    testing::internal::CaptureStdout();
-    (result.Value().get().*parameter.method)() << "message";
-    const int status = std::fflush(stdout);
-    const std::string output = testing::internal::GetCapturedStdout();
-    const std::string suffix = std::string{"["} + parameter.level + "][" + context + "] message\n";
-    /* Expect */
-    EXPECT_EQ(status, 0);
-    ASSERT_GE(output.size(), suffix.size());
-    EXPECT_EQ(output.substr(output.size() - suffix.size()), suffix);
-    EXPECT_EQ(std::count(output.begin(), output.end(), '\n'), 1);
-  }
-  std::string SeverityCaseName(const testing::TestParamInfo<SeverityCase>& info)
-  {
-    return info.param.name;
-  }
-  INSTANTIATE_TEST_SUITE_P(Cases, AP_R3_LOG_005_SeverityMethodsCreateCorrectStreams,
-                           testing::Values(SeverityCase{"Fatal", &Logger::LogFatal, "FATAL"},
-                                           SeverityCase{"Error", &Logger::LogError, "ERROR"},
-                                           SeverityCase{"Warn", &Logger::LogWarn, "WARN"},
-                                           SeverityCase{"Info", &Logger::LogInfo, "INFO"},
-                                           SeverityCase{"Debug", &Logger::LogDebug, "DEBUG"},
-                                           SeverityCase{"Verbose", &Logger::LogVerbose, "VERBOSE"}),
-                           SeverityCaseName);
-  /* ============================= End Test_AP_R3_LOG_005 ============================== */
-  /* =============================== Test_AP_R3_LOG_002 ================================ */
-  struct ThresholdCase
-  {
-      const char* name;   // Case description
-      LogLevel threshold; // Input log threshold
-      LogLevel severity;  // Input message severity
-      bool emitted;       // Expected record emission
-  };
-  void operator<<(std::ostream& out, const ThresholdCase& value)
-  {
-    out << value.name;
-  }
-  /* Case data supplies WithLevel admission and suppression at the console boundary; GetParam() selects the scenario. */
-  class AP_R3_LOG_002_EmittedThresholdFiltering : public testing::TestWithParam<ThresholdCase>
-  {
-  };
-  /* ----------------------------------------------------------------------------------- */
-  /* Verify WithLevel admission and suppression at the console boundary.
-   * 1. Arrange: Register a unique logger with the selected threshold.
-   * 2. Act: Insert a message through WithLevel using the selected severity.
-   * 3. Expect: Verify one record for admitted severities and no output for suppressed ones.
-   */
-  TEST_P(AP_R3_LOG_002_EmittedThresholdFiltering, MatchesContract)
-  {
-    /* Arrange */
-    const auto& parameter = GetParam();
-    const std::string context = std::string{"FILTER_"} + parameter.name;
-    auto result = ara::log::TryCreateLogger(context, "Filtering test", parameter.threshold);
-    ASSERT_TRUE(result.HasValue());
-    /* Act */
-    testing::internal::CaptureStdout();
-    result.Value().get().WithLevel(parameter.severity) << "message";
-    const int status = std::fflush(stdout);
-    const std::string output = testing::internal::GetCapturedStdout();
-    /* Expect */
-    EXPECT_EQ(status, 0);
-    EXPECT_EQ(!output.empty(), parameter.emitted);
-    EXPECT_EQ(std::count(output.begin(), output.end(), '\n'), parameter.emitted ? 1 : 0);
-  }
-  std::string ThresholdCaseName(const testing::TestParamInfo<ThresholdCase>& info)
-  {
-    return info.param.name;
-  }
-  INSTANTIATE_TEST_SUITE_P(Cases, AP_R3_LOG_002_EmittedThresholdFiltering,
-                           testing::Values(ThresholdCase{"AtThreshold", LogLevel::kInfo, LogLevel::kInfo, true},
-                                           ThresholdCase{"BelowThreshold", LogLevel::kInfo, LogLevel::kFatal, true},
-                                           ThresholdCase{"AboveThreshold", LogLevel::kInfo, LogLevel::kDebug, false},
-                                           ThresholdCase{"OffThreshold", LogLevel::kOff, LogLevel::kFatal, false},
-                                           ThresholdCase{"OffSeverity", LogLevel::kVerbose, LogLevel::kOff, false},
-                                           ThresholdCase{"UndefinedSeverity", LogLevel::kVerbose,
-                                                         static_cast<LogLevel>(255), false}),
-                           ThresholdCaseName);
-  /* ============================= End Test_AP_R3_LOG_002 ============================== */
-  /* =============================== Test_AP_R3_LOG_008 ================================ */
   struct OverflowCase
   {
       const char* name;  // Case description
@@ -642,44 +672,7 @@ namespace
                            testing::Values(OverflowCase{"ExactMessageLimit", 4096, true},
                                            OverflowCase{"MessageOverflow", 4097, false}),
                            OverflowCaseName);
-  /* ============================= End Test_AP_R3_LOG_008 ============================== */
-  /* =============================== Test_AP_R3_LOG_007 ================================ */
-
-  /* Verify that a moved stream samples the submitting thread's Linux IDs.
-   * 1. Arrange: Create a pending stream on the main thread and capture stdout.
-   * 2. Act: Move the stream to a worker and flush it there.
-   * 3. Expect: The emitted PID and TID identify the process and worker thread.
-   */
-  TEST(AP_R3_LOG_007_SubmissionThreadMetadata, UsesSubmittingThread)
-  {
-    /* Arrange */
-    auto result = ara::log::TryCreateLogger("METADATA_WORKER", "Metadata test", LogLevel::kInfo);
-    ASSERT_TRUE(result.HasValue());
-    auto stream = result.Value().get().LogInfo();
-    stream << "moved";
-    long submitting_tid = 0;
-    testing::internal::CaptureStdout();
-    /* Act */
-    std::thread worker{[pending = std::move(stream), &submitting_tid]() mutable
-                       {
-                         submitting_tid = ::syscall(SYS_gettid);
-                         pending.Flush();
-                       }};
-    worker.join();
-    const int status = std::fflush(stdout);
-    const std::string output = testing::internal::GetCapturedStdout();
-    /* Expect */
-    EXPECT_EQ(status, 0);
-    EXPECT_NE(submitting_tid, ::syscall(SYS_gettid));
-    const std::string suffix =
-      "][" + std::to_string(::getpid()) + "][" + std::to_string(submitting_tid) + "][INFO][METADATA_WORKER] moved\n";
-    ASSERT_GE(output.size(), suffix.size());
-    EXPECT_EQ(output.substr(output.size() - suffix.size()), suffix);
-    EXPECT_EQ(std::count(output.begin(), output.end(), '\n'), 1);
-  }
-  /* ============================= End Test_AP_R3_LOG_007 ============================== */
-  /* =============================== Test_AP_R3_LOG_008 ================================ */
-
+  /* ----------------------------------------------------------------------------------- */
   /* Verify overflow preserves prior bytes and later fitting appends still work.
    * 1. Arrange: Fill the buffer except for one byte.
    * 2. Act: Reject a two-byte append, then append the last byte and an empty value.
@@ -726,7 +719,6 @@ namespace
   }
   /* ============================= End Test_AP_R3_LOG_008 ============================== */
   /* =============================== Test_AP_R3_LOG_009 ================================ */
-
   /* Verify separate streams sharing one logger emit complete unique records.
    * 1. Arrange: Register one logger and prepare four workers with unique payloads.
    * 2. Act: Emit 32 records per worker concurrently and join every worker.

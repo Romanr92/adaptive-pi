@@ -10,7 +10,7 @@ namespace ara::log::detail
   class LinuxMetadataProvider final : public MetadataProvider
   {
     public:
-      // Tead the current timestamp and linux IDs.
+      // Read the current timestamp and Linux IDs.
       bool Read(RuntimeMetadata& metadata) noexcept override;
   };
 

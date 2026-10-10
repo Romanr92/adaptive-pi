@@ -120,7 +120,7 @@ namespace ara::log::detail
       if (milliseconds < 0)
       {
         --seconds;
-        milliseconds += c_milis_per_second;
+        milliseconds += c_milliseconds_per_second;
       }
 
       // Supported Linux host and ARM64 targets use signed 64-bit time_t.
