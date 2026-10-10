@@ -5,6 +5,10 @@ add_library(
         src/logger.cpp
         src/logger_registry.cpp
         src/console_sink.cpp
+        src/log_stream.cpp
+        src/linux_metadata_provider.cpp
+        src/record_buffer.cpp
+        src/console_record_formatter.cpp
 )
 
 find_package(Threads REQUIRED)

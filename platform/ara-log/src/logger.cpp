@@ -1,5 +1,11 @@
 #include "ara/log/logger.h"
 
+#include "ara/core/config.h"
+#include "ara/log/log_stream.h"
+#include "console_record_formatter.h"
+#include "metadata_provider.h"
+#include "sink.h"
+
 #include <exception>
 #include <utility>
 
@@ -10,9 +16,10 @@ namespace ara::log
   // it does not allocate or copy the characters.
   /* Implements AP-R3-LOG-002 */
   Logger::Logger(std::unique_ptr<char[]> context_id, std::size_t context_id_size, std::unique_ptr<char[]> description,
-                 std::size_t description_size, LogLevel threshold, detail::Sink& sink) noexcept
+                 std::size_t description_size, LogLevel threshold, detail::Sink& sink,
+                 detail::MetadataProvider& metadata_provider) noexcept
       : context_id_{std::move(context_id)}, context_id_size_{context_id_size}, description_{std::move(description)},
-        description_size_{description_size}, threshold_{threshold}, sink_{sink}
+        description_size_{description_size}, threshold_{threshold}, sink_{sink}, metadata_provider_{metadata_provider}
   {
     // An invalid enum value violates the creation contract; terminate does not throw.
     if (static_cast<std::uint8_t>(threshold_) > static_cast<std::uint8_t>(LogLevel::kVerbose))
@@ -50,6 +57,94 @@ namespace ara::log
     return ((severity >= static_cast<std::uint8_t>(LogLevel::kFatal)) &&
             (severity <= static_cast<std::uint8_t>(LogLevel::kVerbose)) &&
             (threshold <= static_cast<std::uint8_t>(LogLevel::kVerbose)) && (severity <= threshold));
+  }
+
+  /* Implements AP-R3-LOG-005; AP-R3-LOG-002 filtering */
+  /* Supports AP-R3-LOG-005, AP-R3-LOG-007, and AP-R3-LOG-008 */
+  void Logger::Submit(LogLevel level, std::string_view message) const noexcept
+  {
+    // Skip empty or filtered records.
+    if ((message.empty()) || (!IsEnabled(level)))
+    {
+      return;
+    }
+
+    detail::RuntimeMetadata metadata{};
+    bool acquired = false;
+
+#if ADAPTIVE_PI_EXCEPTIONS_ENABLED
+    try
+    {
+      acquired = metadata_provider_.Read(metadata);
+    }
+    catch (...)
+    {
+      // Discard provider failures.
+      return;
+    }
+#else
+    acquired = metadata_provider_.Read(metadata);
+#endif
+
+    if (!acquired)
+    {
+      return;
+    }
+
+    detail::RecordBuffer record{};
+
+    if (!detail::RenderConsoleRecord(metadata, level, ContextId(), message, record))
+    {
+      return;
+    }
+
+    const auto status = sink_.Write(record.View());
+    if (status != detail::SinkStatus::kSuccess)
+    {
+      return;
+    }
+  }
+
+  /* Implements AP-R3-LOG-005 */
+  LogStream Logger::WithLevel(LogLevel level) const noexcept
+  {
+    return LogStream{*this, level};
+  }
+
+  /* Implements AP-R3-LOG-005 */
+  LogStream Logger::LogFatal() const noexcept
+  {
+    return WithLevel(LogLevel::kFatal);
+  }
+
+  /* Implements AP-R3-LOG-005 */
+  LogStream Logger::LogError() const noexcept
+  {
+    return WithLevel(LogLevel::kError);
+  }
+
+  /* Implements AP-R3-LOG-005 */
+  LogStream Logger::LogWarn() const noexcept
+  {
+    return WithLevel(LogLevel::kWarn);
+  }
+
+  /* Implements AP-R3-LOG-005 */
+  LogStream Logger::LogInfo() const noexcept
+  {
+    return WithLevel(LogLevel::kInfo);
+  }
+
+  /* Implements AP-R3-LOG-005 */
+  LogStream Logger::LogDebug() const noexcept
+  {
+    return WithLevel(LogLevel::kDebug);
+  }
+
+  /* Implements AP-R3-LOG-005 */
+  LogStream Logger::LogVerbose() const noexcept
+  {
+    return WithLevel(LogLevel::kVerbose);
   }
 
 } // namespace ara::log

@@ -3,6 +3,7 @@
 
 #include "ara/log/logger.h"
 #include "console_sink.h"
+#include "linux_metadata_provider.h"
 
 #include <pthread.h>
 
@@ -17,7 +18,12 @@ namespace ara::log::detail
   class LoggerRegistry final
   {
     public:
-      LoggerRegistry() noexcept = default;
+      /* Supports AP-R3-LOG-007 */
+      LoggerRegistry() noexcept;
+
+      /* Supports AP-R3-LOG-007 test metadata injection */
+      LoggerRegistry(Sink& sink, MetadataProvider& metadata_provider) noexcept;
+
       ~LoggerRegistry() noexcept;
 
       LoggerRegistry(const LoggerRegistry&) = delete;
@@ -39,6 +45,13 @@ namespace ara::log::detail
 
       // Owned by the registry; remains alive until all registered loggers are deleted.
       ConsoleSink console_sink_;
+
+      // Shared production provider.
+      LinuxMetadataProvider metadata_provider_;
+
+      // Selected dependencies; injected objects must outlive this registry.
+      Sink& selected_sink_;
+      MetadataProvider& selected_metadata_provider_;
   };
 
 } // namespace ara::log::detail

@@ -72,6 +72,29 @@ This provides an explicit failure path in the default exception-disabled build.
 A noexcept annotation alone would turn an escaping exception into termination,
 which does not satisfy the discard contract.
 
+#### Console record buffer capacity
+
+The implementation-private `RecordBuffer` uses 16384 bytes (16 KiB) of fixed
+storage for one complete rendered console record. This is an AdaptivePi
+implementation decision supporting LOG-005, LOG-006, and LOG-008, not an AUTOSAR
+limit or a change to the required 4096-byte unescaped message limit.
+
+LOG-006 escaping can expand each message byte to two bytes, so a maximum-sized
+message can occupy 8192 rendered bytes. The remaining storage accommodates the
+timestamp, process/thread IDs, severity, escaped context ID, delimiters, and final
+newline. Context IDs have no specified length bound; therefore 16 KiB does not
+guarantee that every otherwise valid context and message combination fits.
+
+Every append must check remaining capacity without allocating. If the complete
+rendered record cannot fit, formatting returns explicit failure and submission
+discards the entire record under LOG-008. It must not truncate the record or
+write an incomplete buffer to the sink. The capacity is the same in both
+exception configurations and on host and ARM64 builds. Verification should
+cover an exact-capacity append, overflow rejection, and whole-record discard
+when escaped content exceeds capacity. The implementation uses this fixed
+capacity, and unit tests cover exact-capacity appends, overflow rejection, and
+whole-record discard. Test execution and CI evidence are recorded separately.
+
 Internal providers and sinks use explicit failure status. Sink::Write remains
 noexcept: enabled-build sink implementations catch their internal exceptions
 before returning failure status. Provider exceptions are contained at the

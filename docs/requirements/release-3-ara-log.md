@@ -66,7 +66,7 @@ implementation guidance are in [ADR 0007](../adr/0007-release-3-logging-contract
 - Verification: Unit test
   `AP_R3_LOG_002_LoggerRetainsContextProperties`, using a valid,
   caller-unique context ID.
-- Unit Tests: `AP_R3_LOG_002_LoggerRetainsContextProperties.RetainsAllInputs`; `AP_R3_LOG_002_ContextOwnsInputStrings.SurvivesInputMutationAndDestruction`; `AP_R3_LOG_002_ThresholdFiltersDefinedLevels.MatchesEnabledSeveritySet`; `AP_R3_LOG_002_InvalidCreationThreshold.Terminates`
+- Unit Tests: `AP_R3_LOG_002_LoggerRetainsContextProperties.RetainsAllInputs`; `AP_R3_LOG_002_ContextOwnsInputStrings.SurvivesInputMutationAndDestruction`; `AP_R3_LOG_002_ThresholdFiltersDefinedLevels.MatchesEnabledSeveritySet`; `AP_R3_LOG_002_InvalidCreationThreshold.Terminates`; `AP_R3_LOG_002_EmittedThresholdFiltering.MatchesContract`; `AP_R3_LOG_002_FullThresholdMatrix.MatchesConsoleAdmission`
 - Deviation: Application IDs, manifests, and cross-process registration are out
   of scope. The `CreateLogger()` API shall retain context ID, description, and
   threshold as separate inputs so a manifest-based creation overload can be
@@ -123,10 +123,10 @@ implementation guidance are in [ADR 0007](../adr/0007-release-3-logging-contract
   SWS_LOG_00021 and SWS_LOG_00263](https://www.autosar.org/fileadmin/standards/R23-11/AP/AUTOSAR_AP_SWS_LogAndTrace.pdf).
 - Verification: Unit test `AP_R3_LOG_004_DefaultSinkIsConsole` verifies the
   console backend directly. Source inspection verifies that registration passes
-  the registry-owned console sink to each logger. Public-path verification of
-  output from a factory-created logger is deferred to issue #15, when logging
-  operations exist; direct backend tests alone do not establish factory selection.
-- Unit Tests: `AP_R3_LOG_004_DefaultSinkIsConsole.WritesExactBytesToStdout`
+  the registry-owned console sink to each logger. Unit test
+  `AP_R3_LOG_006_EscapesRecordContent.PublicPathEscapesOnce` verifies stdout
+  output through a factory-created logger, including console escaping.
+- Unit Tests: `AP_R3_LOG_004_DefaultSinkIsConsole.WritesExactBytesToStdout`; `AP_R3_LOG_006_EscapesRecordContent.PublicPathEscapesOnce`
 - Deviation: Console is the only Release 3 sink. DLT, file, and remote sinks
   are out of scope. The logger shall write through an internal sink abstraction
   so additional sink types can be added later.
@@ -167,6 +167,7 @@ implementation guidance are in [ADR 0007](../adr/0007-release-3-logging-contract
   `AP_R3_LOG_005_SeverityMethodsCreateCorrectStreams`,
   `AP_R3_LOG_005_StreamInsertionBuildsRecord`, and
   `AP_R3_LOG_005_FlushAndDestructionSubmitRecord`.
+- Unit Tests: `AP_R3_LOG_005_EmptyStreams.EmitsNoOutput`; `AP_R3_LOG_005_StreamInsertionBuildsRecord.MatchesContract`; `AP_R3_LOG_005_FlushAndDestructionSubmitRecord.MatchesContract`; `AP_R3_LOG_005_SeverityMethodsCreateCorrectStreams.MatchesContract`; `AP_R3_LOG_005_SupportedInsertionTypes.RendersBoundaryValues`; `LocaleFixture.AP_R3_LOG_005_LocaleIndependentFormatting`; `LoggingContractFixture.AP_R3_LOG_005_FlushConsumesCopiedMessage`; `CNumericLocaleFixture.AP_R3_LOG_005_CLocaleIndependentFormatting`
 - Deviation: AdaptivePi supports a documented educational subset of stream
   insertion value types. Unsupported AUTOSAR formatting decorators may be added
   later. Move restrictions and suppression of empty records are AdaptivePi
@@ -196,6 +197,7 @@ implementation guidance are in [ADR 0007](../adr/0007-release-3-logging-contract
   [Specification of Log and Trace, R23-11, §7.2.4, p. 20;
   §8.1.1, p. 46; §7.4, pp. 35-36](https://www.autosar.org/fileadmin/standards/R23-11/AP/AUTOSAR_AP_SWS_LogAndTrace.pdf).
 - Verification: Unit test `AP_R3_LOG_006_FormatsConsoleRecord`.
+- Unit Tests: `AP_R3_LOG_006_FormatsConsoleRecord.MatchesContract`; `AP_R3_LOG_006_TimezoneIndependent.UsesUtc`; `AP_R3_LOG_006_EscapesRecordContent.PublicPathEscapesOnce`; `AP_R3_LOG_006_TruncatesTimestamp.DoesNotRound`
 - Deviation: The exact textual representation is AdaptivePi-defined rather
   than an AUTOSAR backend format.
 
@@ -216,6 +218,7 @@ implementation guidance are in [ADR 0007](../adr/0007-release-3-logging-contract
   SWS_LOG_00082 and SWS_LOG_00083](https://www.autosar.org/fileadmin/standards/R23-11/AP/AUTOSAR_AP_SWS_LogAndTrace.pdf).
 - Verification: Unit test
   `AP_R3_LOG_007_FormatsStubbedRuntimeMetadata`.
+- Unit Tests: `AP_R3_LOG_007_SubmissionThreadMetadata.UsesSubmittingThread`; `AP_R3_LOG_007_FormatsStubbedRuntimeMetadata.UsesControlledProvider`; `MetadataFixture.AP_R3_LOG_007_SamplesEachSubmission`; `AP_R3_LOG_007_SuppressedRecordsSkipProviders.SkipsReadAndWrite`
 - Deviation: Timestamp integration follows the AUTOSAR concept. Process ID,
   thread ID, and the provider abstraction are AdaptivePi-defined additions.
 
@@ -245,6 +248,7 @@ implementation guidance are in [ADR 0007](../adr/0007-release-3-logging-contract
 - Verification: Component unit test
   `AP_R3_LOG_008_SinkFailureDoesNotThrow`, using an implementation-private test
   sink that fails on write.
+- Unit Tests: `AP_R3_LOG_008_FormattingFailureDiscardsRecord.MatchesContract`; `AP_R3_LOG_008_RecordBufferCapacity.MatchesContract`; `AP_R3_LOG_008_OverflowDiscardsRecord.MatchesContract`; `AP_R3_LOG_008_RecordBufferAppend.PreservesContentOnFailure`; `AP_R3_LOG_008_FormattingFailureDiscardsOutput.WritesNothing`; `AP_R3_LOG_008_RecoveryAfterFailure.DiscardsFailedRecordAndResumes`; `LoggingFailureFixture.AP_R3_LOG_008_SinkContainsInternalException`; `LoggingFailureFixture.AP_R3_LOG_008_ProviderFailureDiscardsRecord`; `LoggingFailureFixture.AP_R3_LOG_008_SinkFailureDoesNotThrow`; `LoggingFailureFixture.AP_R3_LOG_008_ProviderExceptionIsContained`; `LoggingContractFixture.AP_R3_LOG_008_MaximumEscapedMessage`; `LoggingContractFixture.AP_R3_LOG_008_MovedOverflowDiscardsWholeRecord`
 - Deviation: The failing sink exists only to verify this requirement.
   Production recovery, persistence, and diagnostics are out of scope. The sink
   abstraction shall preserve failure information internally so diagnostics can
@@ -267,6 +271,7 @@ implementation guidance are in [ADR 0007](../adr/0007-release-3-logging-contract
   LogStream operations are reentrant](https://www.autosar.org/fileadmin/standards/R23-11/AP/AUTOSAR_AP_SWS_LogAndTrace.pdf).
 - Verification: Unit test
   `AP_R3_LOG_009_ConcurrentRecordsDoNotInterleave`.
+- Unit Tests: `AP_R3_LOG_009_ConcurrentRecordsDoNotInterleave.SharedLoggerSeparateStreams`; `AP_R3_LOG_009_CompleteConcurrentRecords.PreservesEveryRecord`
 - Deviation: AdaptivePi guarantees complete-record atomicity only. It does not
   define a deterministic total order for records emitted by different threads.
 

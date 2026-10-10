@@ -26,8 +26,23 @@ LLMs and AI agents are allowed to write and modify unit tests directly. This is 
 
 - Prefer parameterized tests over standalone tests when several cases share setup, execution, and assertions and differ mainly in inputs or expected results. Follow the existing GoogleTest conventions.
 - Give parameter cases descriptive names and useful failure diagnostics.
+- Add a very short trailing `//` comment to every field in a parameterized-test case structure. Describe the field's role and distinguish inputs from expected results, including units where useful (for example, `// Case description`, `// Input nanoseconds`, `// Expected milliseconds`, `// Expected UTC timestamp`). These field comments are an explicit exception to the block-comment convention for test documentation and comments inside test bodies.
 - Use standalone tests only when parameterization adds no meaningful value. For example, just two simple cases may be clearer as standalone tests if a parameterized-test class and case table would add unnecessary complexity. Two cases are an example, not a mandatory cutoff.
 - Keep distinct behaviors in separate tests when combining them would require case-dependent branches or obscure the assertions. Multiple parameterized tests may cover different aspects of the same requirement.
+
+Example of a parameter case structure with field descriptions:
+
+```cpp
+#include <cstdint>
+
+struct TimestampTruncationCase
+{
+  const char* name;             // Case description
+  long nanoseconds;             // Input nanoseconds within the supplied second
+  std::int64_t milliseconds;    // Expected milliseconds since Unix epoch
+  const char* timestamp;        // Expected UTC timestamp
+};
+```
 
 ## Requirement blocks and test layout
 

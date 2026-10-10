@@ -30,11 +30,11 @@ namespace ara::core
 
     struct ErrorCodeComparisonCase_EnumConversionStoresValueAndDomain
     {
-        AdaptivePiErrc error;
-        AdaptivePiErrc different_error;
-        ErrorDomain::IdType different_domain_id;
-        std::string_view test_name;
-        const char* description;
+        AdaptivePiErrc error;                    // Input error value
+        AdaptivePiErrc different_error;          // Input distinct error value
+        ErrorDomain::IdType different_domain_id; // Input distinct domain identifier
+        std::string_view test_name;              // Generated case name
+        const char* description;                 // Case description
     };
 
     std::ostream& operator<<(std::ostream& output,
@@ -95,11 +95,11 @@ namespace ara::core
 
     struct ErrorCodeComparisonCase_EquivalentErrorCodesCompareEqual
     {
-        AdaptivePiErrc error;
-        AdaptivePiErrc different_error;
-        ErrorDomain::IdType different_domain_id;
-        std::string_view test_name;
-        const char* description;
+        AdaptivePiErrc error;                    // Input error value
+        AdaptivePiErrc different_error;          // Input distinct error value
+        ErrorDomain::IdType different_domain_id; // Input distinct domain identifier
+        std::string_view test_name;              // Generated case name
+        const char* description;                 // Case description
     };
 
     std::ostream& operator<<(std::ostream& output,
@@ -162,11 +162,11 @@ namespace ara::core
 
     struct ErrorCodeComparisonCase_DifferentValuesInSameDomainCompareUnequal
     {
-        AdaptivePiErrc error;
-        AdaptivePiErrc different_error;
-        ErrorDomain::IdType different_domain_id;
-        std::string_view test_name;
-        const char* description;
+        AdaptivePiErrc error;                    // Input error value
+        AdaptivePiErrc different_error;          // Input distinct error value
+        ErrorDomain::IdType different_domain_id; // Input distinct domain identifier
+        std::string_view test_name;              // Generated case name
+        const char* description;                 // Case description
     };
 
     std::ostream& operator<<(std::ostream& output,
@@ -230,11 +230,11 @@ namespace ara::core
 
     struct ErrorCodeComparisonCase_SameValueInDifferentDomainsCompareUnequal
     {
-        AdaptivePiErrc error;
-        AdaptivePiErrc different_error;
-        ErrorDomain::IdType different_domain_id;
-        std::string_view test_name;
-        const char* description;
+        AdaptivePiErrc error;                    // Input error value
+        AdaptivePiErrc different_error;          // Input distinct error value
+        ErrorDomain::IdType different_domain_id; // Input distinct domain identifier
+        std::string_view test_name;              // Generated case name
+        const char* description;                 // Case description
     };
 
     std::ostream& operator<<(std::ostream& output,
@@ -312,11 +312,11 @@ namespace ara::core
 
     struct ErrorCodeComparisonCase_MatchingEnumComparesEqualInBothDirections
     {
-        AdaptivePiErrc error;
-        AdaptivePiErrc different_error;
-        ErrorDomain::IdType different_domain_id;
-        std::string_view test_name;
-        const char* description;
+        AdaptivePiErrc error;                    // Input error value
+        AdaptivePiErrc different_error;          // Input distinct error value
+        ErrorDomain::IdType different_domain_id; // Input distinct domain identifier
+        std::string_view test_name;              // Generated case name
+        const char* description;                 // Case description
     };
 
     std::ostream& operator<<(std::ostream& output,
@@ -383,11 +383,11 @@ namespace ara::core
 
     struct ErrorCodeComparisonCase_DifferentEnumComparesUnequalInBothDirections
     {
-        AdaptivePiErrc error;
-        AdaptivePiErrc different_error;
-        ErrorDomain::IdType different_domain_id;
-        std::string_view test_name;
-        const char* description;
+        AdaptivePiErrc error;                    // Input error value
+        AdaptivePiErrc different_error;          // Input distinct error value
+        ErrorDomain::IdType different_domain_id; // Input distinct domain identifier
+        std::string_view test_name;              // Generated case name
+        const char* description;                 // Case description
     };
 
     std::ostream& operator<<(std::ostream& output,
@@ -454,8 +454,8 @@ namespace ara::core
 
     struct ForeignDomainEnumCase
     {
-        AdaptivePiErrc error;
-        const char* name;
+        AdaptivePiErrc error; // Input error value
+        const char* name;     // Case description
     };
 
     std::ostream& operator<<(std::ostream& output, const ForeignDomainEnumCase& parameter)

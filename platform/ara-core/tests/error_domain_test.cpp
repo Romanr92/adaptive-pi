@@ -18,10 +18,10 @@ namespace ara::core
 
     struct DomainCase_ReturnsConfiguredIdentifier
     {
-        ErrorDomain::IdType id;
-        std::string_view name;
-        std::string_view test_name;
-        const char* description;
+        ErrorDomain::IdType id;     // Input domain identifier
+        std::string_view name;      // Input domain name
+        std::string_view test_name; // Generated case name
+        const char* description;    // Case description
     };
 
     std::ostream& operator<<(std::ostream& output, const DomainCase_ReturnsConfiguredIdentifier& parameter)
@@ -90,10 +90,10 @@ namespace ara::core
 
     struct DomainCase_ReturnsConfiguredName
     {
-        ErrorDomain::IdType id;
-        std::string_view name;
-        std::string_view test_name;
-        const char* description;
+        ErrorDomain::IdType id;     // Input domain identifier
+        std::string_view name;      // Input domain name
+        std::string_view test_name; // Generated case name
+        const char* description;    // Case description
     };
 
     std::ostream& operator<<(std::ostream& output, const DomainCase_ReturnsConfiguredName& parameter)
@@ -224,12 +224,12 @@ namespace ara::core
 
     struct ErrorDomainIdentityCase_PreservesConfiguredIdentifier
     {
-        ErrorDomain::IdType id;
-        std::string_view name;
-        std::string_view alternate_name;
-        ErrorDomain::IdType different_id;
-        std::string_view test_name;
-        const char* description;
+        ErrorDomain::IdType id;           // Input domain identifier
+        std::string_view name;            // Input domain name
+        std::string_view alternate_name;  // Input alternate domain name
+        ErrorDomain::IdType different_id; // Input distinct domain identifier
+        std::string_view test_name;       // Generated case name
+        const char* description;          // Case description
     };
 
     std::ostream& operator<<(std::ostream& output,
@@ -318,12 +318,12 @@ namespace ara::core
 
     struct ErrorDomainIdentityCase_ProvidesNonEmptyName
     {
-        ErrorDomain::IdType id;
-        std::string_view name;
-        std::string_view alternate_name;
-        ErrorDomain::IdType different_id;
-        std::string_view test_name;
-        const char* description;
+        ErrorDomain::IdType id;           // Input domain identifier
+        std::string_view name;            // Input domain name
+        std::string_view alternate_name;  // Input alternate domain name
+        ErrorDomain::IdType different_id; // Input distinct domain identifier
+        std::string_view test_name;       // Generated case name
+        const char* description;          // Case description
     };
 
     std::ostream& operator<<(std::ostream& output, const ErrorDomainIdentityCase_ProvidesNonEmptyName& parameter)
@@ -395,12 +395,12 @@ namespace ara::core
 
     struct ErrorDomainIdentityCase_SameIdentifiersCompareEqual
     {
-        ErrorDomain::IdType id;
-        std::string_view name;
-        std::string_view alternate_name;
-        ErrorDomain::IdType different_id;
-        std::string_view test_name;
-        const char* description;
+        ErrorDomain::IdType id;           // Input domain identifier
+        std::string_view name;            // Input domain name
+        std::string_view alternate_name;  // Input alternate domain name
+        ErrorDomain::IdType different_id; // Input distinct domain identifier
+        std::string_view test_name;       // Generated case name
+        const char* description;          // Case description
     };
 
     std::ostream& operator<<(std::ostream& output, const ErrorDomainIdentityCase_SameIdentifiersCompareEqual& parameter)
@@ -488,12 +488,12 @@ namespace ara::core
 
     struct ErrorDomainIdentityCase_DifferentIdentifiersCompareUnequal
     {
-        ErrorDomain::IdType id;
-        std::string_view name;
-        std::string_view alternate_name;
-        ErrorDomain::IdType different_id;
-        std::string_view test_name;
-        const char* description;
+        ErrorDomain::IdType id;           // Input domain identifier
+        std::string_view name;            // Input domain name
+        std::string_view alternate_name;  // Input alternate domain name
+        ErrorDomain::IdType different_id; // Input distinct domain identifier
+        std::string_view test_name;       // Generated case name
+        const char* description;          // Case description
     };
 
     std::ostream& operator<<(std::ostream& output,
@@ -584,12 +584,12 @@ namespace ara::core
 
     struct ErrorDomainIdentityCase_EmptyNameTerminates
     {
-        ErrorDomain::IdType id;
-        std::string_view name;
-        std::string_view alternate_name;
-        ErrorDomain::IdType different_id;
-        std::string_view test_name;
-        const char* description;
+        ErrorDomain::IdType id;           // Input domain identifier
+        std::string_view name;            // Input domain name
+        std::string_view alternate_name;  // Input alternate domain name
+        ErrorDomain::IdType different_id; // Input distinct domain identifier
+        std::string_view test_name;       // Generated case name
+        const char* description;          // Case description
     };
 
     std::ostream& operator<<(std::ostream& output, const ErrorDomainIdentityCase_EmptyNameTerminates& parameter)

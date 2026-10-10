@@ -20,11 +20,11 @@ namespace ara::core
 
     struct ErrorCodeContentCase_StoresIntegralErrorValue
     {
-        ErrorCode::ValueType value;
-        ErrorDomain::IdType domain_id;
-        std::string_view domain_name;
-        std::string_view test_name;
-        const char* description;
+        ErrorCode::ValueType value;    // Input value payload
+        ErrorDomain::IdType domain_id; // Input domain identifier
+        std::string_view domain_name;  // Input domain name
+        std::string_view test_name;    // Generated case name
+        const char* description;       // Case description
     };
 
     std::ostream& operator<<(std::ostream& output, const ErrorCodeContentCase_StoresIntegralErrorValue& parameter)
@@ -97,11 +97,11 @@ namespace ara::core
 
     struct ErrorCodeContentCase_ReferencesExactOriginatingDomain
     {
-        ErrorCode::ValueType value;
-        ErrorDomain::IdType domain_id;
-        std::string_view domain_name;
-        std::string_view test_name;
-        const char* description;
+        ErrorCode::ValueType value;    // Input value payload
+        ErrorDomain::IdType domain_id; // Input domain identifier
+        std::string_view domain_name;  // Input domain name
+        std::string_view test_name;    // Generated case name
+        const char* description;       // Case description
     };
 
     std::ostream& operator<<(std::ostream& output,

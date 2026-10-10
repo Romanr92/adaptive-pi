@@ -60,12 +60,12 @@ namespace ara::core
 
     struct MultipleDomainCase_RetainsValue
     {
-        ErrorCode error_code;
-        const ErrorDomain* expected_domain;
-        ErrorCode::ValueType expected_value;
-        ErrorCode same_value_other_domain;
-        std::string_view test_name;
-        const char* description;
+        ErrorCode error_code;                // Input error code
+        const ErrorDomain* expected_domain;  // Expected originating domain
+        ErrorCode::ValueType expected_value; // Expected integral error value
+        ErrorCode same_value_other_domain;   // Input matching value in another domain
+        std::string_view test_name;          // Generated case name
+        const char* description;             // Case description
     };
 
     std::ostream& operator<<(std::ostream& output, const MultipleDomainCase_RetainsValue& parameter)
@@ -130,12 +130,12 @@ namespace ara::core
 
     struct MultipleDomainCase_RetainsOriginatingDomain
     {
-        ErrorCode error_code;
-        const ErrorDomain* expected_domain;
-        ErrorCode::ValueType expected_value;
-        ErrorCode same_value_other_domain;
-        std::string_view test_name;
-        const char* description;
+        ErrorCode error_code;                // Input error code
+        const ErrorDomain* expected_domain;  // Expected originating domain
+        ErrorCode::ValueType expected_value; // Expected integral error value
+        ErrorCode same_value_other_domain;   // Input matching value in another domain
+        std::string_view test_name;          // Generated case name
+        const char* description;             // Case description
     };
 
     std::ostream& operator<<(std::ostream& output, const MultipleDomainCase_RetainsOriginatingDomain& parameter)
@@ -204,12 +204,12 @@ namespace ara::core
 
     struct MultipleDomainCase_DistinguishesSameValueFromDifferentDomain
     {
-        ErrorCode error_code;
-        const ErrorDomain* expected_domain;
-        ErrorCode::ValueType expected_value;
-        ErrorCode same_value_other_domain;
-        std::string_view test_name;
-        const char* description;
+        ErrorCode error_code;                // Input error code
+        const ErrorDomain* expected_domain;  // Expected originating domain
+        ErrorCode::ValueType expected_value; // Expected integral error value
+        ErrorCode same_value_other_domain;   // Input matching value in another domain
+        std::string_view test_name;          // Generated case name
+        const char* description;             // Case description
     };
 
     std::ostream& operator<<(std::ostream& output,

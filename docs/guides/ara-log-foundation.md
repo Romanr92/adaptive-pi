@@ -2,7 +2,7 @@
 
 Release 3 provides a project-owned educational logging foundation, not a claim
 of AUTOSAR API compatibility. Its baseline is
-[LOG-001 through LOG-004](../requirements/release-3-ara-log.md); the accepted
+[LOG-001 through LOG-009](../requirements/release-3-ara-log.md); the accepted
 factory deviation is explained in [ADR 0007](../adr/0007-release-3-logging-contracts.md).
 
 ## Create once, then borrow
@@ -55,22 +55,53 @@ static destructors is unsupported.
 
 IsEnabled admits defined severities from Fatal through the threshold. Off
 severity, an Off threshold, and undefined severity values are disabled.
-Actual record-output filtering is implemented with stream logging in issue #15.
+Stream submission applies this threshold before acquiring metadata or writing.
 
 Each logger receives the registry-owned console sink. Its interface and
 implementation remain under src/, outside the public include directory.
 The console backend submits bounded bytes to buffered stdout and reports short
-writes internally. Record formatting, metadata, stream operations, and logging
-failure-discard behavior belong to issue #15.
+writes internally. Records include a UTC millisecond timestamp, Linux PID/TID,
+severity, context ID, and escaped message, ending in one physical newline.
+
+## Stream logging
+
+Include `ara/log/logger.h` when using the stream API; it includes the complete
+`LogStream` definition. After successfully registering a logger:
+
+```cpp
+auto& logger = result.Value().get();
+logger.LogInfo() << "ready=" << true;
+
+auto stream = logger.LogWarn();
+stream << "retry=" << 1;
+stream.Flush();
+stream << "retry=" << 2;
+```
+
+Temporary destruction submits the first record. `Flush()` submits and clears
+pending bytes; subsequent insertion starts a fresh record submitted on
+destruction. Empty or filtered records emit nothing. Streams are move-constructible
+but cannot be copied or move-assigned; moving transfers pending-record ownership.
+
+Supported values are booleans, characters, integral types excluding wide
+characters, float/double, non-null null-terminated character strings,
+`std::string`, and `std::string_view`. Numbers use locale-independent formatting;
+floating values use general format with `max_digits10` precision. Unsupported
+types are rejected at compilation. The message limit is 4096 raw bytes; overflow
+or internal metadata, formatting, or sink failure discards the affected record.
+Separate streams may share a logger concurrently. Successful console writes
+preserve complete records; thread ordering is unspecified.
 
 ## Verification limits
 
 Foundation tests cover level encoding, context retention and ownership,
 threshold eligibility, factory ownership and lookup, reference stability,
 concurrent registration, and injected allocation failures.
-Console backend tests verify exact stdout bytes. Factory sink wiring is verified
-by source inspection; output through the public logger API is deferred to issue
-#15. No test-only friendship is present in the production Logger definition.
+Console backend and public logger-path tests verify stdout output, formatting,
+escaping, and filtering. Private registry injection supplies deterministic
+metadata and failure status for submission, suppression, and recovery tests.
+Concurrent tests exercise shared and separate loggers, flush/reuse, destruction,
+and complete headers/payloads. No test-only friendship is present in Logger.
 
 Common tests are included in both exception configurations. Default local runs
 use exceptions disabled; exception-enabled execution is verified in CI.
