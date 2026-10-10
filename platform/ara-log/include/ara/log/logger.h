@@ -5,6 +5,8 @@
 #include "ara/core/result.h"
 #include "ara/log/log_level.h"
 #include "ara/log/log_stream.h"
+#include "ara/log/message_writer.h"
+#include "ara/log/modelled_message.h"
 
 #include <cstddef>
 #include <functional>
@@ -47,6 +49,46 @@ namespace ara::log
       [[nodiscard]] LogStream LogDebug() const noexcept;
       [[nodiscard]] LogStream LogVerbose() const noexcept;
       [[nodiscard]] LogStream WithLevel(LogLevel level) const noexcept;
+
+      /* Implements AP-R3-LOG-010 */
+      template <typename MsgId, typename... Params>
+      void Log(const MsgId& message, const Params&... params) const noexcept
+      {
+        using Message = detail::NormalizedType<MsgId>;
+
+        constexpr bool c_parameters_match = detail::kParameterMatch<typename Message::ParameterTypes, Params...>;
+
+        static_assert(c_parameters_match, "Modelled message parameter types must match exactly");
+
+        static_assert(detail::IsValidMessageId(Message::kId),
+                      "Message ID must be non-empty ASCII letters, digits, or underscores");
+
+        static_assert(std::is_same_v<detail::NormalizedType<decltype(Message::kLevel)>, LogLevel>,
+                      "Message severity must have type LogLevel");
+
+        // Avoid instantiating the renderer for mismatched parameters.
+        if constexpr (c_parameters_match)
+        {
+          static_assert(std::is_same_v<decltype(message.Render(std::declval<MessageWriter&>(), params...)), void>,
+                        "Message Render must return void");
+
+          static_assert(noexcept(message.Render(std::declval<MessageWriter&>(), params...)),
+                        "Message Render must be noexcept");
+
+          if (!IsEnabled(Message::kLevel))
+          {
+            return;
+          }
+
+          constexpr std::string_view c_id_prefix{"id="};
+
+          auto stream = WithLevel(Message::kLevel);
+          stream << c_id_prefix << Message::kId;
+
+          MessageWriter writer{stream};
+          message.Render(writer, params...);
+        }
+      }
 
     private:
       // Friendship gives only this class access to private construction and destruction.
