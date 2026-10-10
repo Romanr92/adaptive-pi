@@ -498,6 +498,8 @@ namespace
                            PublicEscapingCaseName);
   /* ============================= End Test_AP_R3_LOG_006 ============================== */
   /* =============================== Test_AP_R3_LOG_007 ================================ */
+
+  /* ----------------------------------------------------------------------------------- */
   /* Verify that a moved stream samples the submitting thread's Linux IDs.
    * 1. Arrange: Create a pending stream on the main thread and capture stdout.
    * 2. Act: Move the stream to a worker and flush it there.
@@ -719,6 +721,8 @@ namespace
   }
   /* ============================= End Test_AP_R3_LOG_008 ============================== */
   /* =============================== Test_AP_R3_LOG_009 ================================ */
+
+  /* ----------------------------------------------------------------------------------- */
   /* Verify separate streams sharing one logger emit complete unique records.
    * 1. Arrange: Register one logger and prepare four workers with unique payloads.
    * 2. Act: Emit 32 records per worker concurrently and join every worker.

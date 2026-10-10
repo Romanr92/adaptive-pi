@@ -16,7 +16,7 @@ namespace ara::log::detail
       [[nodiscard]] std::string_view View() const noexcept;
 
     private:
-      // Proposed capacity; checked appends must reject oversized records
+      // Fixed capacity; checked appends reject oversized records.
       static constexpr std::size_t c_record_capacity = 16384;
       static constexpr std::size_t c_record_zero = 0;
 

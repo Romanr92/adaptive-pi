@@ -91,8 +91,9 @@ discards the entire record under LOG-008. It must not truncate the record or
 write an incomplete buffer to the sink. The capacity is the same in both
 exception configurations and on host and ARM64 builds. Verification should
 cover an exact-capacity append, overflow rejection, and whole-record discard
-when escaped content exceeds capacity. This documents the design; it does not
-claim that rendering or these checks are implemented and verified.
+when escaped content exceeds capacity. The implementation uses this fixed
+capacity, and unit tests cover exact-capacity appends, overflow rejection, and
+whole-record discard. Test execution and CI evidence are recorded separately.
 
 Internal providers and sinks use explicit failure status. Sink::Write remains
 noexcept: enabled-build sink implementations catch their internal exceptions
