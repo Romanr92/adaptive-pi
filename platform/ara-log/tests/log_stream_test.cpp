@@ -1,4 +1,4 @@
-#include "ara/log/log_stream.h"
+/* Include only the public logger header to catch incomplete stream API regressions. */
 #include "ara/log/logger.h"
 
 #include <cstdint>
@@ -16,6 +16,8 @@ namespace
 
   using ara::log::Logger;
   using ara::log::LogStream;
+  /* LOG-005 stream insertion must compile with only logger.h included. */
+  static_assert(std::is_same_v<decltype(std::declval<const Logger&>().LogInfo() << "message"), LogStream&>);
   static_assert(!std::is_default_constructible_v<LogStream>);
   static_assert(!std::is_copy_constructible_v<LogStream>);
   static_assert(!std::is_copy_assignable_v<LogStream>);

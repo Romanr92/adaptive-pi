@@ -98,10 +98,10 @@ namespace ara::log
 
       LogStream(const Logger& logger, LogLevel level) noexcept;
 
-      // Appends bytes only when the pending record remains vaild.
+      // Appends bytes only when the pending record remains valid.
       void Append(std::string_view value) noexcept;
 
-      // LOG-008 establishes this limit; no heal allocattion is needed.
+      // LOG-008 establishes this limit; no heap allocation is needed.
       static constexpr std::size_t c_message_capacity = 4096;
       static constexpr std::size_t c_empty_message_size = 0;
 

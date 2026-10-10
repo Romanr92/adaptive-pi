@@ -37,13 +37,13 @@ namespace ara::log
   /* Implements AP-R3-LOG-005 */
   void LogStream::Append(std::string_view value) noexcept
   {
-    // Disabled, mpve-from, or failed streams accumulate no further bytes.
+    // Disabled, moved-from, or failed streams accumulate no further bytes.
     if ((logger_ == nullptr) || (!enabled_) || (failed_) || (value.empty()))
     {
       return;
     }
 
-    // Substraction avoids overflow from computing size_ + value.size().
+    // Subtraction avoids overflow from computing size_ + value.size().
     if (value.size() > (buffer_.size() - size_))
     {
       failed_ = true;
@@ -78,7 +78,7 @@ namespace ara::log
       return *this;
     }
 
-    // Null is outside the supported input contractl discard safely.
+    // Null is outside the supported input contract; discard safely.
     if (value == nullptr)
     {
       failed_ = true;
@@ -130,9 +130,9 @@ namespace ara::log
       }
       else
       {
-        const auto lenth = static_cast<std::size_t>(result.ptr - text.data());
+        const auto length = static_cast<std::size_t>(result.ptr - text.data());
 
-        Append(std::string_view{text.data(), lenth});
+        Append(std::string_view{text.data(), length});
       }
     }
 
@@ -166,9 +166,9 @@ namespace ara::log
       }
       else
       {
-        const auto lenth = static_cast<std::size_t>(result.ptr - text.data());
+        const auto length = static_cast<std::size_t>(result.ptr - text.data());
 
-        Append(std::string_view{text.data(), lenth});
+        Append(std::string_view{text.data(), length});
       }
     }
 

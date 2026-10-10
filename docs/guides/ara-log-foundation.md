@@ -65,8 +65,8 @@ severity, context ID, and escaped message, ending in one physical newline.
 
 ## Stream logging
 
-Include `ara/log/log_stream.h` as well as `ara/log/logger.h` when using the
-stream API. After successfully registering a logger:
+Include `ara/log/logger.h` when using the stream API; it includes the complete
+`LogStream` definition. After successfully registering a logger:
 
 ```cpp
 auto& logger = result.Value().get();
