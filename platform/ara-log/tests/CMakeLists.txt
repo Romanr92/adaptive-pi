@@ -28,7 +28,7 @@ foreach(test_target IN LISTS ara_log_test_targets)
         set(test_source log_level_test.cpp)
     elseif(test_target STREQUAL "ara_log_stream_test")
         set(test_source log_stream_test.cpp log_record_test.cpp metadata_provider_test.cpp logging_failure_test.cpp
-                        logging_contract_test.cpp)
+                        logging_contract_test.cpp modelled_message_test.cpp)
     elseif(test_target STREQUAL "ara_log_timestamp_test")
         set(test_source console_timestamp_test.cpp)
     elseif(test_target STREQUAL "ara_log_allocation_test")
@@ -61,4 +61,14 @@ target_include_directories(ara_log_stream_test PRIVATE "${CMAKE_CURRENT_SOURCE_D
 if(TARGET ara_log_timestamp_test)
     target_include_directories(ara_log_timestamp_test PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/../src")
     target_link_options(ara_log_timestamp_test PRIVATE "LINKER:--wrap=clock_gettime")
+endif()
+
+# Compile public calls in the current exception mode, including a successful control.
+if(CMAKE_CXX_COMPILER_ID MATCHES "^(GNU|Clang)$")
+    add_test(NAME AP_R3_LOG_010_InvalidModelledMessageParametersDoNotCompile
+        COMMAND ${CMAKE_COMMAND}
+            "-DCOMPILER=${CMAKE_CXX_COMPILER}"
+            "-DSOURCE_ROOT=${PROJECT_SOURCE_DIR}"
+            "-DENABLE_EXCEPTIONS=${ADAPTIVE_PI_ENABLE_EXCEPTIONS}"
+            -P "${CMAKE_CURRENT_SOURCE_DIR}/modelled_compile_test.cmake")
 endif()

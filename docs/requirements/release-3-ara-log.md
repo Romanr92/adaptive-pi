@@ -306,6 +306,7 @@ implementation guidance are in [ADR 0007](../adr/0007-release-3-logging-contract
   [Specification of Log and Trace, R23-11, §7.3.2, pp. 26-29,
   SWS_LOG_00240 and SWS_LOG_00241; §8.3.2.9-8.3.2.10, p. 72,
   SWS_LOG_00204 and SWS_LOG_00133](https://www.autosar.org/fileadmin/standards/R23-11/AP/AUTOSAR_AP_SWS_LogAndTrace.pdf).
+- Unit Tests: `AP_R3_LOG_010_LogsModelledMessage.MatchesContract`; `ModelledFixture.AP_R3_LOG_010_LogsModelledMessageWithAttributes`; `AP_R3_LOG_010_ModelledMessageSizeLimit.AttributesShareLimitAndRecover`; `ModelledFixture.AP_R3_LOG_010_SupportedRenderingValues`; `AP_R3_LOG_010_AttributeRendering.PreservesOrderAndEscapesLocation`; `AP_R3_LOG_010_CombinedMessageLimit.IncludesTextAndBothAttributes`
 - Verification: Compile-time test
   `AP_R3_LOG_010_InvalidModelledMessageParametersDoNotCompile`, plus unit tests
   `AP_R3_LOG_010_LogsModelledMessage` and
