@@ -139,6 +139,20 @@ Message IDs must be non-empty ASCII letters, digits, or underscores.
 types in call order. Arguments must match after removing references and
 top-level cv qualifiers; implicit numeric and string conversions are rejected.
 
+Type matching and argument access are separate concerns. Volatile scalar
+arguments are read into ordinary values for renderer and trace dispatch;
+non-volatile arguments retain their original references. Each enabled
+destination reads its volatile scalar arguments separately, so callers must
+not assume both destinations observe one shared snapshot.
+
+Removing qualifiers for matching does not provide volatile-qualified member
+operations for class types. In particular, `std::string` and `std::string_view`
+have no volatile-qualified accessors. The documented renderers taking ordinary
+const references cannot consume volatile instances of those classes. Supply
+ordinary string objects, or design a message renderer and trace specialization
+for a project-owned type with an explicitly supported volatile access protocol.
+Do not cast away volatile to call ordinary string methods.
+
 `Render()` returns `void` and must be `noexcept`. It receives a borrowed
 `MessageWriter` supporting the same insertion types and formatting as stream
 logging. The renderer must finish synchronously and must not retain the writer.
@@ -236,9 +250,14 @@ no default definition. Every trace-enabled message and parameter signature
 needs a matching definition; a missing definition causes a link error.
 Logger-only and discard routes require no trace definition.
 
-Trace receives the original message and parameter references synchronously;
-it must not retain them beyond their valid lifetimes. `LogWith()` attributes
-are applied to logger output and are not passed to the trace interface.
+Trace receives the original message synchronously. Non-volatile parameters
+retain their original references; volatile scalar parameters are passed as
+temporary values with their top-level qualifiers removed, selecting the
+normalized trace specialization. References to those temporary values are valid
+only during the callback and must not be retained. Any retained reference to an
+ordinary parameter must also respect the caller-owned object's lifetime.
+`LogWith()` attributes are applied to logger output and are not passed to the
+trace interface.
 
 Threshold filtering affects only the logger destination. Configured trace
 invocations still occur with a `kOff` threshold, filtered severity, or after
