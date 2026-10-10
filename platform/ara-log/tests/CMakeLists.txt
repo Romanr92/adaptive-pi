@@ -23,7 +23,7 @@ foreach(test_target IN LISTS ara_log_test_targets)
     if(test_target STREQUAL "ara_log_level_test")
         set(test_source log_level_test.cpp)
     elseif(test_target STREQUAL "ara_log_stream_test")
-        set(test_source log_stream_test.cpp)
+        set(test_source log_stream_test.cpp log_record_test.cpp)
     elseif(test_target STREQUAL "ara_log_allocation_test")
         set(test_source logger_allocation_failure_test.cpp)
     else()
@@ -48,3 +48,4 @@ endif()
 
 # Implementation-private headers are visible only to the component test target.
 target_include_directories(ara_log_context_test PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/../src")
+target_include_directories(ara_log_stream_test PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/../src")
