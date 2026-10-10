@@ -68,16 +68,22 @@ namespace
     /* Act */
     const auto initialize_and_check = []
     {
+      /* Arrange */
+      constexpr std::string_view c_expected_id{"HELLO"};
+      constexpr std::string_view c_expected_description{"AdaptivePi hello application"};
+      constexpr auto c_expected_threshold = ara::log::LogLevel::kInfo;
+
+      /* Act */
       const auto result = hello_adaptive::Initialize();
-      if (!result.HasValue())
-      {
-        std::_Exit(EXIT_FAILURE);
-      }
-      const auto& logger = ara::log::CreateLogger(hello_adaptive::c_context_id, hello_adaptive::c_context_description,
-                                                  hello_adaptive::c_threshold);
-      const bool matches = logger.ContextId() == "HELLO" &&
-                           logger.ContextDescription() == "AdaptivePi hello application" &&
-                           logger.DefaultThreshold() == ara::log::LogLevel::kInfo;
+      const auto* logger =
+        result.HasValue() ? &ara::log::CreateLogger(hello_adaptive::c_context_id, hello_adaptive::c_context_description,
+                                                    hello_adaptive::c_threshold)
+                          : nullptr;
+
+      /* Expect */
+      const bool matches = logger != nullptr && logger->ContextId() == c_expected_id &&
+                           logger->ContextDescription() == c_expected_description &&
+                           logger->DefaultThreshold() == c_expected_threshold;
       std::_Exit(matches ? EXIT_SUCCESS : EXIT_FAILURE);
     };
 
@@ -116,15 +122,19 @@ namespace
     /* Act */
     const auto fail_and_retry = [parameter]
     {
+      /* Arrange */
       allocations_until_failure = parameter.allocation_index;
+      injection_hits = 0;
+
+      /* Act */
       const auto failed = hello_adaptive::Initialize();
       allocations_until_failure = -1;
-      if (injection_hits != 1 || failed.HasValue() || failed.Error() != ara::core::AdaptivePiErrc::kOperationFailed)
-      {
-        std::_Exit(EXIT_FAILURE);
-      }
       const auto retry = hello_adaptive::Initialize();
-      std::_Exit(retry.HasValue() ? EXIT_SUCCESS : EXIT_FAILURE);
+
+      /* Expect */
+      const bool matches = injection_hits == 1 && !failed.HasValue() &&
+                           failed.Error() == ara::core::AdaptivePiErrc::kOperationFailed && retry.HasValue();
+      std::_Exit(matches ? EXIT_SUCCESS : EXIT_FAILURE);
     };
 
     /* Expect */
@@ -160,9 +170,15 @@ namespace
     /* Act */
     const auto run_failed_startup = []
     {
+      /* Arrange */
       allocations_until_failure = 0;
+      injection_hits = 0;
+
+      /* Act */
       const int status = HelloAdaptiveMain();
       allocations_until_failure = -1;
+
+      /* Expect */
       std::_Exit(injection_hits == 1 && status == EXIT_FAILURE ? EXIT_SUCCESS : EXIT_FAILURE);
     };
 

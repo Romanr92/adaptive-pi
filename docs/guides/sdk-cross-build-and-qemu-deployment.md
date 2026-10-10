@@ -166,8 +166,11 @@ ssh -p 2222 root@localhost /usr/local/bin/hello-adaptive
 Expected output:
 
 ```text
-Hello from AdaptivePi on Embedded Linux.
+[2026-10-11T12:00:00.000Z][123][123][INFO][HELLO] Application startup
+[2026-10-11T12:00:00.001Z][123][123][INFO][HELLO] id=HELLO_GREETING Hello from AdaptivePi on Embedded Linux.
 ```
+
+The timestamp, process ID, and thread ID vary between runs. Timestamps use UTC.
 
 This proves that the application was cross-built with the Yocto SDK, deployed over SSH, and executed on the ARM64 PREEMPT_RT target.
 

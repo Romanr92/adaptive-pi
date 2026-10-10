@@ -238,8 +238,11 @@ cmake --build build/debug-app --target hello-adaptive -j 1
 The successful native result is:
 
 ```text
-Hello from AdaptivePi on Embedded Linux.
+[2026-10-11T12:00:00.000Z][123][123][INFO][HELLO] Application startup
+[2026-10-11T12:00:00.001Z][123][123][INFO][HELLO] id=HELLO_GREETING Hello from AdaptivePi on Embedded Linux.
 ```
+
+The timestamp, process ID, and thread ID vary between runs. Timestamps use UTC.
 
 This CMake configure step also gives VS Code IntelliSense the compile information it needs. The next Yocto step will package this same executable and its systemd unit into `adaptive-pi-image`.
 
