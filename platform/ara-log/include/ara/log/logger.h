@@ -7,6 +7,8 @@
 #include "ara/log/log_stream.h"
 #include "ara/log/message_writer.h"
 #include "ara/log/modelled_message.h"
+#include "ara/log/trace_artifact.h"
+#include "ara/log/trace_routing.h"
 
 #include <cstddef>
 #include <functional>
@@ -89,25 +91,32 @@ namespace ara::log
           static_assert(noexcept(message.Render(std::declval<MessageWriter&>(), params...)),
                         "Message Render must be noexcept");
 
-          if (!IsEnabled(Message::kLevel))
+          /* Implements AP-R3-LOG-011 */
+          if constexpr (TraceRouting<Message>::kLoggerEnabled)
           {
-            return;
+            if (IsEnabled(Message::kLevel))
+            {
+              constexpr std::string_view c_id_prefix{"id="};
+
+              auto stream = WithLevel(Message::kLevel);
+              stream << c_id_prefix << Message::kId;
+
+              MessageWriter writer{stream};
+              message.Render(writer, params...);
+
+              std::apply(
+                [&stream](const auto&... attribute) noexcept
+                {
+                  (AppendAttribute(stream, attribute), ...);
+                },
+                attributes);
+            }
           }
 
-          constexpr std::string_view c_id_prefix{"id="};
-
-          auto stream = WithLevel(Message::kLevel);
-          stream << c_id_prefix << Message::kId;
-
-          MessageWriter writer{stream};
-          message.Render(writer, params...);
-
-          std::apply(
-            [&stream](const auto&... attribute) noexcept
-            {
-              (AppendAttribute(stream, attribute), ...);
-            },
-            attributes);
+          if constexpr (TraceRouting<Message>::kTraceEnabled)
+          {
+            ext::TraceArti(message, params...);
+          }
         }
       }
 
