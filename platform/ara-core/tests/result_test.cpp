@@ -106,11 +106,11 @@ namespace ara::core
 
     struct ResultStateCase_ReportsSelectedState
     {
-        bool has_value;
-        int value;
-        AdaptivePiErrc error;
-        std::string_view test_name;
-        const char* description;
+        bool has_value;             // Input success-state selection
+        int value;                  // Input value payload
+        AdaptivePiErrc error;       // Input error value
+        std::string_view test_name; // Generated case name
+        const char* description;    // Case description
     };
 
     std::ostream& operator<<(std::ostream& output, const ResultStateCase_ReportsSelectedState& parameter)
@@ -170,11 +170,11 @@ namespace ara::core
 
     struct ResultStateCase_CopyConstructionPreservesState
     {
-        bool has_value;
-        int value;
-        AdaptivePiErrc error;
-        std::string_view test_name;
-        const char* description;
+        bool has_value;             // Input success-state selection
+        int value;                  // Input value payload
+        AdaptivePiErrc error;       // Input error value
+        std::string_view test_name; // Generated case name
+        const char* description;    // Case description
     };
 
     std::ostream& operator<<(std::ostream& output, const ResultStateCase_CopyConstructionPreservesState& parameter)
@@ -237,11 +237,11 @@ namespace ara::core
     /* Also exercises AP-R3-CORE-010. Do not observe the moved-from result. */
     struct ResultStateCase_MoveConstructionPreservesState
     {
-        bool has_value;
-        int value;
-        AdaptivePiErrc error;
-        std::string_view test_name;
-        const char* description;
+        bool has_value;             // Input success-state selection
+        int value;                  // Input value payload
+        AdaptivePiErrc error;       // Input error value
+        std::string_view test_name; // Generated case name
+        const char* description;    // Case description
     };
 
     std::ostream& operator<<(std::ostream& output, const ResultStateCase_MoveConstructionPreservesState& parameter)
@@ -304,11 +304,11 @@ namespace ara::core
 
     struct ResultStateCase_SameTypesAndPayloadsKeepAlternativesDistinct
     {
-        bool has_value;
-        int value;
-        AdaptivePiErrc error;
-        std::string_view test_name;
-        const char* description;
+        bool has_value;             // Input success-state selection
+        int value;                  // Input value payload
+        AdaptivePiErrc error;       // Input error value
+        std::string_view test_name; // Generated case name
+        const char* description;    // Case description
     };
 
     std::ostream& operator<<(std::ostream& output,
@@ -371,11 +371,11 @@ namespace ara::core
 
     struct ResultStateCase_ConstructsAndDestroysOnlySelectedAlternative
     {
-        bool has_value;
-        int value;
-        AdaptivePiErrc error;
-        std::string_view test_name;
-        const char* description;
+        bool has_value;             // Input success-state selection
+        int value;                  // Input value payload
+        AdaptivePiErrc error;       // Input error value
+        std::string_view test_name; // Generated case name
+        const char* description;    // Case description
     };
 
     std::ostream& operator<<(std::ostream& output,
@@ -503,10 +503,10 @@ namespace ara::core
 
     struct ResultVoidStateCase_ReportsSelectedState
     {
-        bool has_value;
-        AdaptivePiErrc error;
-        std::string_view test_name;
-        const char* description;
+        bool has_value;             // Input success-state selection
+        AdaptivePiErrc error;       // Input error value
+        std::string_view test_name; // Generated case name
+        const char* description;    // Case description
     };
 
     std::ostream& operator<<(std::ostream& output, const ResultVoidStateCase_ReportsSelectedState& parameter)
@@ -562,10 +562,10 @@ namespace ara::core
 
     struct ResultVoidStateCase_CopyConstructionPreservesState
     {
-        bool has_value;
-        AdaptivePiErrc error;
-        std::string_view test_name;
-        const char* description;
+        bool has_value;             // Input success-state selection
+        AdaptivePiErrc error;       // Input error value
+        std::string_view test_name; // Generated case name
+        const char* description;    // Case description
     };
 
     std::ostream& operator<<(std::ostream& output, const ResultVoidStateCase_CopyConstructionPreservesState& parameter)
@@ -625,10 +625,10 @@ namespace ara::core
     /* Also exercises AP-R3-CORE-010. Do not observe the moved-from result. */
     struct ResultVoidStateCase_MoveConstructionPreservesState
     {
-        bool has_value;
-        AdaptivePiErrc error;
-        std::string_view test_name;
-        const char* description;
+        bool has_value;             // Input success-state selection
+        AdaptivePiErrc error;       // Input error value
+        std::string_view test_name; // Generated case name
+        const char* description;    // Case description
     };
 
     std::ostream& operator<<(std::ostream& output, const ResultVoidStateCase_MoveConstructionPreservesState& parameter)
@@ -688,10 +688,10 @@ namespace ara::core
 
     struct ResultVoidStateCase_ConstructsAnErrorOnlyOnFailure
     {
-        bool has_value;
-        AdaptivePiErrc error;
-        std::string_view test_name;
-        const char* description;
+        bool has_value;             // Input success-state selection
+        AdaptivePiErrc error;       // Input error value
+        std::string_view test_name; // Generated case name
+        const char* description;    // Case description
     };
 
     std::ostream& operator<<(std::ostream& output, const ResultVoidStateCase_ConstructsAnErrorOnlyOnFailure& parameter)
@@ -1301,11 +1301,11 @@ namespace ara::core
 
     struct ReplacementCase_PreservesPayloadOnFailureAndReplacesOnSuccess
     {
-        bool starts_with_value;
-        bool replaces_with_value;
-        bool fail_first;
-        std::string_view test_name;
-        const char* description;
+        bool starts_with_value;     // Input initial success state
+        bool replaces_with_value;   // Input replacement success state
+        bool fail_first;            // Input first-attempt failure flag
+        std::string_view test_name; // Generated case name
+        const char* description;    // Case description
     };
 
     std::ostream& operator<<(std::ostream& output,
@@ -1599,10 +1599,10 @@ namespace ara::core
 
     struct VoidReplacementCase_PreservesStateOnFailureAndReplacesOnSuccess
     {
-        bool starts_with_value;
-        bool fail_first;
-        std::string_view test_name;
-        const char* description;
+        bool starts_with_value;     // Input initial success state
+        bool fail_first;            // Input first-attempt failure flag
+        std::string_view test_name; // Generated case name
+        const char* description;    // Case description
     };
 
     std::ostream& operator<<(std::ostream& output,
@@ -1993,11 +1993,11 @@ namespace ara::core
 
     struct ResultQueryCase_ReportsSelectedState
     {
-        bool has_value;
-        int value;
-        AdaptivePiErrc error;
-        std::string_view test_name;
-        const char* description;
+        bool has_value;             // Input success-state selection
+        int value;                  // Input value payload
+        AdaptivePiErrc error;       // Input error value
+        std::string_view test_name; // Generated case name
+        const char* description;    // Case description
     };
 
     std::ostream& operator<<(std::ostream& output, const ResultQueryCase_ReportsSelectedState& parameter)
@@ -2070,10 +2070,10 @@ namespace ara::core
 
     struct ResultVoidQueryCase_ReportsSelectedState
     {
-        bool has_value;
-        AdaptivePiErrc error;
-        std::string_view test_name;
-        const char* description;
+        bool has_value;             // Input success-state selection
+        AdaptivePiErrc error;       // Input error value
+        std::string_view test_name; // Generated case name
+        const char* description;    // Case description
     };
 
     std::ostream& operator<<(std::ostream& output, const ResultVoidQueryCase_ReportsSelectedState& parameter)
@@ -2696,8 +2696,8 @@ namespace ara::core
 
     struct Case008ValueMutable
     {
-        AdaptivePiErrc error;
-        const char* name;
+        AdaptivePiErrc error; // Input error value
+        const char* name;     // Case description
     };
     std::ostream& operator<<(std::ostream& stream, const Case008ValueMutable& parameter)
     {
@@ -2740,8 +2740,8 @@ namespace ara::core
 
     struct Case008ValueConst
     {
-        AdaptivePiErrc error;
-        const char* name;
+        AdaptivePiErrc error; // Input error value
+        const char* name;     // Case description
     };
     std::ostream& operator<<(std::ostream& stream, const Case008ValueConst& parameter)
     {
@@ -2783,8 +2783,8 @@ namespace ara::core
 
     struct Case008ValueRvalue
     {
-        AdaptivePiErrc error;
-        const char* name;
+        AdaptivePiErrc error; // Input error value
+        const char* name;     // Case description
     };
     std::ostream& operator<<(std::ostream& stream, const Case008ValueRvalue& parameter)
     {
@@ -2826,8 +2826,8 @@ namespace ara::core
 
     struct Case008ValueVoid
     {
-        AdaptivePiErrc error;
-        const char* name;
+        AdaptivePiErrc error; // Input error value
+        const char* name;     // Case description
     };
     std::ostream& operator<<(std::ostream& stream, const Case008ValueVoid& parameter)
     {
@@ -2870,8 +2870,8 @@ namespace ara::core
 
     struct Case008ValueOrThrowMutable
     {
-        AdaptivePiErrc error;
-        const char* name;
+        AdaptivePiErrc error; // Input error value
+        const char* name;     // Case description
     };
     std::ostream& operator<<(std::ostream& stream, const Case008ValueOrThrowMutable& parameter)
     {
@@ -2926,8 +2926,8 @@ namespace ara::core
 
     struct Case008ValueOrThrowConst
     {
-        AdaptivePiErrc error;
-        const char* name;
+        AdaptivePiErrc error; // Input error value
+        const char* name;     // Case description
     };
     std::ostream& operator<<(std::ostream& stream, const Case008ValueOrThrowConst& parameter)
     {
@@ -2983,8 +2983,8 @@ namespace ara::core
 
     struct Case008ValueOrThrowRvalue
     {
-        AdaptivePiErrc error;
-        const char* name;
+        AdaptivePiErrc error; // Input error value
+        const char* name;     // Case description
     };
     std::ostream& operator<<(std::ostream& stream, const Case008ValueOrThrowRvalue& parameter)
     {
@@ -3040,8 +3040,8 @@ namespace ara::core
 
     struct Case008ValueOrThrowVoid
     {
-        AdaptivePiErrc error;
-        const char* name;
+        AdaptivePiErrc error; // Input error value
+        const char* name;     // Case description
     };
     std::ostream& operator<<(std::ostream& stream, const Case008ValueOrThrowVoid& parameter)
     {

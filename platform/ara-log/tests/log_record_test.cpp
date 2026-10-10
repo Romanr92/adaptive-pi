@@ -7,9 +7,12 @@
 #include <cmath>
 #include <cstdint>
 #include <cstdio>
+#include <cstdlib>
+#include <ctime>
 #include <gtest/gtest.h>
 #include <limits>
 #include <ostream>
+#include <regex>
 #include <set>
 #include <string>
 #include <sys/syscall.h>
@@ -25,15 +28,52 @@ namespace
   using ara::log::detail::RecordBuffer;
   using ara::log::detail::RenderConsoleRecord;
   using ara::log::detail::RuntimeMetadata;
+  /* ==================================== Fixtures ===================================== */
+
+  /* Save the process timezone before each test and restore it afterward.
+   * This permits timezone-independent UTC verification without leaking global state.
+   */
+  class AP_R3_LOG_006_TimezoneIndependent : public testing::Test
+  {
+    protected:
+      void SetUp() override
+      {
+        const char* previous = std::getenv("TZ");
+        had_timezone_ = previous != nullptr;
+        if (had_timezone_)
+        {
+          previous_timezone_ = previous;
+        }
+      }
+      void TearDown() override
+      {
+        if (had_timezone_)
+        {
+          EXPECT_EQ(::setenv("TZ", previous_timezone_.c_str(), 1), 0);
+        }
+        else
+        {
+          EXPECT_EQ(::unsetenv("TZ"), 0);
+        }
+        ::tzset();
+      }
+
+    private:
+      bool had_timezone_ = false;
+      std::string previous_timezone_;
+  };
+  /* ================================== End Fixtures =================================== */
   /* =============================== Test_AP_R3_LOG_006 ================================ */
   struct FormatCase
   {
-      const char* name;
-      std::int64_t timestamp;
-      LogLevel level;
-      std::string context;
-      std::string message;
-      std::string expected;
+      const char* name;       // Case description
+      std::int64_t timestamp; // Input milliseconds since Unix epoch
+      LogLevel level;         // Input severity level
+      std::string context;    // Input raw context ID
+      std::string message;    // Input raw message bytes
+      std::string expected;   // Expected complete console record
+      std::int64_t pid = 123; // Input process ID
+      std::int64_t tid = 456; // Input thread ID
   };
   void operator<<(std::ostream& out, const FormatCase& value)
   {
@@ -55,7 +95,7 @@ namespace
     /* Arrange */
     const auto& parameter = GetParam();
     RecordBuffer output;
-    const RuntimeMetadata metadata{parameter.timestamp, 123, 456};
+    const RuntimeMetadata metadata{parameter.timestamp, parameter.pid, parameter.tid};
     /* Act */
     const bool success = RenderConsoleRecord(metadata, parameter.level, parameter.context, parameter.message, output);
     /* Expect */
@@ -79,16 +119,115 @@ namespace
                     FormatCase{"Escaping", 0, LogLevel::kError, "A[\\]\n\r", "x\\\n\r[y]",
                                "[1970-01-01T00:00:00.000Z][123][456][ERROR][A\\[\\\\\\]\\n\\r] x\\\\\\n\\r[y]\n"},
                     FormatCase{"Verbose", 0, LogLevel::kVerbose, "CTX", "hello",
-                               "[1970-01-01T00:00:00.000Z][123][456][VERBOSE][CTX] hello\n"}),
+                               "[1970-01-01T00:00:00.000Z][123][456][VERBOSE][CTX] hello\n"},
+                    FormatCase{"OneMillisecond", 1, LogLevel::kInfo, "CTX", "x",
+                               "[1970-01-01T00:00:00.001Z][123][456][INFO][CTX] x\n"},
+                    FormatCase{"LastMillisecond", 999, LogLevel::kInfo, "CTX", "x",
+                               "[1970-01-01T00:00:00.999Z][123][456][INFO][CTX] x\n"},
+                    FormatCase{"NextSecond", 1000, LogLevel::kInfo, "CTX", "x",
+                               "[1970-01-01T00:00:01.000Z][123][456][INFO][CTX] x\n"},
+                    FormatCase{"NegativeSecond", -1000, LogLevel::kInfo, "CTX", "x",
+                               "[1969-12-31T23:59:59.000Z][123][456][INFO][CTX] x\n"},
+                    FormatCase{"NegativeFraction", -1001, LogLevel::kInfo, "CTX", "x",
+                               "[1969-12-31T23:59:58.999Z][123][456][INFO][CTX] x\n"},
+                    FormatCase{"MinimumYear", -62167219200000LL, LogLevel::kInfo, "CTX", "x",
+                               "[0000-01-01T00:00:00.000Z][123][456][INFO][CTX] x\n"},
+                    FormatCase{"MaximumYear", 253402300799999LL, LogLevel::kInfo, "CTX", "x",
+                               "[9999-12-31T23:59:59.999Z][123][456][INFO][CTX] x\n"},
+                    FormatCase{"YearRollover", 946684800000LL, LogLevel::kInfo, "CTX", "x",
+                               "[2000-01-01T00:00:00.000Z][123][456][INFO][CTX] x\n"},
+                    FormatCase{"DecimalIds", 0, LogLevel::kInfo, "CTX", "x",
+                               "[1970-01-01T00:00:00.000Z][1][2147483647][INFO][CTX] x\n", 1, 2147483647},
+                    FormatCase{"LiteralEscapes", 0, LogLevel::kInfo, "CTX", "\\n\\r",
+                               std::string{"[1970-01-01T00:00:00.000Z][123][456][INFO][CTX] "} + R"(\\n\\r)" + "\n"},
+                    FormatCase{"RepeatedNewlines", 0, LogLevel::kInfo, "CTX", "\n\r\n",
+                               std::string{"[1970-01-01T00:00:00.000Z][123][456][INFO][CTX] "} + R"(\n\r\n)" + "\n"}),
     FormatCaseName);
+  /* ----------------------------------------------------------------------------------- */
+  /* Verify UTC rendering ignores a non-UTC process timezone.
+   * 1. Arrange: Select a fixed UTC+9 timezone and epoch metadata.
+   * 2. Act: Render an info record.
+   * 3. Expect: The timestamp remains midnight UTC rather than local time.
+   */
+  TEST_F(AP_R3_LOG_006_TimezoneIndependent, UsesUtc)
+  {
+    /* Arrange */
+    ASSERT_EQ(::setenv("TZ", "JST-9", 1), 0);
+    ::tzset();
+    RecordBuffer output;
+    const RuntimeMetadata metadata{0, 12, 34};
+    /* Act */
+    const bool success = RenderConsoleRecord(metadata, LogLevel::kInfo, "UTC", "message", output);
+    /* Expect */
+    EXPECT_TRUE(success);
+    EXPECT_EQ(output.View(), "[1970-01-01T00:00:00.000Z][12][34][INFO][UTC] message\n");
+  }
+  /* ----------------------------------------------------------------------------------- */
+  struct PublicEscapingCase
+  {
+      const char* name;             // Case description
+      std::string context;          // Input raw context ID
+      std::string message;          // Input raw message bytes
+      std::string expected_context; // Expected escaped context ID
+      std::string expected_message; // Expected escaped message bytes
+  };
+  void operator<<(std::ostream& out, const PublicEscapingCase& value)
+  {
+    out << value.name;
+  }
+  /* GetParam supplies raw context/message bytes and their once-escaped forms. */
+  class AP_R3_LOG_006_EscapesRecordContent : public testing::TestWithParam<PublicEscapingCase>
+  {
+  };
+  /* ----------------------------------------------------------------------------------- */
+  /* Verify the public logger path escapes once and uses context ID rather than description.
+   * 1. Arrange: Register a unique raw context with a visibly different description.
+   * 2. Act: Insert the raw message into a factory-created logger and destroy the stream.
+   * 3. Expect: The complete record has decimal IDs, UTC timestamp, escaped payload, and one newline.
+   */
+  TEST_P(AP_R3_LOG_006_EscapesRecordContent, PublicPathEscapesOnce)
+  {
+    /* Arrange */
+    const auto& parameter = GetParam();
+    auto result = ara::log::TryCreateLogger(parameter.context, "DESCRIPTION_MUST_NOT_APPEAR", LogLevel::kInfo);
+    ASSERT_TRUE(result.HasValue());
+    testing::internal::CaptureStdout();
+    /* Act */
+    result.Value().get().LogInfo() << parameter.message;
+    const int status = std::fflush(stdout);
+    const std::string output = testing::internal::GetCapturedStdout();
+    /* Expect */
+    EXPECT_EQ(status, 0);
+    const auto timestamp_end = output.find(']');
+    ASSERT_NE(timestamp_end, std::string::npos);
+    const std::regex utc_pattern{R"(\[[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}\.[0-9]{3}Z\])"};
+    EXPECT_TRUE(std::regex_match(output.substr(0, timestamp_end + 1), utc_pattern));
+    const std::string expected_suffix = "[" + std::to_string(::getpid()) + "][" +
+                                        std::to_string(::syscall(SYS_gettid)) + "][INFO][" +
+                                        parameter.expected_context + "] " + parameter.expected_message + "\n";
+    EXPECT_EQ(output.substr(timestamp_end + 1), expected_suffix);
+    EXPECT_EQ(output.find("DESCRIPTION_MUST_NOT_APPEAR"), std::string::npos);
+    EXPECT_EQ(std::count(output.begin(), output.end(), '\n'), 1);
+  }
+  std::string PublicEscapingCaseName(const testing::TestParamInfo<PublicEscapingCase>& info)
+  {
+    return info.param.name;
+  }
+  INSTANTIATE_TEST_SUITE_P(PublicRecords, AP_R3_LOG_006_EscapesRecordContent,
+                           testing::Values(PublicEscapingCase{"ControlCharacters", "PUBLIC[\\]\n\r",
+                                                              "text\\\n\r[brackets]\n", R"(PUBLIC\[\\\]\n\r)",
+                                                              R"(text\\\n\r[brackets]\n)"},
+                                           PublicEscapingCase{"LiteralEscapes", "PUBLIC_LITERAL", R"(\n\r\\)",
+                                                              "PUBLIC_LITERAL", R"(\\n\\r\\\\)"}),
+                           PublicEscapingCaseName);
   /* ============================= End Test_AP_R3_LOG_006 ============================== */
   /* =============================== Test_AP_R3_LOG_008 ================================ */
   struct FailureCase
   {
-      const char* name;
-      RuntimeMetadata metadata;
-      LogLevel level;
-      std::string context;
+      const char* name;         // Case description
+      RuntimeMetadata metadata; // Input runtime metadata
+      LogLevel level;           // Input severity level
+      std::string context;      // Input raw context ID
   };
   void operator<<(std::ostream& out, const FailureCase& value)
   {
@@ -131,9 +270,9 @@ namespace
   /* =============================== Test_AP_R3_LOG_008 ================================ */
   struct CapacityCase
   {
-      const char* name;
-      std::size_t bytes;
-      bool success;
+      const char* name;  // Case description
+      std::size_t bytes; // Input byte count
+      bool success;      // Expected append success
   };
   void operator<<(std::ostream& out, const CapacityCase& value)
   {
@@ -174,9 +313,9 @@ namespace
   /* =============================== Test_AP_R3_LOG_005 ================================ */
   struct InsertionCase
   {
-      const char* name;
-      void (*insert)(ara::log::LogStream&);
-      std::string expected;
+      const char* name;                     // Case description
+      void (*insert)(ara::log::LogStream&); // Input insertion operation
+      std::string expected;                 // Expected rendered message
   };
   void operator<<(std::ostream& out, const InsertionCase& value)
   {
@@ -262,9 +401,9 @@ namespace
   /* =============================== Test_AP_R3_LOG_005 ================================ */
   struct LifecycleCase
   {
-      const char* name;
-      void (*exercise)(Logger&);
-      int records;
+      const char* name;          // Case description
+      void (*exercise)(Logger&); // Input stream lifecycle operation
+      int records;               // Expected record count
   };
   void operator<<(std::ostream& out, const LifecycleCase& value)
   {
@@ -346,9 +485,9 @@ namespace
   /* =============================== Test_AP_R3_LOG_005 ================================ */
   struct SeverityCase
   {
-      const char* name;
-      ara::log::LogStream (Logger::*method)() const noexcept;
-      const char* level;
+      const char* name;                                       // Case description
+      ara::log::LogStream (Logger::*method)() const noexcept; // Input severity method
+      const char* level;                                      // Expected severity name
   };
   void operator<<(std::ostream& out, const SeverityCase& value)
   {
@@ -399,10 +538,10 @@ namespace
   /* =============================== Test_AP_R3_LOG_002 ================================ */
   struct ThresholdCase
   {
-      const char* name;
-      LogLevel threshold;
-      LogLevel severity;
-      bool emitted;
+      const char* name;   // Case description
+      LogLevel threshold; // Input log threshold
+      LogLevel severity;  // Input message severity
+      bool emitted;       // Expected record emission
   };
   void operator<<(std::ostream& out, const ThresholdCase& value)
   {
@@ -452,9 +591,9 @@ namespace
   /* =============================== Test_AP_R3_LOG_008 ================================ */
   struct OverflowCase
   {
-      const char* name;
-      std::size_t bytes;
-      bool emitted;
+      const char* name;  // Case description
+      std::size_t bytes; // Input byte count
+      bool emitted;      // Expected record emission
   };
   void operator<<(std::ostream& out, const OverflowCase& value)
   {

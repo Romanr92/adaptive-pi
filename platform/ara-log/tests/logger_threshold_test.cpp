@@ -13,10 +13,10 @@ namespace
 
   struct ThresholdCase
   {
-      const char* name;
-      const char* id;
-      LogLevel threshold;
-      unsigned enabled_mask;
+      const char* name;      // Case description
+      const char* id;        // Input context ID
+      LogLevel threshold;    // Input log threshold
+      unsigned enabled_mask; // Expected enabled-severity bitmask
   };
   void operator<<(std::ostream& out, const ThresholdCase& value)
   {

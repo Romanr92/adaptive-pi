@@ -25,9 +25,9 @@ namespace
 
   struct LevelCase
   {
-      const char* name;
-      LogLevel level;
-      std::uint8_t expected;
+      const char* name;      // Case description
+      LogLevel level;        // Input severity level
+      std::uint8_t expected; // Expected encoded level
   };
 
   void operator<<(std::ostream& out, const LevelCase& value)

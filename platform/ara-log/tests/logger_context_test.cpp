@@ -13,10 +13,10 @@ namespace
 
   struct ContextCase
   {
-      const char* name;
-      const char* id;
-      const char* description;
-      LogLevel threshold;
+      const char* name;        // Case description
+      const char* id;          // Input context ID
+      const char* description; // Input context description
+      LogLevel threshold;      // Input log threshold
   };
 
   void operator<<(std::ostream& out, const ContextCase& value)

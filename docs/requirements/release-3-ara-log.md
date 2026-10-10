@@ -197,7 +197,7 @@ implementation guidance are in [ADR 0007](../adr/0007-release-3-logging-contract
   [Specification of Log and Trace, R23-11, §7.2.4, p. 20;
   §8.1.1, p. 46; §7.4, pp. 35-36](https://www.autosar.org/fileadmin/standards/R23-11/AP/AUTOSAR_AP_SWS_LogAndTrace.pdf).
 - Verification: Unit test `AP_R3_LOG_006_FormatsConsoleRecord`.
-- Unit Tests: `AP_R3_LOG_006_FormatsConsoleRecord.MatchesContract`
+- Unit Tests: `AP_R3_LOG_006_FormatsConsoleRecord.MatchesContract`; `AP_R3_LOG_006_TimezoneIndependent.UsesUtc`; `AP_R3_LOG_006_EscapesRecordContent.PublicPathEscapesOnce`; `AP_R3_LOG_006_TruncatesTimestamp.DoesNotRound`
 - Deviation: The exact textual representation is AdaptivePi-defined rather
   than an AUTOSAR backend format.
 

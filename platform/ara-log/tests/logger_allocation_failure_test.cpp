@@ -55,9 +55,9 @@ namespace
 
   struct AllocationCase
   {
-      const char* name;
-      const char* id;
-      int failure_index;
+      const char* name;  // Case description
+      const char* id;    // Input context ID
+      int failure_index; // Input allocation failure index
   };
   void operator<<(std::ostream& out, const AllocationCase& value)
   {

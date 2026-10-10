@@ -87,8 +87,8 @@ namespace
 
   struct EmptyStreamCase
   {
-      const char* name;
-      void (*exercise)(Logger&);
+      const char* name;          // Case description
+      void (*exercise)(Logger&); // Input stream lifecycle operation
   };
   void operator<<(std::ostream& out, const EmptyStreamCase& value)
   {
