@@ -2,7 +2,7 @@
 
 Release 3 provides a project-owned educational logging foundation, not a claim
 of AUTOSAR API compatibility. Its baseline is
-[LOG-001 through LOG-010](../requirements/release-3-ara-log.md); the accepted
+[LOG-001 through LOG-011](../requirements/release-3-ara-log.md); the accepted
 factory deviation is explained in [ADR 0007](../adr/0007-release-3-logging-contracts.md).
 
 ## Create once, then borrow
@@ -180,6 +180,76 @@ limit before console escaping. Attribute escaping counts toward that limit.
 Overflow or internal logging failure discards the entire record without
 returning an application error. These rules apply in both exception modes.
 
+## Compile-time trace routing
+
+`TraceRouting<Message>` selects destinations for each modelled message type.
+Its default enables logger output and disables tracing, preserving ordinary
+modelled logging. Specialize it to select either destination independently:
+
+| `kLoggerEnabled` | `kTraceEnabled` | Destination |
+|---|---|---|
+| `true` | `false` | Logger only (default) |
+| `false` | `true` | Trace artifact only |
+| `true` | `true` | Both |
+| `false` | `false` | Discard |
+
+For the `RetryMessage` above, this example enables both routes and counts trace
+invocations through a manually authored educational artifact:
+
+```cpp
+#include <atomic>
+
+namespace retry_trace
+{
+  inline std::atomic<std::uint32_t> calls{0};
+}
+
+namespace ara::log
+{
+  template <>
+  struct TraceRouting<RetryMessage>
+  {
+    static constexpr bool kLoggerEnabled = true;
+    static constexpr bool kTraceEnabled = true;
+  };
+}
+
+namespace ara::log::ext
+{
+  template <>
+  inline void TraceArti<RetryMessage, std::uint32_t>(
+      const RetryMessage&, const std::uint32_t&) noexcept
+  {
+    retry_trace::calls.fetch_add(1, std::memory_order_relaxed);
+  }
+}
+```
+
+Place routing and trace specialization declarations in a shared header after
+the message definition and before any call to `Log()` or `LogWith()` using that
+message. All translation units must see consistent definitions. An inline
+specialization can be defined in that header as above; alternatively, declare
+it there and define it once in an application source file.
+
+The primary `TraceArti(const MsgId&, const Params&...) noexcept` template has
+no default definition. Every trace-enabled message and parameter signature
+needs a matching definition; a missing definition causes a link error.
+Logger-only and discard routes require no trace definition.
+
+Trace receives the original message and parameter references synchronously;
+it must not retain them beyond their valid lifetimes. `LogWith()` attributes
+are applied to logger output and are not passed to the trace interface.
+
+Threshold filtering affects only the logger destination. Configured trace
+invocations still occur with a `kOff` threshold, filtered severity, or after
+logger assembly, formatting, metadata, or sink failure. Trace specializations
+must honor `noexcept` in both exception configurations. A specialization that
+lets an exception escape violates the contract and terminates; recovery from
+that violation is outside Release 3.
+
+Routing is fixed at compilation. ARXML generation, runtime routing changes,
+DLT transport, and external trace-tool integration remain out of scope.
+
 ## Verification limits
 
 Foundation tests cover level encoding, context retention and ownership,
@@ -198,8 +268,25 @@ Requirement statuses and passing CI evidence remain separate from test existence
 LOG-010 tests cover modelled payloads, supported rendering values, exact
 parameter matching, attribute eligibility, tuple order, escaping, and size
 limits. Compiler checks include successful controls and rejected public calls.
-Local exception-disabled checks passed; exception-enabled CI and ARM64
-verification remain pending for these changes.
+Local exception-disabled checks pass. PR #68's Host CI run for commit
+`8347611` passed both host exception configurations and the existing target
+build. The new routing edge cases and smoke-test CI step added afterward still
+need CI evidence for their revision.
+
+LOG-011 tests cover all four routes, original trace argument identity, logger
+filtering (including trace-only routing at Off), assembly overflow, console
+formatting failure, metadata failure, and sink failure. Exception-enabled CI
+also exercises trace delivery after a contained metadata-provider exception.
+
+The opt-in `ADAPTIVE_PI_BUILD_LOG_SMOKE` CMake option builds
+`ara_log_target_smoke` without GoogleTest or host test discovery. It instantiates
+`Log()` and `LogWith()`, both attributes, all four routes, and real trace
+specializations. The ARM64 CI job enables it and verifies its ELF architecture;
+it does not execute the target binary. A successful library build alone does
+not verify application-instantiated template code. Local native execution
+verifies the smoke test's trace counter. The smoke executable also compiled and
+linked locally with the Yocto SDK, and its ELF header reports AArch64. Target
+runtime execution remains unverified; cross-compilation is separate evidence.
 
 Allocation-failure injection uses a separate test executable with 64-bit Linux
 GCC/Clang ABI symbols and ELF linker wrapping. CMake checks linker support and

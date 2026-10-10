@@ -337,7 +337,7 @@ implementation guidance are in [ADR 0007](../adr/0007-release-3-logging-contract
   [Specification of Log and Trace, R23-11, §7.7.2, pp. 37-38,
   SWS_LOG_20001 to SWS_LOG_20004; Appendix B.1.1, p. 89,
   SWS_LOG_20000](https://www.autosar.org/fileadmin/standards/R23-11/AP/AUTOSAR_AP_SWS_LogAndTrace.pdf).
-- Unit Tests: `RoutingFixture.AP_R3_LOG_011_RoutesToLogger`; `RoutingFixture.AP_R3_LOG_011_RoutesToTraceArtifact`; `RoutingFixture.AP_R3_LOG_011_RoutesToBoth`; `RoutingFixture.AP_R3_LOG_011_DiscardsDisabledTraceMessage`; `AP_R3_LOG_011_LoggerFailureDoesNotSuppressTrace.PreservesTraceInvocation`
+- Unit Tests: `RoutingFixture.AP_R3_LOG_011_RoutesToLogger`; `RoutingFixture.AP_R3_LOG_011_RoutesToTraceArtifact`; `RoutingFixture.AP_R3_LOG_011_RoutesToBoth`; `RoutingFixture.AP_R3_LOG_011_DiscardsDisabledTraceMessage`; `AP_R3_LOG_011_LoggerFailureDoesNotSuppressTrace.PreservesTraceInvocation`; `RoutingFixture.AP_R3_LOG_011_TraceOnlyAtOff`; `RoutingFixture.AP_R3_LOG_011_FormattingFailurePreservesTrace`
 - Verification: Unit tests
   `AP_R3_LOG_011_RoutesToLogger`,
   `AP_R3_LOG_011_RoutesToTraceArtifact`,

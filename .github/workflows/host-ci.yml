@@ -23,13 +23,15 @@ jobs:
       - name: Check out source
         uses: actions/checkout@v4
 
-      - name: Install clang-format
+      - name: Install clang-format 23.1.1
         run: |
-          sudo apt-get update
-          sudo apt-get install --yes clang-format
+          python3 -m venv "${RUNNER_TEMP}/adaptive-pi-format"
+          "${RUNNER_TEMP}/adaptive-pi-format/bin/python" -m pip install --only-binary=:all: clang-format==23.1.1
+          echo "${RUNNER_TEMP}/adaptive-pi-format/bin" >> "${GITHUB_PATH}"
 
       - name: Verify C++ formatting
         run: |
+          clang-format --version
           find apps platform -type f \( -name '*.cpp' -o -name '*.h' -o -name '*.hpp' \) -print0 |
             xargs -0 clang-format --dry-run --Werror
 
@@ -207,10 +209,16 @@ jobs:
             -d "${GITHUB_WORKSPACE}/yocto/sdk"
 
       - name: Configure AArch64 application build
-        run: cmake --preset debug-qemu-app -DADAPTIVE_PI_ENABLE_EXCEPTIONS=OFF
+        run: cmake --preset debug-qemu-app -DADAPTIVE_PI_ENABLE_EXCEPTIONS=OFF -DADAPTIVE_PI_BUILD_LOG_SMOKE=ON
 
       - name: Build AArch64 applications
         run: cmake --build --preset debug-qemu-app
+
+      - name: Verify modelled logging smoke executable architecture
+        run: |
+          smoke_binary=build/debug-qemu-app/platform/ara-log/ara_log_target_smoke
+          file "${smoke_binary}"
+          readelf -h "${smoke_binary}" | grep -q "Machine:.*AArch64"
 
       - name: Verify target executable architectures
         run: |

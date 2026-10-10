@@ -285,5 +285,56 @@ namespace
   }
   INSTANTIATE_TEST_SUITE_P(IndependentTrace, AP_R3_LOG_011_LoggerFailureDoesNotSuppressTrace,
                            testing::ValuesIn(RoutingFailureCases()), RoutingFailureCaseName);
+
+  /* ----------------------------------------------------------------------------------- */
+  /* Verify trace-only routing ignores an Off threshold.
+   * 1. Arrange: Register an Off logger and prepare a trace-only message.
+   * 2. Act: Submit the original message and parameter.
+   * 3. Expect: Trace receives both original arguments once; rendering and providers stay idle.
+   */
+  TEST_F(RoutingFixture, AP_R3_LOG_011_TraceOnlyAtOff)
+  {
+    /* Arrange */
+    auto result = registry.Register("ROUTING", "Trace only Off", ara::log::LogLevel::kOff);
+    ASSERT_TRUE(result.HasValue());
+    const routing_test::Message<false, true> message{&capture, &renders};
+    constexpr std::string_view text{"ready"};
+    /* Act */
+    result.Value().get().Log(message, text);
+    /* Expect */
+    EXPECT_EQ(capture.calls, 1U);
+    EXPECT_EQ(capture.message, &message);
+    EXPECT_EQ(capture.parameter, &text);
+    EXPECT_EQ(renders, 0U);
+    EXPECT_EQ(provider.reads, 0U);
+    EXPECT_EQ(sink.writes, 0U);
+    EXPECT_TRUE(sink.record.View().empty());
+  }
+  /* ----------------------------------------------------------------------------------- */
+  /* Verify console-formatting overflow cannot suppress trace delivery.
+   * 1. Arrange: Register a context larger than the console record buffer with both routes.
+   * 2. Act: Submit a short valid modelled payload.
+   * 3. Expect: Metadata is sampled but no sink write occurs; original arguments reach trace.
+   */
+  TEST_F(RoutingFixture, AP_R3_LOG_011_FormattingFailurePreservesTrace)
+  {
+    /* Arrange */
+    constexpr std::size_t c_console_capacity = 16384;
+    const std::string context(c_console_capacity + 1, 'x');
+    auto result = registry.Register(context, "Formatting failure", ara::log::LogLevel::kInfo);
+    ASSERT_TRUE(result.HasValue());
+    const routing_test::Message<true, true> message{&capture, &renders};
+    constexpr std::string_view text{"ready"};
+    /* Act */
+    result.Value().get().Log(message, text);
+    /* Expect */
+    EXPECT_EQ(capture.calls, 1U);
+    EXPECT_EQ(capture.message, &message);
+    EXPECT_EQ(capture.parameter, &text);
+    EXPECT_EQ(renders, 1U);
+    EXPECT_EQ(provider.reads, 1U);
+    EXPECT_EQ(sink.writes, 0U);
+    EXPECT_TRUE(sink.record.View().empty());
+  }
   /* ============================= End Test_AP_R3_LOG_011 ============================== */
 } // namespace
