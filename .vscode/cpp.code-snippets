@@ -3,7 +3,12 @@
     "scope": "cpp",
     "prefix": "hguard",
     "body": [
-      "... existing snippet lines ..."
+      "#ifndef ARA_LOG_${TM_FILENAME_BASE/([a-zA-Z0-9]+)|[^a-zA-Z0-9]+/${1:/upcase}${1:+_}/g}H_",
+      "#define ARA_LOG_${TM_FILENAME_BASE/([a-zA-Z0-9]+)|[^a-zA-Z0-9]+/${1:/upcase}${1:+_}/g}H_",
+      "",
+      "$0",
+      "",
+      "#endif /* ARA_LOG_${TM_FILENAME_BASE/([a-zA-Z0-9]+)|[^a-zA-Z0-9]+/${1:/upcase}${1:+_}/g}H_ */"
     ],
     "description": "Create an ara::log header guard from the filename"
   }

@@ -85,10 +85,12 @@ namespace ara::log
         // Avoid instantiating the renderer for mismatched parameters.
         if constexpr (c_parameters_match && c_attributes_valid)
         {
-          static_assert(std::is_same_v<decltype(message.Render(std::declval<MessageWriter&>(), params...)), void>,
-                        "Message Render must return void");
+          static_assert(
+            std::is_same_v<decltype(message.Render(std::declval<MessageWriter&>(), detail::RenderParameter(params)...)),
+                           void>,
+            "Message Render must return void");
 
-          static_assert(noexcept(message.Render(std::declval<MessageWriter&>(), params...)),
+          static_assert(noexcept(message.Render(std::declval<MessageWriter&>(), detail::RenderParameter(params)...)),
                         "Message Render must be noexcept");
 
           /* Implements AP-R3-LOG-011 */
@@ -102,7 +104,7 @@ namespace ara::log
               stream << c_id_prefix << Message::kId;
 
               MessageWriter writer{stream};
-              message.Render(writer, params...);
+              message.Render(writer, detail::RenderParameter(params)...);
 
               std::apply(
                 [&stream](const auto&... attribute) noexcept
@@ -115,7 +117,7 @@ namespace ara::log
 
           if constexpr (TraceRouting<Message>::kTraceEnabled)
           {
-            ext::TraceArti(message, params...);
+            ext::TraceArti(message, detail::RenderParameter(params)...);
           }
         }
       }

@@ -93,5 +93,13 @@ void Check(ara::log::Logger& logger)
   logger.Log(PairMessage{}, std::string_view{"test"}, std::uint32_t{2});
 #elif MODELLED_CASE == 13 || MODELLED_CASE == 14
   logger.Log(UnsupportedRenderMessage{}, std::uint32_t{2});
+#elif MODELLED_CASE == 15
+  volatile std::uint32_t value = 2;
+  logger.Log(NumericMessage{}, value);
+  logger.LogWith(std::make_tuple(ara::log::Tag{"volatile"}), NumericMessage{}, value);
+#elif MODELLED_CASE == 16
+  const volatile std::uint32_t value = 3;
+  logger.Log(NumericMessage{}, value);
+  logger.Log(PairMessage{}, value, std::string_view{"test"});
 #endif
 }

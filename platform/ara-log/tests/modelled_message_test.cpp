@@ -245,60 +245,80 @@ namespace
               "[1970-01-01T00:00:00.000Z][12][34][INFO][MODEL] id=VALUES_01 "
               "true|false|X|-9223372036854775808|18446744073709551615|1.5|2.25|nan|inf|-inf|cstring|string|view\n");
   }
-  struct AttributeOrderCase
-  {
-      const char* name;     // Case description
-      bool location_only;   // Input omission of tag
-      bool location_first;  // Input tuple ordering
-      std::string expected; // Expected escaped payload
-  };
-  void operator<<(std::ostream& out, const AttributeOrderCase& value)
-  {
-    out << value.name;
-  }
-  /* GetParam selects individual attributes or either tuple order with an escaped filename. */
-  class AP_R3_LOG_010_AttributeRendering : public ModelledFixture,
-                                           public testing::WithParamInterface<AttributeOrderCase>
-  {
-  };
   /* ----------------------------------------------------------------------------------- */
-  /* Verify Location alone and both tuple orders including filename escaping.
-   * 1. Arrange: Register a logger and prepare a filename containing quotes and backslashes.
-   * 2. Act: Submit the selected attribute tuple with non-empty message text.
-   * 3. Expect: Exact output preserves tuple order and escapes the filename in both stages.
+  /* Verify LocationOnlyEscapesFilename with exact attribute and console escaping.
+   * 1. Arrange: Register a logger and prepare an escaped filename and the required tuple.
+   * 2. Act: Submit that tuple with non-empty message text.
+   * 3. Expect: One exact record preserves attribute order and escapes the filename.
    */
-  TEST_P(AP_R3_LOG_010_AttributeRendering, PreservesOrderAndEscapesLocation)
+  TEST_F(ModelledFixture, AP_R3_LOG_010_LocationOnlyEscapesFilename)
   {
     /* Arrange */
-    const auto& parameter = GetParam();
+    auto result = registry.Register("MODEL", "Attribute order", ara::log::LogLevel::kInfo);
+    ASSERT_TRUE(result.HasValue());
+    const ara::log::Location location{"a\"b\\c\r", 0};
+    constexpr std::string_view text{"message"};
+    const auto attributes = std::make_tuple(location);
+    /* Act */
+    result.Value().get().LogWith(attributes, TextMessage{}, text);
+    /* Expect */
+    EXPECT_EQ(provider.reads, 1U);
+    EXPECT_EQ(sink.writes, 1U);
+    constexpr std::string_view expected = "[1970-01-01T00:00:00.000Z][12][34][INFO][MODEL] "
+                                          R"(id=TEXT message location="a\\"b\\\\c\r:0")"
+                                          "\n";
+    EXPECT_EQ(sink.record.View(), expected);
+  }
+  /* ----------------------------------------------------------------------------------- */
+  /* Verify LocationThenTagPreservesOrder with exact attribute and console escaping.
+   * 1. Arrange: Register a logger and prepare an escaped filename and the required tuple.
+   * 2. Act: Submit that tuple with non-empty message text.
+   * 3. Expect: One exact record preserves attribute order and escapes the filename.
+   */
+  TEST_F(ModelledFixture, AP_R3_LOG_010_LocationThenTagPreservesOrder)
+  {
+    /* Arrange */
     auto result = registry.Register("MODEL", "Attribute order", ara::log::LogLevel::kInfo);
     ASSERT_TRUE(result.HasValue());
     const ara::log::Location location{"a\"b\\c\r", 0};
     const ara::log::Tag tag{"ready"};
     constexpr std::string_view text{"message"};
+    const auto attributes = std::make_tuple(location, tag);
     /* Act */
-    if (parameter.location_only)
-      result.Value().get().LogWith(std::make_tuple(location), TextMessage{}, text);
-    else if (parameter.location_first)
-      result.Value().get().LogWith(std::make_tuple(location, tag), TextMessage{}, text);
-    else
-      result.Value().get().LogWith(std::make_tuple(tag, location), TextMessage{}, text);
+    result.Value().get().LogWith(attributes, TextMessage{}, text);
     /* Expect */
     EXPECT_EQ(provider.reads, 1U);
     EXPECT_EQ(sink.writes, 1U);
-    EXPECT_EQ(sink.record.View(), "[1970-01-01T00:00:00.000Z][12][34][INFO][MODEL] " + parameter.expected + "\n");
+    constexpr std::string_view expected = "[1970-01-01T00:00:00.000Z][12][34][INFO][MODEL] "
+                                          R"(id=TEXT message location="a\\"b\\\\c\r:0" tag="ready")"
+                                          "\n";
+    EXPECT_EQ(sink.record.View(), expected);
   }
-  std::string AttributeOrderCaseName(const testing::TestParamInfo<AttributeOrderCase>& info)
+  /* ----------------------------------------------------------------------------------- */
+  /* Verify TagThenLocationPreservesOrder with exact attribute and console escaping.
+   * 1. Arrange: Register a logger and prepare an escaped filename and the required tuple.
+   * 2. Act: Submit that tuple with non-empty message text.
+   * 3. Expect: One exact record preserves attribute order and escapes the filename.
+   */
+  TEST_F(ModelledFixture, AP_R3_LOG_010_TagThenLocationPreservesOrder)
   {
-    return info.param.name;
+    /* Arrange */
+    auto result = registry.Register("MODEL", "Attribute order", ara::log::LogLevel::kInfo);
+    ASSERT_TRUE(result.HasValue());
+    const ara::log::Location location{"a\"b\\c\r", 0};
+    const ara::log::Tag tag{"ready"};
+    constexpr std::string_view text{"message"};
+    const auto attributes = std::make_tuple(tag, location);
+    /* Act */
+    result.Value().get().LogWith(attributes, TextMessage{}, text);
+    /* Expect */
+    EXPECT_EQ(provider.reads, 1U);
+    EXPECT_EQ(sink.writes, 1U);
+    constexpr std::string_view expected = "[1970-01-01T00:00:00.000Z][12][34][INFO][MODEL] "
+                                          R"(id=TEXT message tag="ready" location="a\\"b\\\\c\r:0")"
+                                          "\n";
+    EXPECT_EQ(sink.record.View(), expected);
   }
-  INSTANTIATE_TEST_SUITE_P(
-    AttributeOrders, AP_R3_LOG_010_AttributeRendering,
-    testing::Values(
-      AttributeOrderCase{"LocationOnly", true, true, R"(id=TEXT message location="a\\"b\\\\c\r:0")"},
-      AttributeOrderCase{"LocationFirst", false, true, R"(id=TEXT message location="a\\"b\\\\c\r:0" tag="ready")"},
-      AttributeOrderCase{"TagFirst", false, false, R"(id=TEXT message tag="ready" location="a\\"b\\\\c\r:0")"}),
-    AttributeOrderCaseName);
   struct CombinedLimitCase
   {
       const char* name;      // Case description

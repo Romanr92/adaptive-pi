@@ -28,7 +28,7 @@ namespace ara::log::detail
   inline constexpr bool kParameterMatch =
     std::is_same_v<typename NormalizeParameterTuple<DeclaredTuple>::Type, std::tuple<NormalizedType<Params>...>>;
 
-  /* Supports Ap-R3-LOG-010 */
+  /* Supports AP-R3-LOG-010 */
   constexpr bool IsValidMessageId(std::string_view id) noexcept
   {
     if (id.empty())
@@ -64,6 +64,19 @@ namespace ara::log::detail
      ((std::size_t{0} + ... + (std::is_same_v<NormalizedType<Attrs>, Tag> ? std::size_t{1} : std::size_t{0})) <=
       std::size_t{1}));
 
+  /* Supports AP-R3-LOG-010 */
+  template <typename T>
+  decltype(auto) RenderParameter(const T& value) noexcept
+  {
+    if constexpr (std::is_volatile_v<T> && std::is_scalar_v<NormalizedType<T>>)
+    {
+      return static_cast<NormalizedType<T>>(value);
+    }
+    else
+    {
+      return (value);
+    }
+  }
 } // namespace ara::log::detail
 
 #endif /* ARA_LOG_MODELLED_MESSAGE_H_ */

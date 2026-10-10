@@ -4,16 +4,16 @@ if(ENABLE_EXCEPTIONS)
 else()
     set(exception_flag -fno-exceptions)
 endif()
-foreach(case RANGE 0 14)
+foreach(case RANGE 0 16)
     execute_process(
         COMMAND "${COMPILER}" -std=c++17 "${exception_flag}" "-DMODELLED_CASE=${case}"
                 "-I${SOURCE_ROOT}/platform/ara-log/include"
                 "-I${SOURCE_ROOT}/platform/ara-core/include"
                 -fsyntax-only "${SOURCE_ROOT}/platform/ara-log/tests/modelled_compile_test.cpp"
         RESULT_VARIABLE status OUTPUT_VARIABLE output ERROR_VARIABLE diagnostics)
-    if(case EQUAL 0)
+    if(case EQUAL 0 OR case GREATER_EQUAL 15)
         if(NOT status STREQUAL "0")
-            message(FATAL_ERROR "Valid modelled calls failed: ${diagnostics}")
+            message(FATAL_ERROR "Valid modelled calls failed in case ${case}: ${diagnostics}")
         endif()
     else()
         if(case LESS 6 OR case EQUAL 12)

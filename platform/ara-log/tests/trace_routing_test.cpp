@@ -3,6 +3,7 @@
 #include "logger_registry.h"
 #include "record_buffer.h"
 
+#include <cstdint>
 #include <gtest/gtest.h>
 #include <ostream>
 #include <string>
@@ -18,6 +19,7 @@ namespace routing_test
   struct TraceCapture
   {
       std::size_t calls = 0;
+      std::uint32_t scalar = 0;
       const void* message = nullptr;
       const void* parameter = nullptr;
   };
@@ -35,6 +37,17 @@ namespace routing_test
         writer << text;
       }
   };
+  struct ScalarMessage
+  {
+      static constexpr std::string_view kId{"SCALAR"};
+      static constexpr ara::log::LogLevel kLevel{ara::log::LogLevel::kInfo};
+      using ParameterTypes = std::tuple<std::uint32_t>;
+      TraceCapture* capture;
+      static void Render(ara::log::MessageWriter& writer, const std::uint32_t& value) noexcept
+      {
+        writer << value;
+      }
+  };
 } // namespace routing_test
 namespace ara::log
 {
@@ -43,6 +56,12 @@ namespace ara::log
   {
       static constexpr bool kLoggerEnabled = L;
       static constexpr bool kTraceEnabled = T;
+  };
+  template <>
+  struct TraceRouting<routing_test::ScalarMessage>
+  {
+      static constexpr bool kLoggerEnabled = true;
+      static constexpr bool kTraceEnabled = true;
   };
 } // namespace ara::log
 namespace ara::log::ext
@@ -63,6 +82,13 @@ namespace ara::log::ext
     ++message.capture->calls;
     message.capture->message = &message;
     message.capture->parameter = &text;
+  }
+  template <>
+  void TraceArti<routing_test::ScalarMessage, std::uint32_t>(const routing_test::ScalarMessage& message,
+                                                             const std::uint32_t& value) noexcept
+  {
+    ++message.capture->calls;
+    message.capture->scalar = value;
   }
 } // namespace ara::log::ext
 namespace
@@ -335,6 +361,28 @@ namespace
     EXPECT_EQ(provider.reads, 1U);
     EXPECT_EQ(sink.writes, 0U);
     EXPECT_TRUE(sink.record.View().empty());
+  }
+  /* ----------------------------------------------------------------------------------- */
+  /* Verify volatile scalars reach the declared normalized trace specialization.
+   * 1. Arrange: Register a logger and define only the uint32_t trace specialization.
+   * 2. Act: Log a volatile scalar through both enabled destinations.
+   * 3. Expect: Linking succeeds, the trace records its value, and console rendering agrees.
+   */
+  TEST_F(RoutingFixture, AP_R3_LOG_011_VolatileScalarUsesNormalizedTrace)
+  {
+    /* Arrange */
+    auto result = registry.Register("ROUTING", "Volatile trace", ara::log::LogLevel::kInfo);
+    ASSERT_TRUE(result.HasValue());
+    volatile std::uint32_t value = 7;
+    const routing_test::ScalarMessage message{&capture};
+    /* Act */
+    result.Value().get().Log(message, value);
+    /* Expect */
+    EXPECT_EQ(capture.calls, 1U);
+    EXPECT_EQ(capture.scalar, 7U);
+    EXPECT_EQ(provider.reads, 1U);
+    EXPECT_EQ(sink.writes, 1U);
+    EXPECT_EQ(sink.record.View(), "[1970-01-01T00:00:00.000Z][12][34][INFO][ROUTING] id=SCALAR 7\n");
   }
   /* ============================= End Test_AP_R3_LOG_011 ============================== */
 } // namespace
