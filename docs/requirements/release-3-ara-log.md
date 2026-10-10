@@ -218,7 +218,7 @@ implementation guidance are in [ADR 0007](../adr/0007-release-3-logging-contract
   SWS_LOG_00082 and SWS_LOG_00083](https://www.autosar.org/fileadmin/standards/R23-11/AP/AUTOSAR_AP_SWS_LogAndTrace.pdf).
 - Verification: Unit test
   `AP_R3_LOG_007_FormatsStubbedRuntimeMetadata`.
-- Unit Tests: `AP_R3_LOG_007_SubmissionThreadMetadata.UsesSubmittingThread`
+- Unit Tests: `AP_R3_LOG_007_SubmissionThreadMetadata.UsesSubmittingThread`; `AP_R3_LOG_007_FormatsStubbedRuntimeMetadata.UsesControlledProvider`; `MetadataFixture.AP_R3_LOG_007_SamplesEachSubmission`; `AP_R3_LOG_007_SuppressedRecordsSkipProviders.SkipsReadAndWrite`
 - Deviation: Timestamp integration follows the AUTOSAR concept. Process ID,
   thread ID, and the provider abstraction are AdaptivePi-defined additions.
 

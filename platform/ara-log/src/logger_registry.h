@@ -18,7 +18,12 @@ namespace ara::log::detail
   class LoggerRegistry final
   {
     public:
-      LoggerRegistry() noexcept = default;
+      /* Supports AP-R3-LOG-007 */
+      LoggerRegistry() noexcept;
+
+      /* Supports AP-R3-LOG-007 test metadata injection */
+      LoggerRegistry(Sink& sink, MetadataProvider& metadata_provider) noexcept;
+
       ~LoggerRegistry() noexcept;
 
       LoggerRegistry(const LoggerRegistry&) = delete;
@@ -43,6 +48,10 @@ namespace ara::log::detail
 
       // Shared production provider.
       LinuxMetadataProvider metadata_provider_;
+
+      // Selected dependencies; injected objects must outlive this registry.
+      Sink& selected_sink_;
+      MetadataProvider& selected_metadata_provider_;
   };
 
 } // namespace ara::log::detail

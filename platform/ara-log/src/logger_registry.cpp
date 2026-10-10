@@ -57,9 +57,9 @@ namespace ara::log::detail
 
     // Separate object allocation keeps this address stable as the registry grows.
     // Construction takes ownership of the buffers and performs no allocation.
-    Logger* logger = new (std::nothrow)
-      Logger{std::move(id_buffer), context_id.size(), std::move(description_buffer), description.size(), threshold,
-             console_sink_,        metadata_provider_};
+    Logger* logger = new (std::nothrow) Logger{
+      std::move(id_buffer), context_id.size(),          std::move(description_buffer), description.size(), threshold,
+      selected_sink_,       selected_metadata_provider_};
 
     if (logger == nullptr)
     {
@@ -120,6 +120,18 @@ namespace ara::log::detail
     // Dereferencing returns a borrowed reference, not a copy. No removal occurs
     // during normal operation, so unlocking does not invalidate the object.
     return *found;
+  }
+
+  /* Supports AP-R3-LOG-007 */
+  LoggerRegistry::LoggerRegistry() noexcept
+      : selected_sink_{console_sink_}, selected_metadata_provider_{metadata_provider_}
+  {
+  }
+
+  /* Supports AP-R3-LOG-007 test metadata injection */
+  LoggerRegistry::LoggerRegistry(Sink& sink, MetadataProvider& metadata_provider) noexcept
+      : selected_sink_{sink}, selected_metadata_provider_{metadata_provider}
+  {
   }
 
   /* Implements AP-R3-LOG-003 */
