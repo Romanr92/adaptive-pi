@@ -237,6 +237,17 @@ Continue at section 3, **Install all required host tools**, in the
 Yocto, QEMU, CMake, and Git commands in the Arch WSL shell. In VS Code, use
 **Remote - WSL** to open the repository inside WSL.
 
+### Required formatter version
+
+Install **clang-format 23.1.1** as part of the required host tools. Follow
+[Install the pinned C++ formatter](fresh-arch-yocto-build.md#install-the-pinned-c-formatter)
+to install that exact version in a dedicated Python environment and put its
+executable on PATH. Run the commands inside Arch WSL as your normal user.
+
+`clang-format --version` must report `23.1.1`, matching CI. Configure the
+formatter in the remote VS Code session to use the same executable; the
+Windows formatter and the rolling Arch package may use different versions.
+
 ## Troubleshooting
 
 | Symptom | Resolution |

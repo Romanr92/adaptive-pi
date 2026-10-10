@@ -91,6 +91,35 @@ sudo pacman -Syu --needed \
   llvm
 ```
 
+### Install the pinned C++ formatter
+
+AdaptivePi requires **clang-format 23.1.1**, matching the pinned formatting job
+in `.github/workflows/host-ci.yml`. Arch packages can advance to newer versions;
+install the [23.1.1 package](https://pypi.org/project/clang-format/23.1.1/) in a
+dedicated Python environment to keep local formatting consistent with CI.
+These commands apply to both native Arch and the Arch WSL host:
+
+```bash
+python -m venv "$HOME/.local/share/adaptive-pi/clang-format-23.1.1"
+"$HOME/.local/share/adaptive-pi/clang-format-23.1.1/bin/python" -m pip install \
+  --only-binary=:all: clang-format==23.1.1
+
+export PATH="$HOME/.local/share/adaptive-pi/clang-format-23.1.1/bin:$PATH"
+clang-format --version
+```
+
+The output must report `clang-format version 23.1.1`. For Bash, add the PATH
+entry once to `~/.bashrc` so new terminals use the same formatter:
+
+```bash
+printf '%s\n' 'export PATH="$HOME/.local/share/adaptive-pi/clang-format-23.1.1/bin:$PATH"' >> "$HOME/.bashrc"
+```
+
+Configure the VS Code formatter extension to use this environment's
+`bin/clang-format` executable in the remote Arch host. Verify its version after
+changing the editor configuration or upgrading host packages. Update the
+documented version and CI pin together when changing the formatter baseline.
+
 Other recommended packages but not necessary:
 ```bash
 sudo pacman -S --needed --noconfirm\
