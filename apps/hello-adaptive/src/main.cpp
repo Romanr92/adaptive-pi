@@ -45,11 +45,11 @@ namespace hello_adaptive
 
 int main()
 {
-  const auto intitialization = hello_adaptive::Initialize();
+  const auto initialization = hello_adaptive::Initialize();
 
-  if (!intitialization.HasValue())
+  if (!initialization.HasValue())
   {
-    // No registered logger is availabe on this path.
+    // No registered logger is available on this path.
     return EXIT_FAILURE;
   }
 
