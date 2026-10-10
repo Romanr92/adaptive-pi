@@ -1,0 +1,10 @@
+{
+  "Header guard": {
+    "scope": "cpp",
+    "prefix": "hguard",
+    "body": [
+      "... existing snippet lines ..."
+    ],
+    "description": "Create an ara::log header guard from the filename"
+  }
+}
