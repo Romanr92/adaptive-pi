@@ -66,7 +66,7 @@ implementation guidance are in [ADR 0007](../adr/0007-release-3-logging-contract
 - Verification: Unit test
   `AP_R3_LOG_002_LoggerRetainsContextProperties`, using a valid,
   caller-unique context ID.
-- Unit Tests: `AP_R3_LOG_002_LoggerRetainsContextProperties.RetainsAllInputs`; `AP_R3_LOG_002_ContextOwnsInputStrings.SurvivesInputMutationAndDestruction`; `AP_R3_LOG_002_ThresholdFiltersDefinedLevels.MatchesEnabledSeveritySet`; `AP_R3_LOG_002_InvalidCreationThreshold.Terminates`; `AP_R3_LOG_002_EmittedThresholdFiltering.MatchesContract`
+- Unit Tests: `AP_R3_LOG_002_LoggerRetainsContextProperties.RetainsAllInputs`; `AP_R3_LOG_002_ContextOwnsInputStrings.SurvivesInputMutationAndDestruction`; `AP_R3_LOG_002_ThresholdFiltersDefinedLevels.MatchesEnabledSeveritySet`; `AP_R3_LOG_002_InvalidCreationThreshold.Terminates`; `AP_R3_LOG_002_EmittedThresholdFiltering.MatchesContract`; `AP_R3_LOG_002_FullThresholdMatrix.MatchesConsoleAdmission`
 - Deviation: Application IDs, manifests, and cross-process registration are out
   of scope. The `CreateLogger()` API shall retain context ID, description, and
   threshold as separate inputs so a manifest-based creation overload can be
@@ -167,7 +167,7 @@ implementation guidance are in [ADR 0007](../adr/0007-release-3-logging-contract
   `AP_R3_LOG_005_SeverityMethodsCreateCorrectStreams`,
   `AP_R3_LOG_005_StreamInsertionBuildsRecord`, and
   `AP_R3_LOG_005_FlushAndDestructionSubmitRecord`.
-- Unit Tests: `AP_R3_LOG_005_EmptyStreams.EmitsNoOutput`; `AP_R3_LOG_005_StreamInsertionBuildsRecord.MatchesContract`; `AP_R3_LOG_005_FlushAndDestructionSubmitRecord.MatchesContract`; `AP_R3_LOG_005_SeverityMethodsCreateCorrectStreams.MatchesContract`
+- Unit Tests: `AP_R3_LOG_005_EmptyStreams.EmitsNoOutput`; `AP_R3_LOG_005_StreamInsertionBuildsRecord.MatchesContract`; `AP_R3_LOG_005_FlushAndDestructionSubmitRecord.MatchesContract`; `AP_R3_LOG_005_SeverityMethodsCreateCorrectStreams.MatchesContract`; `AP_R3_LOG_005_SupportedInsertionTypes.RendersBoundaryValues`; `LocaleFixture.AP_R3_LOG_005_LocaleIndependentFormatting`; `LoggingContractFixture.AP_R3_LOG_005_FlushConsumesCopiedMessage`
 - Deviation: AdaptivePi supports a documented educational subset of stream
   insertion value types. Unsupported AUTOSAR formatting decorators may be added
   later. Move restrictions and suppression of empty records are AdaptivePi
@@ -248,7 +248,7 @@ implementation guidance are in [ADR 0007](../adr/0007-release-3-logging-contract
 - Verification: Component unit test
   `AP_R3_LOG_008_SinkFailureDoesNotThrow`, using an implementation-private test
   sink that fails on write.
-- Unit Tests: `AP_R3_LOG_008_FormattingFailureDiscardsRecord.MatchesContract`; `AP_R3_LOG_008_RecordBufferCapacity.MatchesContract`; `AP_R3_LOG_008_OverflowDiscardsRecord.MatchesContract`; `AP_R3_LOG_008_RecordBufferAppend.PreservesContentOnFailure`; `AP_R3_LOG_008_FormattingFailureDiscardsOutput.WritesNothing`; `AP_R3_LOG_008_RecoveryAfterFailure.DiscardsFailedRecordAndResumes`; `LoggingFailureFixture.AP_R3_LOG_008_SinkContainsInternalException`; `LoggingFailureFixture.AP_R3_LOG_008_ProviderFailureDiscardsRecord`; `LoggingFailureFixture.AP_R3_LOG_008_SinkFailureDoesNotThrow`; `LoggingFailureFixture.AP_R3_LOG_008_ProviderExceptionIsContained`
+- Unit Tests: `AP_R3_LOG_008_FormattingFailureDiscardsRecord.MatchesContract`; `AP_R3_LOG_008_RecordBufferCapacity.MatchesContract`; `AP_R3_LOG_008_OverflowDiscardsRecord.MatchesContract`; `AP_R3_LOG_008_RecordBufferAppend.PreservesContentOnFailure`; `AP_R3_LOG_008_FormattingFailureDiscardsOutput.WritesNothing`; `AP_R3_LOG_008_RecoveryAfterFailure.DiscardsFailedRecordAndResumes`; `LoggingFailureFixture.AP_R3_LOG_008_SinkContainsInternalException`; `LoggingFailureFixture.AP_R3_LOG_008_ProviderFailureDiscardsRecord`; `LoggingFailureFixture.AP_R3_LOG_008_SinkFailureDoesNotThrow`; `LoggingFailureFixture.AP_R3_LOG_008_ProviderExceptionIsContained`; `LoggingContractFixture.AP_R3_LOG_008_MaximumEscapedMessage`; `LoggingContractFixture.AP_R3_LOG_008_MovedOverflowDiscardsWholeRecord`
 - Deviation: The failing sink exists only to verify this requirement.
   Production recovery, persistence, and diagnostics are out of scope. The sink
   abstraction shall preserve failure information internally so diagnostics can
@@ -271,7 +271,7 @@ implementation guidance are in [ADR 0007](../adr/0007-release-3-logging-contract
   LogStream operations are reentrant](https://www.autosar.org/fileadmin/standards/R23-11/AP/AUTOSAR_AP_SWS_LogAndTrace.pdf).
 - Verification: Unit test
   `AP_R3_LOG_009_ConcurrentRecordsDoNotInterleave`.
-- Unit Tests: `AP_R3_LOG_009_ConcurrentRecordsDoNotInterleave.SharedLoggerSeparateStreams`
+- Unit Tests: `AP_R3_LOG_009_ConcurrentRecordsDoNotInterleave.SharedLoggerSeparateStreams`; `AP_R3_LOG_009_CompleteConcurrentRecords.PreservesEveryRecord`
 - Deviation: AdaptivePi guarantees complete-record atomicity only. It does not
   define a deterministic total order for records emitted by different threads.
 
