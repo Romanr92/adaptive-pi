@@ -147,4 +147,49 @@ namespace ara::log
     return WithLevel(LogLevel::kVerbose);
   }
 
+  /* Supports AP-R3-LOG-010 */
+  void Logger::AppendAttributeValue(LogStream& stream, std::string_view value) noexcept
+  {
+    constexpr char c_escape = '\\';
+    constexpr char c_quote = '"';
+
+    for (const char character : value)
+    {
+      if (stream.failed_)
+      {
+        return;
+      }
+
+      if ((character == c_escape) || character == c_quote)
+      {
+        stream << c_escape;
+      }
+
+      stream << character;
+    }
+  }
+
+  /* Implements AP-R3-LOG-010 */
+  void Logger::AppendAttribute(LogStream& stream, const Location& location) noexcept
+  {
+    constexpr std::string_view c_location_prefix{" location=\""};
+    constexpr char c_line_separator = ':';
+    constexpr char c_closing_quote = '"';
+
+    stream << c_location_prefix;
+    AppendAttributeValue(stream, location.file);
+    stream << c_line_separator << location.line << c_closing_quote;
+  }
+
+  /* Implements AP-R3-LOG-010 */
+  void Logger::AppendAttribute(LogStream& stream, const Tag& tag) noexcept
+  {
+    constexpr std::string_view c_tag_prefix{" tag=\""};
+    constexpr char c_closing_quote = '"';
+
+    stream << c_tag_prefix;
+    AppendAttributeValue(stream, tag.value);
+    stream << c_closing_quote;
+  }
+
 } // namespace ara::log

@@ -306,6 +306,7 @@ implementation guidance are in [ADR 0007](../adr/0007-release-3-logging-contract
   [Specification of Log and Trace, R23-11, §7.3.2, pp. 26-29,
   SWS_LOG_00240 and SWS_LOG_00241; §8.3.2.9-8.3.2.10, p. 72,
   SWS_LOG_00204 and SWS_LOG_00133](https://www.autosar.org/fileadmin/standards/R23-11/AP/AUTOSAR_AP_SWS_LogAndTrace.pdf).
+- Unit Tests: `AP_R3_LOG_010_LogsModelledMessage.MatchesContract`; `ModelledFixture.AP_R3_LOG_010_LogsModelledMessageWithAttributes`; `AP_R3_LOG_010_ModelledMessageSizeLimit.AttributesShareLimitAndRecover`; `ModelledFixture.AP_R3_LOG_010_SupportedRenderingValues`; `ModelledFixture.AP_R3_LOG_010_LocationOnlyEscapesFilename`; `ModelledFixture.AP_R3_LOG_010_LocationThenTagPreservesOrder`; `ModelledFixture.AP_R3_LOG_010_TagThenLocationPreservesOrder`; `AP_R3_LOG_010_CombinedMessageLimit.IncludesTextAndBothAttributes`
 - Verification: Compile-time test
   `AP_R3_LOG_010_InvalidModelledMessageParametersDoNotCompile`, plus unit tests
   `AP_R3_LOG_010_LogsModelledMessage` and
@@ -336,6 +337,7 @@ implementation guidance are in [ADR 0007](../adr/0007-release-3-logging-contract
   [Specification of Log and Trace, R23-11, §7.7.2, pp. 37-38,
   SWS_LOG_20001 to SWS_LOG_20004; Appendix B.1.1, p. 89,
   SWS_LOG_20000](https://www.autosar.org/fileadmin/standards/R23-11/AP/AUTOSAR_AP_SWS_LogAndTrace.pdf).
+- Unit Tests: `RoutingFixture.AP_R3_LOG_011_RoutesToLogger`; `RoutingFixture.AP_R3_LOG_011_RoutesToTraceArtifact`; `RoutingFixture.AP_R3_LOG_011_RoutesToBoth`; `RoutingFixture.AP_R3_LOG_011_DiscardsDisabledTraceMessage`; `AP_R3_LOG_011_LoggerFailureDoesNotSuppressTrace.PreservesTraceInvocation`; `RoutingFixture.AP_R3_LOG_011_TraceOnlyAtOff`; `RoutingFixture.AP_R3_LOG_011_FormattingFailurePreservesTrace`; `RoutingFixture.AP_R3_LOG_011_VolatileScalarUsesNormalizedTrace`
 - Verification: Unit tests
   `AP_R3_LOG_011_RoutesToLogger`,
   `AP_R3_LOG_011_RoutesToTraceArtifact`,

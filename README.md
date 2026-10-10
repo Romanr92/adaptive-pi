@@ -93,6 +93,10 @@ Stop QEMU cleanly after development:
 scripts/qemu/stop-development-image.sh
 ```
 
+Formatting requires **clang-format 23.1.1**, matching CI. Follow the
+[pinned formatter installation steps](docs/guides/fresh-arch-yocto-build.md#install-the-pinned-c-formatter)
+for native Arch or WSL Arch, and configure the editor to use that executable.
+
 Format entire project according to rules:
 ```bash
 find apps platform -type f \( -name '*.cpp' -o -name '*.h' -o -name '*.hpp' \) -print0 | xargs -0 clang-format -i

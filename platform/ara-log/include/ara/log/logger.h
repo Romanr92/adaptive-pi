@@ -5,11 +5,18 @@
 #include "ara/core/result.h"
 #include "ara/log/log_level.h"
 #include "ara/log/log_stream.h"
+#include "ara/log/message_writer.h"
+#include "ara/log/modelled_message.h"
+#include "ara/log/trace_artifact.h"
+#include "ara/log/trace_routing.h"
 
 #include <cstddef>
 #include <functional>
 #include <memory>
 #include <string_view>
+#include <tuple>
+#include <type_traits>
+#include <utility>
 
 namespace ara::log
 {
@@ -48,6 +55,73 @@ namespace ara::log
       [[nodiscard]] LogStream LogVerbose() const noexcept;
       [[nodiscard]] LogStream WithLevel(LogLevel level) const noexcept;
 
+      /* Implements AP-R3-LOG-010 */
+      template <typename MsgId, typename... Params>
+      void Log(const MsgId& message, const Params&... params) const noexcept
+      {
+        LogWith(std::tuple<>{}, message, params...);
+      }
+
+      /* Implements AP-R3-LOG-010 */
+      template <typename... Attrs, typename MsgId, typename... Params>
+      void LogWith(const std::tuple<Attrs...>& attributes, const MsgId& message, const Params&... params) const noexcept
+      {
+        using Message = detail::NormalizedType<MsgId>;
+
+        constexpr bool c_parameters_match = detail::kParameterMatch<typename Message::ParameterTypes, Params...>;
+
+        constexpr bool c_attributes_valid = detail::kValidAttributes<Attrs...>;
+
+        static_assert(c_parameters_match, "Modelled message parameter types must match exactly");
+
+        static_assert(c_attributes_valid, "Attributes must be unique Location or Tag types");
+
+        static_assert(detail::IsValidMessageId(Message::kId),
+                      "Message ID must be non-empty ASCII letters, digits, or underscores");
+
+        static_assert(std::is_same_v<detail::NormalizedType<decltype(Message::kLevel)>, LogLevel>,
+                      "Message severity must have type LogLevel");
+
+        // Avoid instantiating the renderer for mismatched parameters.
+        if constexpr (c_parameters_match && c_attributes_valid)
+        {
+          static_assert(
+            std::is_same_v<decltype(message.Render(std::declval<MessageWriter&>(), detail::RenderParameter(params)...)),
+                           void>,
+            "Message Render must return void");
+
+          static_assert(noexcept(message.Render(std::declval<MessageWriter&>(), detail::RenderParameter(params)...)),
+                        "Message Render must be noexcept");
+
+          /* Implements AP-R3-LOG-011 */
+          if constexpr (TraceRouting<Message>::kLoggerEnabled)
+          {
+            if (IsEnabled(Message::kLevel))
+            {
+              constexpr std::string_view c_id_prefix{"id="};
+
+              auto stream = WithLevel(Message::kLevel);
+              stream << c_id_prefix << Message::kId;
+
+              MessageWriter writer{stream};
+              message.Render(writer, detail::RenderParameter(params)...);
+
+              std::apply(
+                [&stream](const auto&... attribute) noexcept
+                {
+                  (AppendAttribute(stream, attribute), ...);
+                },
+                attributes);
+            }
+          }
+
+          if constexpr (TraceRouting<Message>::kTraceEnabled)
+          {
+            ext::TraceArti(message, detail::RenderParameter(params)...);
+          }
+        }
+      }
+
     private:
       // Friendship gives only this class access to private construction and destruction.
       friend class detail::LoggerRegistry;
@@ -85,6 +159,13 @@ namespace ara::log
 
       // Non-owning list link; the registry owns each node and preserves its address.
       Logger* next_ = nullptr;
+
+      /* Supports AP-R3-LOG-010 */
+      static void AppendAttributeValue(LogStream& stream, std::string_view value) noexcept;
+
+      static void AppendAttribute(LogStream& stream, const Location& location) noexcept;
+
+      static void AppendAttribute(LogStream& stream, const Tag& tag) noexcept;
   };
 
   // Result holds either a borrowed reference_wrapper or an ErrorCode.
