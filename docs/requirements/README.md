@@ -1,10 +1,17 @@
-# AdaptivePi Release 3 requirements baseline
+# AdaptivePi requirements baselines
 
 ## Purpose
 
-This directory defines the requirements baseline for Release 3: a small,
-clean-room educational subset inspired by AUTOSAR Adaptive Platform
-`ara::core` and `ara::log`.
+This directory defines the project requirements baselines.
+
+- Release 3: the existing core/log baseline below.
+- Release 4: the [Draft baseline and dependency order](release-4-overview.md) for
+  Execution Management and Manifests, with [manifest](release-4-manifests.md),
+  [execution](release-4-execution-management.md), and
+  [verification](release-4-verification.md) requirements.
+
+Release 3 covers a small clean-room educational subset inspired by AUTOSAR
+Adaptive Platform `ara::core` and `ara::log`.
 
 AdaptivePi does not claim AUTOSAR conformance. The requirements are written in
 project-owned wording and do not reproduce AUTOSAR specification text or
@@ -20,6 +27,9 @@ remains a CI obligation; see the evidence notes in the core requirement file.
 
 - `AP-R3-CORE-xxx`: `ara::core`-inspired requirements
 - `AP-R3-LOG-xxx`: `ara::log`-inspired requirements
+- `AP-R4-MAN-xxx`: Release 4 manifest and package requirements
+- `AP-R4-EXEC-xxx`: Release 4 execution-control and supervision requirements
+- `AP-R4-VER-xxx`: Release 4 release-evidence and bounded-proof requirements
 
 Requirement identifiers are stable and shall not be reused for a different
 requirement.
@@ -30,8 +40,10 @@ requirement.
 - `Approved`: accepted as the Release 3 implementation baseline
 - `Implemented`: implemented and verified
 
-No Release 3 C++ implementation shall begin until every requirement in this
-baseline is `Approved`.
+No release implementation shall begin until every requirement in that release
+has been approved. Release 4 remains Draft; authoring its baseline does not
+authorize implementation or promote its statuses. Implemented requirements in
+an existing release retain their recorded verification evidence.
 
 ## Traceability convention
 
