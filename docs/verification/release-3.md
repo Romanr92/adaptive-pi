@@ -156,7 +156,7 @@ Observed ara_log_target_smoke stdout (exit 0, including its two-trace-call check
 
 ```text
 [2026-10-11T00:31:33.516Z][283][283][INFO][SMOKE] id=SMOKE 2
-[2026-10-11T00:31:33.518Z][283][283][INFO][SMOKE] id=SMOKE 2 location=\"smoke.cpp:1\" tag=\"target\"
+[2026-10-11T00:31:33.518Z][283][283][INFO][SMOKE] id=SMOKE 2 location="smoke.cpp:1" tag="target"
 ```
 
 The QEMU instance started for this audit was stopped afterward. These checks use
