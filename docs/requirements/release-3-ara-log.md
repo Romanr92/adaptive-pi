@@ -103,7 +103,7 @@ implementation guidance are in [ADR 0007](../adr/0007-release-3-logging-contract
   SWS_LOG_00005; §8.2.1, p. 54, SWS_LOG_00021; §8.3.2, p. 68,
   SWS_LOG_00172](https://www.autosar.org/fileadmin/standards/R23-11/AP/AUTOSAR_AP_SWS_LogAndTrace.pdf).
 - Verification: Unit test `AP_R3_LOG_003_CreateLoggerOwnsLogger`.
-- Unit Tests: `AP_R3_LOG_003_CreateLoggerOwnsLogger.ReferencesRemainStable`; `AP_R3_LOG_003_ConcurrentCreation.RegistersAndRetrievesUniqueContexts`; `AP_R3_LOG_003_LookupPreconditions.MissingContextTerminates`; `AP_R3_LOG_003_LookupPreconditions.MismatchedInputsTerminate`; `AP_R3_LOG_003_CreationFailureReturnsError.LeavesRegistryUsable`
+- Unit Tests: `AP_R3_LOG_003_CreateLoggerOwnsLogger.ReferencesRemainStable`; `AP_R3_LOG_003_ConcurrentCreation.RegistersAndRetrievesUniqueContexts`; `AP_R3_LOG_003_LookupPreconditions.MissingContextTerminates`; `AP_R3_LOG_003_LookupPreconditions.MismatchedInputsTerminate`; `AP_R3_LOG_003_CreationFailureReturnsError.LeavesRegistryUsable`; `AP_R3_LOG_003_HelloStartupFailure.ReturnsFailureExitStatus`
 - Deviation: Release 3 has no logger deregistration or platform lifecycle
   management. Logger ownership shall be isolated behind the logging framework
   so lifecycle registration can be added later. The recoverable factory and

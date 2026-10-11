@@ -13,12 +13,16 @@ execute_process(
     TIMEOUT 10
 )
 
-# Expect: Successful execution, the documented greeting, and no diagnostics.
+# Expect: Successful execution, two structured records, and no diagnostics.
 if(NOT "${result}" STREQUAL "0")
     message(FATAL_ERROR "Application failed (${result}): ${error}")
 endif()
-if(NOT "${output}" STREQUAL "Hello from AdaptivePi on Embedded Linux.\n")
-    message(FATAL_ERROR "Unexpected stdout: [${output}]")
+# Match runtime metadata structurally rather than assuming fixed IDs or time.
+set(timestamp "[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]T[0-9][0-9]:[0-9][0-9]:[0-9][0-9]\\.[0-9][0-9][0-9]Z")
+set(prefix "\\[${timestamp}\\]\\[[0-9]+\\]\\[[0-9]+\\]\\[INFO\\]\\[HELLO\\] ")
+set(expected "^${prefix}Application startup\n${prefix}id=HELLO_GREETING Hello from AdaptivePi on Embedded Linux\\.\n$")
+if(NOT "${output}" MATCHES "${expected}")
+    message(FATAL_ERROR "Unexpected structured stdout: [${output}]")
 endif()
 if(NOT "${error}" STREQUAL "")
     message(FATAL_ERROR "Unexpected stderr: [${error}]")
