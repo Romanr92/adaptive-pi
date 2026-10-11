@@ -15,6 +15,17 @@ AdaptivePi is an educational, clean-room Adaptive AUTOSAR-inspired project. It d
 
 
 
+## Creating requirements
+
+Every LLM or coding agent creating or revising an AUTOSAR-derived requirements baseline shall read
+`.agents/skills/create-autosar-requirements/SKILL.md` and follow it. Keep new
+requirements Draft and prepare them for review; authoring does not approve them.
+The skill is plain Markdown and applies independently of model provider or tool.
+If the tool does not discover skills automatically, open the file directly.
+At the start of requirement creation, inform the user that the latest available
+model suitable for critical source analysis with High reasoning effort is
+recommended. This is a recommendation, not a prerequisite that blocks work.
+
 ## Teaching requirement discussions
 
 When the user asks what a requirement means, why it exists, or how to implement it, read `.agents/skills/teach-requirement/SKILL.md` and follow it. Explain the approach and give code examples.
