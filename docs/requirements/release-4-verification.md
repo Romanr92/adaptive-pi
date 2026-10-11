@@ -64,7 +64,7 @@ later integration evidence does not block completion of an earlier requirement.
 - AUTOSAR source: No direct AUTOSAR requirement source; this is an AdaptivePi design/verification decision.
 - Verification: Bounded proofs against MAN-012 and EXEC-009–011 plus other feasible pure code; each harness shall document modeled inputs, assumptions, bounds and the property checked.
 - Unit Tests:
-- Deviation: This follows #41 after #22; no proof of JSON libraries, filesystem races, systemd, Linux, network or third-party behavior. Core-only proofs do not satisfy this requirement.
+- Deviation: This follows #41 after #22; no proof of JSON5 parser libraries, filesystem races, systemd, Linux, network or third-party behavior. Core-only proofs do not satisfy this requirement.
 
 ## AP-R4-VER-006 — Reproducible proof results
 

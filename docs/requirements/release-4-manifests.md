@@ -1,6 +1,7 @@
 # Release 4 — application manifest and package requirements
 
-Release 4 uses one manually authored JSON manifest per application package.
+Release 4 uses one manually authored [JSON5 1.0.0](https://spec.json5.org/)
+manifest per application package.
 The schema below is a proposed AdaptivePi contract requiring review, not an
 AUTOSAR schema or a decision already approved by the milestone issues.
 
@@ -16,21 +17,21 @@ later integration evidence does not block completion of an earlier requirement.
 
 ## AP-R4-MAN-001 — Manifest syntax and version
 
-- Status: Draft
+- Status: In Review
 - Dependencies: Existing Release 3 core/log contracts only; no Release 4 prerequisite.
 - Owning issue: [#17](https://github.com/Romanr92/adaptive-pi/issues/17)
-- Requirement: The manifest shall be a UTF-8 JSON object with an integer `schema_version` equal to `1`; duplicate keys and unknown keys shall be invalid.
+- Requirement: The manifest shall be a UTF-8 JSON5 1.0.0 document with an object root and an integer `schema_version` equal to `1`; duplicate keys and unknown keys shall be invalid.
 - AUTOSAR source: [AUTOSAR AP R23-11 RS_ManifestSpecification, §3.1.1.2, PDF pp. 14, RS_MANI_00006 {DRAFT in AUTOSAR}](https://www.autosar.org/fileadmin/standards/R23-11/AP/AUTOSAR_AP_RS_ManifestSpecification.pdf); [AUTOSAR AP R23-11 SWS_ExecutionManagement, §7.2.7, PDF pp. 34, no requirement ID for this explanatory passage](https://www.autosar.org/fileadmin/standards/R23-11/AP/AUTOSAR_AP_SWS_ExecutionManagement.pdf)
-- Verification: Documentation review and later `AP_R4_MAN_001_SyntaxAndVersion` cases for valid JSON, malformed JSON, duplicates, unknown keys, non-integer and unsupported versions.
+- Verification: Documentation review and later `AP_R4_MAN_001_SyntaxAndVersion` cases for valid JSON5, including comments, trailing commas, single-quoted strings and unquoted member names; malformed JSON5; duplicates; unknown keys; non-integer and unsupported versions.
 - Unit Tests:
-- Deviation: JSON, strict keys, and version 1 are project choices. No ARXML parser or ARXML-to-JSON generator is provided.
+- Deviation: JSON5 1.0.0, strict keys, and schema version 1 are project choices. No ARXML parser or ARXML-to-JSON5 generator is provided.
 
 ## AP-R4-MAN-002 — Application package layout
 
-- Status: Draft
+- Status: In Review
 - Dependencies: `AP-R4-MAN-001`
 - Owning issue: [#17](https://github.com/Romanr92/adaptive-pi/issues/17)
-- Requirement: One application package shall contain `manifest.json` at its root, its executable under `bin/`, a working directory under `work/`, and any packaged service unit under `systemd/`; package loading shall take an explicit package-root path.
+- Requirement: One application package shall contain `manifest.json5` at its root, its executable under `bin/`, a working directory under `work/`, and any packaged service unit under `systemd/`; package loading shall take an explicit package-root path.
 - AUTOSAR source: [AUTOSAR AP R23-11 RS_ManifestSpecification, §3.1.1.2, PDF pp. 14, RS_MANI_00006 {DRAFT in AUTOSAR}](https://www.autosar.org/fileadmin/standards/R23-11/AP/AUTOSAR_AP_RS_ManifestSpecification.pdf)
 - Verification: Documentation review of the package tree and later `AP_R4_MAN_002_PackageLayout` checks for discovery and missing manifest.
 - Unit Tests:
@@ -38,18 +39,18 @@ later integration evidence does not block completion of an earlier requirement.
 
 ## AP-R4-MAN-003 — Required and optional manifest fields
 
-- Status: Draft
+- Status: In Review
 - Dependencies: `AP-R4-MAN-001`; `AP-R4-MAN-002`
 - Owning issue: [#17](https://github.com/Romanr92/adaptive-pi/issues/17)
 - Requirement: The manifest shall require `application_id`, `executable`, `arguments`, `working_directory`, and `restart_policy`; it shall permit optional `environment` and `service_unit`. Identity, executable and working directory shall be strings, arguments an ordered array of strings, restart_policy an object, environment a string-to-string object defaulting to empty, and service_unit a string when present.
-- AUTOSAR source: [AUTOSAR AP R23-11 RS_ManifestSpecification, §3.1.1.2, PDF pp. 14, RS_MANI_00006 {DRAFT in AUTOSAR}](https://www.autosar.org/fileadmin/standards/R23-11/AP/AUTOSAR_AP_RS_ManifestSpecification.pdf); [AUTOSAR AP R23-11 TPS_ManifestSpecification, §8.3–8.3.1, PDF p. 389, TPS_MANI_01012, TPS_MANI_01013 {both DRAFT in AUTOSAR; contextual startup modelling, not the JSON schema or C++ storage contract}](https://www.autosar.org/fileadmin/standards/R23-11/AP/AUTOSAR_AP_TPS_ManifestSpecification.pdf)
+- AUTOSAR source: [AUTOSAR AP R23-11 RS_ManifestSpecification, §3.1.1.2, PDF pp. 14, RS_MANI_00006 {DRAFT in AUTOSAR}](https://www.autosar.org/fileadmin/standards/R23-11/AP/AUTOSAR_AP_RS_ManifestSpecification.pdf); [AUTOSAR AP R23-11 TPS_ManifestSpecification, §8.3–8.3.1, PDF p. 389, TPS_MANI_01012, TPS_MANI_01013 {both DRAFT in AUTOSAR; contextual startup modelling, not the JSON5 manifest schema or C++ storage contract}](https://www.autosar.org/fileadmin/standards/R23-11/AP/AUTOSAR_AP_TPS_ManifestSpecification.pdf)
 - Verification: Documentation review and later `AP_R4_MAN_003_FieldShape` checks for each missing required field, wrong type, explicit null, empty arguments, and optional defaults.
 - Unit Tests:
 - Deviation: Only one startup configuration and one executable per package; no machine/function-group-dependent startup configurations.
 
 ## AP-R4-MAN-004 — Application identity
 
-- Status: Draft
+- Status: In Review
 - Dependencies: `AP-R4-MAN-003`
 - Owning issue: [#17](https://github.com/Romanr92/adaptive-pi/issues/17)
 - Requirement: The application ID shall match `[A-Za-z][A-Za-z0-9_]*` and identify the single application handled by a manager instance.
@@ -60,7 +61,7 @@ later integration evidence does not block completion of an earlier requirement.
 
 ## AP-R4-MAN-005 — Package path rules
 
-- Status: Draft
+- Status: In Review
 - Dependencies: `AP-R4-MAN-002`; `AP-R4-MAN-003`
 - Owning issue: [#17](https://github.com/Romanr92/adaptive-pi/issues/17)
 - Requirement: Executable and working-directory paths shall be relative to the package root, respectively under `bin/` and `work/`; absolute paths, empty paths, embedded NUL, and `.` or `..` components shall be invalid. Resolved paths, including symlink targets, shall remain inside the package root. The executable shall resolve to an executable regular file and the working directory to an existing directory.
@@ -71,7 +72,7 @@ later integration evidence does not block completion of an earlier requirement.
 
 ## AP-R4-MAN-006 — Argument and environment values
 
-- Status: Draft
+- Status: In Review
 - Dependencies: `AP-R4-MAN-003`
 - Owning issue: [#17](https://github.com/Romanr92/adaptive-pi/issues/17)
 - Requirement: The manifest arguments array shall contain only configured arguments, excluding executable argument zero. Argument values shall preserve their order and bytes, including empty strings, spaces, quotes and shell metacharacters, and shall reject embedded NUL. Environment names shall match `[A-Za-z_][A-Za-z0-9_]*`; values may be empty strings but shall reject embedded NUL.
@@ -82,10 +83,10 @@ later integration evidence does not block completion of an earlier requirement.
 
 ## AP-R4-MAN-007 — Bounded restart-policy configuration
 
-- Status: Draft
+- Status: In Review
 - Dependencies: `AP-R4-MAN-003`
 - Owning issue: [#17](https://github.com/Romanr92/adaptive-pi/issues/17)
-- Requirement: The restart_policy object shall contain exactly `mode` and `max_attempts`: mode shall be `never` or `on_failure`; max_attempts shall be an integer in [0, 100], excluding JSON booleans. Mode never shall require max_attempts=0. The count denotes additional starts after unexpected termination within one explicit-start episode; the initial start is not counted.
+- Requirement: The restart_policy object shall contain exactly `mode` and `max_attempts`: mode shall be `never` or `on_failure`; max_attempts shall be an integer in [0, 100], excluding JSON5 booleans. Mode never shall require max_attempts=0. The count denotes additional starts after unexpected termination within one explicit-start episode; the initial start is not counted.
 - AUTOSAR source: [AUTOSAR AP R23-11 TPS_ManifestSpecification, §8.2, PDF pp. 385–386, no requirement ID for this explanatory passage](https://www.autosar.org/fileadmin/standards/R23-11/AP/AUTOSAR_AP_TPS_ManifestSpecification.pdf); [AUTOSAR AP R23-11 RS_ExecutionManagement, §4.2.3, PDF pp. 19, RS_EM_00103](https://www.autosar.org/fileadmin/standards/R23-11/AP/AUTOSAR_AP_RS_ExecutionManagement.pdf)
 - Verification: Documentation review and later `AP_R4_MAN_007_RestartPolicy` boundary cases for both modes, zero/100, negatives, fractions, over-limit values and inconsistent mode/count.
 - Unit Tests:
@@ -93,7 +94,7 @@ later integration evidence does not block completion of an earlier requirement.
 
 ## AP-R4-MAN-008 — Service-unit naming
 
-- Status: Draft
+- Status: In Review
 - Dependencies: `AP-R4-MAN-003`; `AP-R4-MAN-004`
 - Owning issue: [#17](https://github.com/Romanr92/adaptive-pi/issues/17)
 - Requirement: A supplied service_unit shall match `[A-Za-z][A-Za-z0-9_-]*\.service`; omission shall select `adaptive-pi-<application_id>.service`. Names with path separators, whitespace, template markers or embedded NUL shall be invalid.
@@ -104,18 +105,18 @@ later integration evidence does not block completion of an earlier requirement.
 
 ## AP-R4-MAN-009 — Manifest example inventory
 
-- Status: Draft
+- Status: In Review
 - Dependencies: `AP-R4-MAN-001`; `AP-R4-MAN-002`; `AP-R4-MAN-003`; `AP-R4-MAN-004`; `AP-R4-MAN-005`; `AP-R4-MAN-006`; `AP-R4-MAN-007`; `AP-R4-MAN-008`
 - Owning issue: [#17](https://github.com/Romanr92/adaptive-pi/issues/17)
-- Requirement: The manifest documentation shall include a complete valid package example and individually labelled invalid examples covering each schema, field, path and policy rejection defined above.
+- Requirement: The manifest documentation shall include a complete valid JSON5 manifest and package example and individually labelled invalid examples covering each schema, field, path and policy rejection defined above.
 - AUTOSAR source: No direct AUTOSAR requirement source; this is an AdaptivePi design/verification decision.
 - Verification: Documentation review of examples against MAN-001–008; later parser tests shall reuse the same examples. Supplementary launch examples may illustrate the derived executable argument zero and the following manifest arguments, including an empty arguments array.
 - Unit Tests:
-- Deviation: Examples are manually authored JSON and package fixtures; no generated AUTOSAR artifacts.
+- Deviation: Examples are manually authored JSON5 and package fixtures; no generated AUTOSAR artifacts.
 
 ## AP-R4-MAN-010 — Manifest error domain
 
-- Status: Draft
+- Status: In Review
 - Dependencies: `AP-R4-MAN-001`; `AP-R4-MAN-002`; `AP-R4-MAN-003`; `AP-R4-MAN-004`; `AP-R4-MAN-005`; `AP-R4-MAN-006`; `AP-R4-MAN-007`; `AP-R4-MAN-008`
 - Owning issue: [#18](https://github.com/Romanr92/adaptive-pi/issues/18)
 - Requirement: Manifest operations shall provide a project-owned error domain and enum distinguishing unreadable manifest, invalid syntax, unsupported version, invalid field, invalid path and resource failure; domain identity and conversion shall follow the existing core domain contract in both exception configurations.
@@ -126,18 +127,18 @@ later integration evidence does not block completion of an earlier requirement.
 
 ## AP-R4-MAN-011 — Owned configuration model
 
-- Status: Draft
+- Status: In Review
 - Dependencies: `AP-R4-MAN-003`; `AP-R4-MAN-004`; `AP-R4-MAN-005`; `AP-R4-MAN-006`; `AP-R4-MAN-007`; `AP-R4-MAN-008`; `AP-R4-MAN-010`
 - Owning issue: [#18](https://github.com/Romanr92/adaptive-pi/issues/18)
 - Requirement: The manifest component shall provide an owned configuration model containing the application ID, package root, resolved executable and working directory, ordered arguments, environment overrides, service-unit name and restart policy, with no references into temporary parse buffers; this requirement defines storage and does not perform parsing or validation.
-- AUTOSAR source: [AUTOSAR AP R23-11 TPS_ManifestSpecification, §8.3–8.3.1, PDF p. 389, TPS_MANI_01012, TPS_MANI_01013 {both DRAFT in AUTOSAR; contextual startup modelling, not the JSON schema or C++ storage contract}](https://www.autosar.org/fileadmin/standards/R23-11/AP/AUTOSAR_AP_TPS_ManifestSpecification.pdf); [AUTOSAR AP R23-11 EXP_InterfacesGuidelines, §3.1–3.1.2.2, PDF pp. 8–10, no requirement ID for this explanatory passage](https://www.autosar.org/fileadmin/standards/R23-11/AP/AUTOSAR_AP_EXP_InterfacesGuidelines.pdf)
+- AUTOSAR source: [AUTOSAR AP R23-11 TPS_ManifestSpecification, §8.3–8.3.1, PDF p. 389, TPS_MANI_01012, TPS_MANI_01013 {both DRAFT in AUTOSAR; contextual startup modelling, not the JSON5 manifest schema or C++ storage contract}](https://www.autosar.org/fileadmin/standards/R23-11/AP/AUTOSAR_AP_TPS_ManifestSpecification.pdf); [AUTOSAR AP R23-11 EXP_InterfacesGuidelines, §3.1–3.1.2.2, PDF pp. 8–10, no requirement ID for this explanatory passage](https://www.autosar.org/fileadmin/standards/R23-11/AP/AUTOSAR_AP_EXP_InterfacesGuidelines.pdf)
 - Verification: `AP_R4_MAN_011_ConfigurationLifetime` checks contents after input buffers are destroyed and optional defaults.
 - Unit Tests:
 - Deviation: A manually authored C++ model replaces the AUTOSAR meta-model; ownership is a project contract.
 
 ## AP-R4-MAN-012 — Pure schema validation
 
-- Status: Draft
+- Status: In Review
 - Dependencies: `AP-R4-MAN-001`; `AP-R4-MAN-003`; `AP-R4-MAN-004`; `AP-R4-MAN-006`; `AP-R4-MAN-007`; `AP-R4-MAN-008`; `AP-R4-MAN-010`; `AP-R4-MAN-011`
 - Owning issue: [#18](https://github.com/Romanr92/adaptive-pi/issues/18)
 - Requirement: Validation of parsed manifest values shall apply the syntax-independent schema and value rules above and return either complete candidate configuration data or a manifest ErrorCode, without filesystem access or process-control side effects.
@@ -148,7 +149,7 @@ later integration evidence does not block completion of an earlier requirement.
 
 ## AP-R4-MAN-013 — Filesystem package validation
 
-- Status: Draft
+- Status: In Review
 - Dependencies: `AP-R4-MAN-002`; `AP-R4-MAN-005`; `AP-R4-MAN-010`; `AP-R4-MAN-011`; `AP-R4-MAN-012`
 - Owning issue: [#18](https://github.com/Romanr92/adaptive-pi/issues/18)
 - Requirement: Package validation shall apply the path-resolution, containment, object-kind and executable-permission rules to a candidate configuration and return a complete validated configuration or a manifest ErrorCode.
@@ -159,10 +160,10 @@ later integration evidence does not block completion of an earlier requirement.
 
 ## AP-R4-MAN-014 — Manifest loading pipeline
 
-- Status: Draft
+- Status: In Review
 - Dependencies: `AP-R4-MAN-002`; `AP-R4-MAN-009`; `AP-R4-MAN-010`; `AP-R4-MAN-011`; `AP-R4-MAN-012`; `AP-R4-MAN-013`
 - Owning issue: [#18](https://github.com/Romanr92/adaptive-pi/issues/18)
-- Requirement: Loading an explicit package root shall discover and read manifest.json, parse its JSON, invoke pure validation followed by package validation, and return `Result<validated configuration, ErrorCode>` without publishing partial configuration on failure.
+- Requirement: Loading an explicit package root shall discover and read `manifest.json5`, parse its JSON5, invoke pure validation followed by package validation, and return `Result<validated configuration, ErrorCode>` without publishing partial configuration on failure.
 - AUTOSAR source: [AUTOSAR AP R23-11 EXP_InterfacesGuidelines, §3.1–3.1.2.2, PDF pp. 8–10, no requirement ID for this explanatory passage](https://www.autosar.org/fileadmin/standards/R23-11/AP/AUTOSAR_AP_EXP_InterfacesGuidelines.pdf); [AUTOSAR AP R23-11 RS_ManifestSpecification, §3.1.1.2, PDF pp. 14, RS_MANI_00006 {DRAFT in AUTOSAR}](https://www.autosar.org/fileadmin/standards/R23-11/AP/AUTOSAR_AP_RS_ManifestSpecification.pdf)
 - Verification: `AP_R4_MAN_014_LoadPackage` consumes the example inventory, unreadable files and malformed input; verifies Result error propagation and no process/controller calls in either exception mode.
 - Unit Tests:
@@ -170,7 +171,7 @@ later integration evidence does not block completion of an earlier requirement.
 
 ## AP-R4-MAN-015 — Executable argument zero
 
-- Status: Draft
+- Status: In Review
 - Dependencies: `AP-R4-MAN-005`; `AP-R4-MAN-006`
 - Owning issue: [#17](https://github.com/Romanr92/adaptive-pi/issues/17)
 - Requirement: The documented launch vector for a validated configuration shall place its resolved executable path at `argv[0]`, followed by every manifest argument unchanged and in array order beginning at `argv[1]`; for `n` manifest arguments, `argc` shall be `n+1`, including when the array is empty. Argument zero shall be derived from the validated executable and shall not require or permit another manifest field.

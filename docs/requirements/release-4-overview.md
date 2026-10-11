@@ -6,11 +6,12 @@ This is a **Draft** baseline for issues [#17–#22](https://github.com/Romanr92/
 [#41](https://github.com/Romanr92/adaptive-pi/issues/41), and the logging extension
 [#73](https://github.com/Romanr92/adaptive-pi/issues/73), reviewed against the
 official AUTOSAR AP R23-11 documents on 2026-10-11. The baseline contains 72
-Draft requirements: MAN-001–015, EXEC-001–027, LOG-001–023 and VER-001–007.
+requirements: MAN-001–015, EXEC-001–027, LOG-001–023 and VER-001–007.
+MAN-001–015 are In Review; the remaining 57 entries are Draft.
 Creating these files does not approve them. No Release 4 production implementation may begin until every
 Release 4 requirement is Agreed (or legacy Approved) under AGENTS.md.
 
-Release 4 defines one packaged application, a manually authored manifest, a
+Release 4 defines one packaged application, a manually authored JSON5 manifest, a
 systemd controller boundary, a small manager state machine, bounded automatic
 restart decisions, and a supervised platform-test-service demonstration. It
 also adds [logging bindings and bounded delivery](release-4-logging.md) under #73,
@@ -21,12 +22,15 @@ text is reproduced and no AUTOSAR conformance is claimed.
 The [source completeness audit](release-4-source-audit.md) maps findings F1–F6
 to the added Draft contracts and records explicit scope exclusions. The added
 entries have source/deviation notes and planned checks, with no approval or
-implementation evidence. Authoring can continue before the user starts review.
+implementation evidence. Authoring can continue while review is in progress.
 
 ## Next review session
 
-Review has not started. When the user chooses to begin later, start
-with **AP-R4-MAN-001** in [Manifest and package](release-4-manifests.md). Follow
+Review started on 2026-10-11. **AP-R4-MAN-001** in
+[Manifest and package](release-4-manifests.md) is In Review, awaiting discussion
+of version and key-validation ambiguities after the JSON5 format selection;
+MAN-001–015 are In Review at the user's request, and no requirement is Agreed.
+See the [review log](reviews/release-4.md). Resume with this entry. Follow
 the [interactive review skill](../../.agents/skills/review-requirements/SKILL.md)
 and this explicit dependency order, taking each range in ascending numeric order.
 Supplemental stages preserve existing IDs:
@@ -109,7 +113,8 @@ be reused; new proofs must cover Release 4 logic rather than only core examples.
 These details make the issue scope testable, but were not predetermined by
 AUTOSAR or by the issue titles:
 
-- JSON version 1, strict unknown/duplicate-key rejection, a defined package tree,
+- JSON5 1.0.0 manifests with schema version 1, strict unknown/duplicate-key
+  rejection, a defined package tree,
   field names, identity/unit-name grammar and path containment rules.
 - Only never/on_failure restart modes with 0–100 additional starts per explicit
   start episode, no reset on successful automatic restart, no automatic retry
@@ -135,8 +140,9 @@ AUTOSAR or by the issue titles:
   finite in-memory event history, distinct request/observed milestones and original
   monotonic event times separate from logging submission timestamps.
 
-These choices are explicitly Draft. Approved edits must preserve the dependency
-order or update dependencies and their verification together. API spelling,
+These choices remain subject to requirement review and explicit agreement.
+Requested edits must preserve the dependency order or update dependencies and
+their verification together. API spelling,
 parser-library selection, systemd transport and concrete storage remain
 implementation/design decisions where the requirements do not prescribe them.
 
@@ -181,7 +187,7 @@ AUTOSAR process states, application-reported execution states, machine/function-
 group states and systemd unit states are distinct concepts. The proposed manager
 states are a small project abstraction and must not be described as the complete
 AUTOSAR state model. AUTOSAR manifest format processing also does not make this
-manually authored JSON format an AUTOSAR processed manifest.
+manually authored JSON5 format an AUTOSAR processed manifest.
 
 ## Exclusions
 

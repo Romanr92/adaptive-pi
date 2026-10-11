@@ -5,9 +5,11 @@ Date: 2026-10-11. Baseline: AUTOSAR AP R23-11.
 This is a scoped completeness assessment, not interactive requirement review,
 user agreement, implementation verification or an AUTOSAR conformance claim.
 The original audit assessed 64 Draft requirements. The subsequent additions
-requested by the user bring the baseline to 72 Draft entries; the disposition
-table below identifies their documents. Authoring these proposals does not
-agree to them or begin interactive review.
+requested by the user brought the baseline to 72 entries, initially Draft; the
+disposition table below identifies their documents. MAN-001–015 are now In Review
+at the user's request; the remaining 57 entries are Draft. Authoring these proposals
+did not agree to them or begin interactive review; the ongoing review is recorded
+in the [review log](reviews/release-4.md).
 
 ## Draft additions following the audit
 
@@ -186,7 +188,7 @@ deviations still await later user review.
 | Source behavior | Existing treatment / audit conclusion |
 |---|---|
 | Executable/deployment separation: RS_MANI_00006 (DRAFT), TPS_MANI_01011 (DRAFT); process arguments/environment: SWS_EM_01012/01078/02246 | MAN-002/003/006/011–014 and EXEC-004/005 cover the focused package/model/launch subset; F1 isolates the missing argument-zero detail. |
-| Empty environment values: TPS_MANI_01209 (DRAFT), SWS_EM_02249; machine environment/precedence: SWS_EM_02247/02248 | MAN-006 permits explicit empty strings and excludes Machine Manifest precedence. Missing ARXML values are represented differently by the JSON schema; no Machine Manifest is required. Clarifying precedence over an inherited systemd environment would be a project contract refinement. |
+| Empty environment values: TPS_MANI_01209 (DRAFT), SWS_EM_02249; machine environment/precedence: SWS_EM_02247/02248 | MAN-006 permits explicit empty strings and excludes Machine Manifest precedence. Missing ARXML values are represented differently by the JSON5 manifest schema; no Machine Manifest is required. Clarifying precedence over an inherited systemd environment would be a project contract refinement. |
 | Startup/termination timeout configuration: TPS_MANI_01277/01278 (DRAFT) | EXEC-014/015 include configurable deadlines outside the manifest. This is an intentional configuration-source choice; F4 concerns reactions, not absence of all timeout support. |
 | Startup retry metadata: Process.numberOfRestartAttempts, TPS §8.2 p. 386; SWS_EM_02260 | MAN-007 and EXEC-011/013 explicitly distinguish the crash-restart budget and exclude automatic retry of unsuccessful initial startup. This is a documented difference, not a newly missed identical crash-policy requirement. |
 | Default non-self-terminating process: SWS_EM_01314; self-termination support: RS_EM_00011 | The long-running demonstrator subset in EXEC-016 treats self-exit, even zero, as unexpected. Support for legitimately self-terminating jobs is outside that subset; no one-shot application requirement is justified by current issues. |
@@ -234,7 +236,7 @@ deviations still await later user review.
   that maturity is now explicit in the affected MAN/EXEC source traces, as already
   done for several logging entries. Published document status is not entry maturity.
 - MAN-003/011 cite TPS_MANI_01012/01013. These describe state-dependent
-  startup modelling, not the exact JSON fields or owned C++ storage. They are
+  startup modelling, not the exact JSON5 fields or owned C++ storage. They are
   now marked contextual at p. 389; applicable argument/environment entries remain.
 - EXEC-001 now also cites SWS_EM_02548 (§7.3.1 p. 37) for creating/converting
   error information; SWS_EM_02547 alone concerns obtaining it. No new error-domain
