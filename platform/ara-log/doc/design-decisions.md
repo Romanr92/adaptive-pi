@@ -28,7 +28,7 @@ Requirements: LOG-003.
 
 TryCreateLogger uses non-throwing allocation and publishes only after successful construction and locking. Failure returns Result with kOperationFailed without partial registration. CreateLogger retrieves an already registered context with matching inputs; invalid lookup terminates. This two-operation protocol deliberately differs from AUTOSAR creation semantics.
 
-Implementation: [logger_registry.cpp](../src/logger_registry.cpp), [logger_registry.cpp](../src/logger_registry.cpp).
+Implementation: [logger_registry.cpp](../src/logger_registry.cpp), [ara_log.cpp](../src/ara_log.cpp).
 
 ## DD-04 — Private console sink and Linux metadata dependencies
 
