@@ -1,7 +1,7 @@
 # Release 4 — verification and documentation requirements
 
 These requirements collect release evidence after manifest, controller,
-supervision and demonstration contracts have been implemented. #41 proof work
+supervision, demonstration and applicable logging contracts have been implemented. #41 proof work
 follows the #22 functional verification work, matching the milestone dependencies.
 
 ## Requirement order
@@ -14,9 +14,9 @@ later integration evidence does not block completion of an earlier requirement.
 ## AP-R4-VER-001 — Requirement verification inventory
 
 - Status: Draft
-- Dependencies: `AP-R4-MAN-014`; `AP-R4-EXEC-021`
+- Dependencies: `AP-R4-MAN-014`; `AP-R4-EXEC-021`; `AP-R4-LOG-022`
 - Owning issue: [#22](https://github.com/Romanr92/adaptive-pi/issues/22)
-- Requirement: Release 4 shall maintain a requirement-to-implementation/check inventory covering every MAN and EXEC entry, exact test/check names, exception configuration and observed result without treating test declaration existence as execution success.
+- Requirement: Release 4 shall maintain a requirement-to-implementation/check inventory covering every MAN, EXEC and LOG entry, including documented conditional applicability, exact test/check names, exception configuration and observed result without treating test declaration existence as execution success.
 - AUTOSAR source: No direct AUTOSAR requirement source; this is an AdaptivePi design/verification decision.
 - Verification: Documentation review against baseline and registered tests; inventory shall show missing/pending evidence explicitly.
 - Unit Tests:
@@ -38,7 +38,7 @@ later integration evidence does not block completion of an earlier requirement.
 - Status: Draft
 - Dependencies: `AP-R4-VER-001`; `AP-R4-VER-002`
 - Owning issue: [#22](https://github.com/Romanr92/adaptive-pi/issues/22)
-- Requirement: Release evidence shall include a successful ARM64 SDK build, AArch64 ELF checks and deployment/execution of EXEC-021 with startup, intentional crash, restart and controlled-stop observations.
+- Requirement: Release evidence shall include a successful ARM64 SDK build, AArch64 ELF checks and deployment/execution of EXEC-021 with startup, intentional crash, restart and controlled-stop observations, plus LOG-022 evidence for the selected Linux logging bindings.
 - AUTOSAR source: No direct AUTOSAR requirement source; this is an AdaptivePi design/verification decision.
 - Verification: Record SDK/image versions, tested SHA, ELF headers, deployed package paths, exit results and target output; retain a repeatable smoke procedure.
 - Unit Tests:
@@ -49,7 +49,7 @@ later integration evidence does not block completion of an earlier requirement.
 - Status: Draft
 - Dependencies: `AP-R4-VER-001`; `AP-R4-VER-002`; `AP-R4-VER-003`
 - Owning issue: [#22](https://github.com/Romanr92/adaptive-pi/issues/22)
-- Requirement: Documentation shall describe manifest/package contracts, supported controller/manager interfaces, state graph, deadlines, restart budget, failure behavior, clean-room sources and exclusions; component design decisions shall use component-local IDs with matching code comments, and README shall record the verified functional scope with any bounded-proof evidence still pending.
+- Requirement: Documentation shall describe manifest/package contracts, supported controller/manager interfaces, state graph, deadlines, restart budget, failure behavior, logging bindings/configuration, rotation/buffer bounds, flush/loss semantics, deferred logging deployment policy, clean-room sources and exclusions; component design decisions shall use component-local IDs with matching code comments, and README shall record the verified functional scope with any bounded-proof evidence still pending.
 - AUTOSAR source: No direct AUTOSAR requirement source; this is an AdaptivePi design/verification decision.
 - Verification: Documentation/link review against actual APIs, numbered decisions, requirement inventory and recorded results.
 - Unit Tests:
@@ -60,7 +60,7 @@ later integration evidence does not block completion of an earlier requirement.
 - Status: Draft
 - Dependencies: `AP-R4-VER-001`; `AP-R4-VER-002`; `AP-R4-VER-003`; `AP-R4-VER-004`
 - Owning issue: [#41](https://github.com/Romanr92/adaptive-pi/issues/41)
-- Requirement: After the #17–#22 work is verified, named ESBMC harnesses shall check pure manifest validation, permitted lifecycle transitions, restart-budget decision safety and feasible configuration/state invariants; excluded available Release 4 logic shall have a documented reason.
+- Requirement: After the #17–#22 work is verified, named ESBMC harnesses shall check pure manifest validation, permitted lifecycle transitions, restart-budget decision safety and feasible configuration/state invariants; pure logging configuration, rotation-boundary and queue-bound/order logic shall be assessed for feasible additional harnesses, with adopted checks and exclusions recorded; excluded available Release 4 logic shall have a documented reason.
 - AUTOSAR source: No direct AUTOSAR requirement source; this is an AdaptivePi design/verification decision.
 - Verification: Bounded proofs against MAN-012 and EXEC-009–011 plus other feasible pure code; each harness shall document modeled inputs, assumptions, bounds and the property checked.
 - Unit Tests:
@@ -82,7 +82,7 @@ later integration evidence does not block completion of an earlier requirement.
 - Status: Draft
 - Dependencies: `AP-R4-VER-004`; `AP-R4-VER-006`
 - Owning issue: [#22](https://github.com/Romanr92/adaptive-pi/issues/22), with the proof evidence from [#41](https://github.com/Romanr92/adaptive-pi/issues/41).
-- Requirement: README shall mark Release 4 complete only after the functional evidence and bounded-proof results above are recorded, with every requirement accounted for and all missing, failed or deliberately excluded checks explicitly resolved or accepted before milestone closure.
+- Requirement: README shall mark Release 4 complete only after the functional evidence (including applicable LOG contracts and recorded conditional outcomes) and bounded-proof results above are recorded, with every requirement accounted for and all missing, failed or deliberately excluded checks explicitly resolved or accepted before milestone closure.
 - AUTOSAR source: No direct AUTOSAR requirement source; this is an AdaptivePi release decision.
 - Verification: Final documentation review of the requirement inventory, host/CI, target scenario and proof results against the milestone acceptance criteria.
 - Unit Tests:

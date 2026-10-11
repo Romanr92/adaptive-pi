@@ -188,6 +188,7 @@ issues:
 | [#21](https://github.com/Romanr92/adaptive-pi/issues/21) | Package `platform-test-service` with a manifest and systemd unit, log startup, and provide controlled test-only fault injection and QEMU deployment. |
 | [#22](https://github.com/Romanr92/adaptive-pi/issues/22) | Collect passing host/CI and ARM64 evidence, demonstrate manifest-driven startup followed by an intentional crash and automatic restart in QEMU, and document APIs and limitations. |
 | [#41](https://github.com/Romanr92/adaptive-pi/issues/41) | Add bounded ESBMC proofs for feasible Release 4 logic, including invalid-manifest rejection, permitted lifecycle transitions, and restart-policy safety, with explicit assumptions and results. |
+| [#73](https://github.com/Romanr92/adaptive-pi/issues/73) | Extend logging with configurable bindings, bounded rotating files, journald feasibility, bounded delivery and a minimal lifecycle log; review the [Draft logging requirements](docs/requirements/release-4-logging.md) before implementation. |
 
 The completion demonstration will show the manager starting `platform-test-service`
 from its manifest, detecting an intentional crash, recording failed/restarting

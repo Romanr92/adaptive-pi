@@ -7,7 +7,8 @@ This directory defines the project requirements baselines.
 - Release 3: the existing core/log baseline below.
 - Release 4: the [Draft baseline and dependency order](release-4-overview.md) for
   Execution Management and Manifests, with [manifest](release-4-manifests.md),
-  [execution](release-4-execution-management.md), and
+  [execution](release-4-execution-management.md),
+  [logging](release-4-logging.md), and
   [verification](release-4-verification.md) requirements.
 
 Release 3 covers a small clean-room educational subset inspired by AUTOSAR
@@ -29,6 +30,7 @@ remains a CI obligation; see the evidence notes in the core requirement file.
 - `AP-R3-LOG-xxx`: `ara::log`-inspired requirements
 - `AP-R4-MAN-xxx`: Release 4 manifest and package requirements
 - `AP-R4-EXEC-xxx`: Release 4 execution-control and supervision requirements
+- `AP-R4-LOG-xxx`: Release 4 logging-binding and bounded-delivery requirements
 - `AP-R4-VER-xxx`: Release 4 release-evidence and bounded-proof requirements
 
 Requirement identifiers are stable and shall not be reused for a different
@@ -37,7 +39,7 @@ requirement.
 ## Status
 
 - `Draft`: proposed and subject to review
-- `Approved`: accepted as the Release 3 implementation baseline
+- `Approved`: accepted as the Release implementation baseline
 - `Implemented`: implemented and verified
 
 No release implementation shall begin until every requirement in that release
@@ -76,6 +78,11 @@ that they have no direct AUTOSAR requirement source.
 The Platform Types specification was reviewed for scope alignment. No Release 3
 requirement directly traces to it because Release 3 does not implement AUTOSAR
 model types, generated artifacts, or platform type definitions.
+
+The [Release 4 logging extension](release-4-logging.md) reviews R23-11 output
+bindings, identification, filtering, availability buffering and shutdown.
+Journald, rotation and the global lifecycle log are explicit project decisions;
+the supplied R24-11 PDF does not change the R23-11 baseline.
 
 Logging contract clarifications and implementation-issue allocation are recorded
 in [the logging baseline](release-3-ara-log.md) and

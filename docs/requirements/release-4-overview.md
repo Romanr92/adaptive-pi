@@ -2,8 +2,9 @@
 
 ## Status and scope
 
-This is a **Draft** baseline for issues [#17–#22](https://github.com/Romanr92/adaptive-pi/milestone/2)
-and [#41](https://github.com/Romanr92/adaptive-pi/issues/41), reviewed against the
+This is a **Draft** baseline for issues [#17–#22](https://github.com/Romanr92/adaptive-pi/milestone/2),
+[#41](https://github.com/Romanr92/adaptive-pi/issues/41), and the logging extension
+[#73](https://github.com/Romanr92/adaptive-pi/issues/73), reviewed against the
 local AUTOSAR AP R23-11 documents on 2026-10-11. Creating these files does not
 approve them. No Release 4 production implementation may begin until every
 Release 4 requirement is Approved under AGENTS.md.
@@ -11,7 +12,8 @@ Release 4 requirement is Approved under AGENTS.md.
 Release 4 defines one packaged application, a manually authored manifest, a
 systemd controller boundary, a small manager state machine, bounded automatic
 restart decisions, and a supervised platform-test-service demonstration. It
-uses existing Release 3 core/log interfaces and exception policy. Requirements
+also adds [logging bindings and bounded delivery](release-4-logging.md) under #73,
+and uses existing Release 3 core/log interfaces and exception policy. Requirements
 are project-owned paraphrases; no proprietary implementation or specification
 text is reproduced and no AUTOSAR conformance is claimed.
 
@@ -27,9 +29,10 @@ its range:
 3. **AP-R4-EXEC-001–008:** controller boundary and backend operations (#19).
 4. **AP-R4-EXEC-009–018:** lifecycle states and restart management (#20).
 5. **AP-R4-EXEC-019–021:** target demonstration and deployment (#21).
-6. **AP-R4-VER-001–004:** functional verification and documentation (#22).
-7. **AP-R4-VER-005–006:** bounded proofs (#41).
-8. **AP-R4-VER-007:** final release closure (#22/#41).
+6. **AP-R4-LOG-001–022:** logging bindings, bounded delivery and lifecycle log (#73).
+7. **AP-R4-VER-001–004:** functional verification and documentation (#22).
+8. **AP-R4-VER-005–006:** bounded proofs (#41).
+9. **AP-R4-VER-007:** final release closure (#22/#41).
 
 For each requirement:
 
@@ -51,11 +54,21 @@ implementation; this walkthrough does not approve requirements automatically.
 | 3 | [Execution Management](release-4-execution-management.md), EXEC-001–008 | Error/observation model, fake controller, safe unit preparation, backend start/stop/query (#19). |
 | 4 | [Execution Management](release-4-execution-management.md), EXEC-009–018 | State model, transition relation, pure restart decision, configured manager, startup, confirmation, stop, crash detection, restart and events (#20). |
 | 5 | [Execution Management](release-4-execution-management.md), EXEC-019–021 | Target service package, fault trigger, deployment and crash/restart scenario (#21). |
-| 6 | [Verification](release-4-verification.md), VER-001–004 | Functional evidence, host/CI, ARM64/QEMU and API/release documentation (#22). |
-| 7 | [Verification](release-4-verification.md), VER-005–006 | Bounded proofs of available Release 4 pure logic and reproducible proof results (#41). |
-| 8 | [Verification](release-4-verification.md), VER-007 | Final milestone closure after functional and proof evidence (#22/#41). |
+| 6 | [Logging](release-4-logging.md), LOG-001–022 | Internal records/configuration, fake-sink delivery, console, journald feasibility, files/rotation, buffering, optional workers, shutdown, stream separation and global lifecycle evidence (#73). |
+| 7 | [Verification](release-4-verification.md), VER-001–004 | Functional evidence, host/CI, ARM64/QEMU and API/release documentation (#22). |
+| 8 | [Verification](release-4-verification.md), VER-005–006 | Bounded proofs of available Release 4 pure logic and reproducible proof results (#41). |
+| 9 | [Verification](release-4-verification.md), VER-007 | Final milestone closure after functional and proof evidence (#22/#41). |
 
-Full IDs use `AP-R4-MAN-xxx`, `AP-R4-EXEC-xxx`, and `AP-R4-VER-xxx`.
+Logging entries depend only on lower-numbered LOG IDs and existing core/log
+contracts, with EXEC-018/021 added only for the final lifecycle/evidence entries.
+Fake factories and sinks, storage doubles and explicit drain steps finish earlier
+contracts before later bindings, workers and target integration exist.
+
+Image minimization (#72) and the Raspberry Pi smoke experiment (#71) remain
+issue-level work without new requirement IDs. Their issue ordering/gating rules
+are not changed by this logging extension.
+
+Full IDs use `AP-R4-MAN-xxx`, `AP-R4-EXEC-xxx`, `AP-R4-LOG-xxx`, and `AP-R4-VER-xxx`.
 Dependencies refer only to lower-numbered IDs in a file or an earlier file stage.
 They include documentation contracts as well as implemented behavior. For
 example, pure restart decisions can be tested before any automatic restart is
@@ -82,6 +95,10 @@ AUTOSAR or by the issue titles:
   restarting, so initial state and successful shutdown have defined endpoints.
 - systemd active status as startup confirmation; it does **not** establish
   application business readiness or implement ara::exec::ExecutionClient reporting.
+- Logging destination configuration, journald priority/source metadata mapping,
+  bounded rotating files, byte-bounded oldest-entry buffering, optional workers,
+  finite shutdown budgets and a minimal global lifecycle stream (LOG-001–022).
+  Long-term sink selection and persistent storage policy remain open.
 - Manager-controlled restart with systemd automatic restart disabled, serialized
   manager use, generation-based failure deduplication, injectable clock deadlines,
   and finite in-memory event history.
@@ -93,15 +110,16 @@ implementation/design decisions where the requirements do not prescribe them.
 
 ## Source review and scope correspondence
 
-All ten supplied PDFs were extracted and checked for release identification and
+The original ten supplied PDFs were extracted and checked for release identification and
 relevant sections. PDF page numbers below are one-based and match document
 pagination. Full official URLs, sections, pages and applicable source IDs appear
 in individual requirement entries. Source entries marked DRAFT or OBSOLETE in
 AUTOSAR retain their source maturity; AdaptivePi Draft/Approved status is separate.
 Obsolete AUTOSAR entries are not used as normative implementation requirements.
 
-| Supplied source (R23-11) | Relevant expectations | Release 4 treatment |
+| Reviewed baseline source (R23-11) | Relevant expectations | Release 4 treatment |
 |---|---|---|
+| [Specification of Log and Trace](https://www.autosar.org/fileadmin/standards/R23-11/AP/AUTOSAR_AP_SWS_LogAndTrace.pdf), §7.1–7.2, pp. 17–22; §7.6, p. 37; §7.8, pp. 42–45 | Identification, configuration, error containment, output bindings, buffering and shutdown. | LOG-001–022 retain the focused R3 API and distinguish source oldest-entry eviction from project rotation/threading/journald choices. Source DRAFT maturity remains explicit. |
 | [Requirements on Manifest Specification](https://www.autosar.org/fileadmin/standards/R23-11/AP/AUTOSAR_AP_RS_ManifestSpecification.pdf), §3.1.1.2, p. 14, RS_MANI_00006/00007 | Deployment ties an executable to a process; startup configuration can depend on platform states. | MAN package/configuration scope uses the deployment concept; machine/function-group configuration is excluded. |
 | [Specification of Manifest](https://www.autosar.org/fileadmin/standards/R23-11/AP/AUTOSAR_AP_TPS_ManifestSpecification.pdf), §8, pp. 385–393 | Process, startup configuration, process arguments, process-scoped environment, startup/termination timeouts and startup retry metadata. | Manually authored schema/configuration replaces the meta-model. Environment and launch values are retained; crash-budget semantics are a documented project deviation. |
 | [Requirements on Execution Management](https://www.autosar.org/fileadmin/standards/R23-11/AP/AUTOSAR_AP_RS_ExecutionManagement.pdf), §4.2.3–4.2.4, pp. 18–19, RS_EM_00101/00103/00150 | Lifecycle coordination, State Management interaction and execution error handling. | One-application lifecycle/error handling; no Function Groups, StateClient or system-wide error recovery. |
@@ -112,6 +130,11 @@ Obsolete AUTOSAR entries are not used as normative implementation requirements.
 | [Specification of Operating System Interface](https://www.autosar.org/fileadmin/standards/R23-11/AP/AUTOSAR_AP_SWS_OperatingSystemInterface.pdf), §7.1.2, pp. 14–15, SWS_OSI_01040/01008/01009 | Initial EM, process support and isolation. | Separate Linux processes with systemd backend; systemd and kernel behavior is integration-tested, not implemented or bounded-proved by this release. |
 | [Explanation of Adaptive Platform Design](https://www.autosar.org/fileadmin/standards/R23-11/AP/AUTOSAR_AP_EXP_PlatformDesign.pdf), §4.2.2–4.3, pp. 26–27 | Functional-cluster implementation choices, interaction and manifest methodology. | Architectural context for package/configuration separation and systemd boundary, not additional normative requirements. |
 | [Guidelines for using Adaptive Platform interfaces](https://www.autosar.org/fileadmin/standards/R23-11/AP/AUTOSAR_AP_EXP_InterfacesGuidelines.pdf), §3.1–3.1.2.2, pp. 8–10 | ErrorCode/Result and explicit recovery. | Existing core types for recoverable errors in both modes; guarded exception conversion follows ADR 0006. |
+
+The logging source was reviewed separately against R23-11 (93 pages); the newly
+supplied local logging PDF is R24-11 (121 pages). Its edition does not replace
+the baseline or its section/page references. See the logging file for conditional
+journald support and intentionally deferred deployment policy.
 
 AUTOSAR process states, application-reported execution states, machine/function-
 group states and systemd unit states are distinct concepts. The proposed manager
