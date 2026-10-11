@@ -22,12 +22,23 @@ lifecycle stream are AdaptivePi decisions. File output in the source is for
 development/integration/prototyping; this demonstrator makes no production
 persistence or AUTOSAR conformance claim.
 
+R23-11 contains a configuration-name inconsistency: SWS_LOG_00001 (§7.1.1,
+PDF p. 17) names `LogAndTraceInstantiation.queueSize`, while Specification of
+Manifest, §10.6, PDF pp. 483–484, Tables 10.56/10.57, places `queueSize` on
+`DltLogSink` and gives no such attribute to `LogAndTraceInstantiation`.
+LOG-015 preserves the inspected buffering/oldest-entry behavior using project
+configuration; it does not claim an equivalent ARXML attribute mapping.
+The [official R23-11 manifest specification](https://www.autosar.org/fileadmin/standards/R23-11/AP/AUTOSAR_AP_TPS_ManifestSpecification.pdf)
+provides the contextual model trace, not an additional manifest obligation.
+
 ## Dependency and verification order
 
-Read LOG-001–022 in ascending order after the existing MAN/EXEC stages and
-before VER-001–007. Every LOG dependency is a lower-numbered entry; LOG-021/022
-also use already-defined execution contracts. Each earlier requirement can be
-finished with its own documentation review, pure check or fake boundary; it does
+Read the explicit stages LOG-001–021, then LOG-023, then LOG-022 after the
+MAN/EXEC stages and before VER-001–007. LOG-023 was added after the source audit;
+the established IDs are retained. LOG-022 therefore uses LOG-023 from an
+explicitly earlier stage. Other LOG dependencies are lower-numbered entries;
+LOG-021/022 also use already-defined execution contracts. Each earlier requirement
+can be finished with its own documentation review, pure check or fake boundary; it does
 not require a later concrete sink, worker, lifecycle integration or QEMU check.
 For example, LOG-006 uses fake factories, LOG-007 uses fake destinations and
 LOG-015/016 use explicit drain steps. LOG-022 collects later release evidence.
@@ -40,6 +51,26 @@ for oversized inputs, zero-capacity disablement and finite shutdown budget are
 explicit project choices requiring review. Asynchronous workers are optional;
 availability buffering is a separate contract. Journald is conditional on a
 recorded feasibility outcome. A rotating file binding is required.
+
+LOG-023 proposes a local-time-base notification after successful registration
+through the existing `TryCreateLogger()` factory when configured Release 4
+logging is adopted. The R3 console-only compatibility mode suppresses automatic
+notifications, and `CreateLogger()` remains retrieval under AP-R3-LOG-003 and
+ADR 0007. This compatibility policy and the proposed Info severity are Draft
+choices awaiting later agreement; they neither revise the approved R3 baseline
+nor adopt synchronized time. The AUTOSAR source instead attaches its notification
+to each call of its creating `CreateLogger()` function. The changed condition,
+compatibility suppression and ordinary threshold filtering are declared in
+LOG-023 rather than presented as identical source behavior.
+
+Release 6 [#31](https://github.com/Romanr92/adaptive-pi/issues/31) will consume
+execution state and crash/restart history, including explicit unavailable data.
+LOG-021 preserves the occurrence time and request/observed-process distinction
+from EXEC-026/027 when selected events are logged later. Logging's LOG-002
+submission timestamp remains separate from event occurrence time. The event
+foundation belongs to Release 4; diagnostic freeze frames, persistent DTCs and
+the history-consumer integration remain in Release 6 and are not prerequisites
+for completing these logging contracts.
 
 The current experimental configuration and concrete limits must be documented,
 but default sink combinations, selection scope, long-term paths/retention,
@@ -199,10 +230,10 @@ issue-level work and have no new requirements in this logging extension.
 - Dependencies: `AP-R4-LOG-004`; `AP-R4-LOG-010`; `AP-R4-LOG-013`
 - Owning issue: [#73](https://github.com/Romanr92/adaptive-pi/issues/73)
 - Requirement: The file binding shall provide an internal explicit flush operation that attempts to pass buffered bytes to the underlying storage and reports success/failure to platform lifecycle code without changing ordinary logging-call behavior.
-- AUTOSAR source: [Specification of Log and Trace, AUTOSAR AP R23-11, §7.1.2, PDF pp. 17–18, SWS_LOG_00123 {DRAFT in AUTOSAR}](https://www.autosar.org/fileadmin/standards/R23-11/AP/AUTOSAR_AP_SWS_LogAndTrace.pdf)
+- AUTOSAR source: No direct AUTOSAR requirement source for an explicit file flush operation; this is an AdaptivePi design decision. [Specification of Log and Trace, AUTOSAR AP R23-11, §7.1.2, PDF pp. 17–18, SWS_LOG_00123 {DRAFT in AUTOSAR}](https://www.autosar.org/fileadmin/standards/R23-11/AP/AUTOSAR_AP_SWS_LogAndTrace.pdf) supplies contextual shutdown queue-delivery intent, not a file-buffer flush or fsync obligation.
 - Verification: `AP_R4_LOG_014_FileFlush`: Use a storage double for successful/failed flush and empty-buffer behavior; check exactly which storage action constitutes success without any dispatcher queue.
 - Unit Tests:
-- Deviation: Flushing a file buffer is distinct from LogStream::Flush and from draining a dispatcher queue. Durability across power loss, fsync policy and guaranteed persistence across reboot are not implied.
+- Deviation: Extension: explicit file-buffer flush/status is a project operation distinct from LogStream::Flush and dispatcher queue draining. Durability across power loss, fsync policy and guaranteed persistence across reboot are not implied.
 
 ## AP-R4-LOG-015 — Bounded unavailable-destination buffering
 
@@ -273,22 +304,33 @@ issue-level work and have no new requirements in this logging extension.
 ## AP-R4-LOG-021 — Minimal global lifecycle log
 
 - Status: Draft
-- Dependencies: `AP-R4-LOG-002`; `AP-R4-LOG-004`; `AP-R4-LOG-007`; `AP-R4-LOG-012`; `AP-R4-LOG-013`; `AP-R4-LOG-020`; `AP-R4-EXEC-018`
+- Dependencies: `AP-R4-LOG-002`; `AP-R4-LOG-004`; `AP-R4-LOG-007`; `AP-R4-LOG-012`; `AP-R4-LOG-013`; `AP-R4-LOG-020`; `AP-R4-EXEC-018`; `AP-R4-EXEC-026`; `AP-R4-EXEC-027`
 - Owning issue: [#73](https://github.com/Romanr92/adaptive-pi/issues/73)
-- Requirement: A bounded global lifecycle stream shall retain selected manager start/stop, startup failure, unexpected termination, restart attempt and restart outcome events with application identity and known execution generation/reason, while ordinary application messages shall not be copied to it.
+- Requirement: A bounded global lifecycle stream shall retain selected manager start/stop, startup failure, unexpected termination, restart attempt and restart outcome events with application identity and known execution generation/reason, preserving their request-versus-observation classification and original occurrence timestamp and availability information from EXEC-026/027 independently of LOG-002 submission-time metadata; ordinary application messages shall not be copied to it.
 - AUTOSAR source: No direct AUTOSAR requirement source; this is an AdaptivePi design/verification decision.
-- Verification: `AP_R4_LOG_021_GlobalLifecycle`: Replay EXEC-018 event fixtures through a capturing destination to verify event selection/order/metadata and exclusion of ordinary messages; check independent storage bounds and unchanged manager decisions on sink failure.
+- Verification: `AP_R4_LOG_021_GlobalLifecycle`: Replay EXEC-018/026/027 event fixtures through a capturing destination with a controlled clock; verify event selection/order/metadata, distinct request and observed milestones, unchanged occurrence timestamps during delayed logging, explicit unavailable information and exclusion of ordinary messages. Check independent storage bounds and unchanged manager decisions on sink failure.
 - Unit Tests:
-- Deviation: Also depends on AP-R4-EXEC-018, an earlier component stage. The selected mechanism and paths remain platform design choices; no centralized collector, multi-application supervisor, persistent diagnostic/health store or mandatory major-sink-failure log is introduced. Failure reporting must not recurse.
+- Deviation: Extension: the global stream and preservation of project event metadata serve issue #73 and the later #31 history consumer. EXEC-018/026/027 are earlier component stages. Observed backend activity shall not be relabelled as a received AUTOSAR kRunning report; manager requests shall not be relabelled as process creation or completed termination. The selected mechanism and paths remain platform design choices; no centralized collector, multi-application supervisor, persistent diagnostic/health store or mandatory major-sink-failure log is introduced. Failure reporting must not recurse.
+
+## AP-R4-LOG-023 — Local time-base notification
+
+- Status: Draft
+- Dependencies: `AP-R3-LOG-003`; `AP-R4-LOG-002`; `AP-R4-LOG-003`; `AP-R4-LOG-004`; `AP-R4-LOG-005`; `AP-R4-LOG-006`; `AP-R4-LOG-007`; `AP-R4-LOG-015`; `AP-R4-LOG-016`; `AP-R4-LOG-019`
+- Owning issue: [#73](https://github.com/Romanr92/adaptive-pi/issues/73)
+- Requirement: When platform configuration adopts Release 4 logging outside the console-only compatibility mode, each successful `TryCreateLogger()` registration shall attempt one ordinary Info record identifying its application/context and indicating that timestamps use a local time base without a platform synchronization guarantee. Failed registration and `CreateLogger()` retrieval shall attempt no notification. The notification shall obey normal threshold admission, destination selection, bounded record/buffering, shutdown and failure rules; filtering, discard or delivery failure shall not change the successful registration result or trigger recursive logging. The console-only compatibility mode shall suppress these automatic records.
+- AUTOSAR source: [Specification of Log and Trace, AUTOSAR AP R23-11, §7.5, PDF p. 36, SWS_LOG_00091 {DRAFT in AUTOSAR}; §7.2.6, PDF p. 22, SWS_LOG_00005; §8.2.1, PDF p. 54, SWS_LOG_00021 {DRAFT in AUTOSAR}](https://www.autosar.org/fileadmin/standards/R23-11/AP/AUTOSAR_AP_SWS_LogAndTrace.pdf). SWS_LOG_00091 attaches a local/global time-base message to calls of the AUTOSAR creating `CreateLogger()` function; it does not specify the proposed severity or the project registration/compatibility conditions.
+- Verification: `AP_R4_LOG_023_LocalTimeBaseNotification`: Use fake registration resources, controlled metadata and capturing/failing destinations to verify one admitted notification per successful registration, application/context and local-time meaning, no notification on failed registration or repeated retrieval, Info threshold/Off suppression before metadata acquisition, bounded unavailable-destination handling, shutdown rejection and successful registration despite record/delivery failure. Verify no automatic output in console-only compatibility mode. Common checks apply in both exception modes; enabled CI additionally injects contained record-preparation exceptions. A target capture verifies the configured Release 4 notification without requiring a synchronization service.
+- Unit Tests:
+- Deviation: Behavioral deviation: notification follows successful project `TryCreateLogger()` registration rather than every call of the source `CreateLogger()`; notification is suppressed in R3 console-only compatibility mode and may be suppressed by the ordinary Info threshold. These conditions preserve the approved R3 creation/retrieval, filtering and console contracts while making time-base information available through configured R4 logging. Extension: application/context association, Info severity and unchanged successful creation result are project choices. Constrained subset: local time only; Time Synchronization, global time-base selection and new public creation/configuration APIs are excluded. This proposed compatibility policy remains Draft pending later review.
 
 ## AP-R4-LOG-022 — Logging verification and documented policy
 
 - Status: Draft
-- Dependencies: `AP-R4-LOG-005`; `AP-R4-LOG-006`; `AP-R4-LOG-007`; `AP-R4-LOG-008`; `AP-R4-LOG-009`; `AP-R4-LOG-010`; `AP-R4-LOG-011`; `AP-R4-LOG-012`; `AP-R4-LOG-013`; `AP-R4-LOG-014`; `AP-R4-LOG-015`; `AP-R4-LOG-016`; `AP-R4-LOG-017`; `AP-R4-LOG-018`; `AP-R4-LOG-019`; `AP-R4-LOG-020`; `AP-R4-LOG-021`; `AP-R4-EXEC-021`
+- Dependencies: `AP-R4-LOG-005`; `AP-R4-LOG-006`; `AP-R4-LOG-007`; `AP-R4-LOG-008`; `AP-R4-LOG-009`; `AP-R4-LOG-010`; `AP-R4-LOG-011`; `AP-R4-LOG-012`; `AP-R4-LOG-013`; `AP-R4-LOG-014`; `AP-R4-LOG-015`; `AP-R4-LOG-016`; `AP-R4-LOG-017`; `AP-R4-LOG-018`; `AP-R4-LOG-019`; `AP-R4-LOG-020`; `AP-R4-LOG-021`; `AP-R4-LOG-023`; `AP-R4-EXEC-021`
 - Owning issue: [#73](https://github.com/Romanr92/adaptive-pi/issues/73)
-- Requirement: Release evidence shall record named host checks for each applicable logging contract, ARM64 build results and QEMU operation of the selected Linux bindings, including file rotation and global lifecycle events during the crash/restart/controlled-stop scenario; documentation shall identify actual sink selection, limits, flush/loss behavior and explicitly deferred deployment policy.
+- Requirement: Release evidence shall record named host checks for each applicable logging contract, ARM64 build results and QEMU operation of the selected Linux bindings, including file rotation, the local-time-base notification and global lifecycle events during the crash/restart/controlled-stop scenario; documentation shall identify actual sink selection, limits, flush/loss behavior, notification compatibility mode and explicitly deferred deployment policy.
 - AUTOSAR source: No direct AUTOSAR requirement source; this is an AdaptivePi design/verification decision.
 - Verification: `AP_R4_LOG_022_LoggingEvidence`: Record tested revision, both exception-mode CI results, exceptions-OFF local results, image/dependency versions, target paths/output and feasibility or conditional exclusions. Review the mapping from every LOG ID to observed checks.
 - Unit Tests:
-- Deviation: Also depends on AP-R4-EXEC-021, an earlier component stage. Queue/worker and journald checks apply only to adopted paths; omitted paths need recorded decisions. Fakes avoid host journald dependencies. Defaults, future manifest configuration, persistent partition placement, retention and DLT/network/diagnostic integration remain open. This is later evidence, not a prerequisite for earlier unit-level completion.
+- Deviation: Also depends on AP-R4-EXEC-021 and LOG-023, explicitly earlier stages. Queue/worker and journald checks apply only to adopted paths; omitted paths need recorded decisions. Fakes avoid host journald dependencies. Defaults, future manifest configuration, persistent partition placement, retention and DLT/network/diagnostic integration remain open. This is later evidence, not a prerequisite for earlier unit-level completion.
 

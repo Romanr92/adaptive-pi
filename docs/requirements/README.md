@@ -9,7 +9,11 @@ This directory defines the project requirements baselines.
   Execution Management and Manifests, with [manifest](release-4-manifests.md),
   [execution](release-4-execution-management.md),
   [logging](release-4-logging.md), and
-  [verification](release-4-verification.md) requirements.
+  [verification](release-4-verification.md) requirements. The
+  [AUTOSAR source completeness audit](release-4-source-audit.md) maps the
+  added Draft contracts and explicit exclusions; the current baseline contains
+  72 Draft entries. Supplemental stages in the overview preserve stable IDs
+  while placing new prerequisites before their consumers. Review has not started.
 
 Release 3 covers a small clean-room educational subset inspired by AUTOSAR
 Adaptive Platform `ara::core` and `ara::log`.
