@@ -22,13 +22,15 @@ C++ exceptions are enabled in the compiler toolchain.
 Verification entries name the planned checks. Checkmarks record declaration
 existence only, not test execution or complete coverage. Exception-disabled core
 execution has been observed locally; exception-enabled verification is delegated
-to Host CI and remains unconfirmed here without a successful run for the current
-revision. Existing Status Deviation entries explicitly retain their accepted
-status convention and do not claim both configurations passed.
+to Host CI. Existing Status Deviation entries retain the historical accepted
+status convention; execution evidence is recorded separately below.
 
 The CORE-006 convertible-error constructor defect is fixed. Its regression test
-and all 154 core tests passed locally with exceptions disabled. CORE-006 remains
-Approved pending confirmed exception-enabled CI verification.
+and all 154 core tests passed locally with exceptions disabled during that work.
+The [2026-10-11 Release 3 audit](../verification/release-3.md) now records passing
+local tests and confirmed Host CI in both exception configurations for the
+audited code tree. Earlier pending-verification notes below are historical;
+the explicit statuses are retained for release review.
 
 ## AP-R3-CORE-001 - ErrorDomain
 

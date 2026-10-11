@@ -15,6 +15,7 @@ namespace ara::log::detail
 
   // Private framework owner: list insertion never relocates existing logger objects.
   /* Implements AP-R3-LOG-003 */
+  /* Implemented DD-01 */
   class LoggerRegistry final
   {
     public:
@@ -40,10 +41,12 @@ namespace ara::log::detail
     private:
       // POSIX locking reports errors explicitly in both exception configurations.
       // This mutex protects head_ and list traversal; callers must stop before destruction.
+      /* Implemented DD-02 */
       pthread_mutex_t mutex_ = PTHREAD_MUTEX_INITIALIZER;
       Logger* head_ = nullptr;
 
       // Owned by the registry; remains alive until all registered loggers are deleted.
+      /* Implemented DD-04 */
       ConsoleSink console_sink_;
 
       // Shared production provider.

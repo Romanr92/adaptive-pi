@@ -2,9 +2,10 @@
 
 ## Status
 
-Accepted. The default exception-disabled configuration is in place and verified
-locally, but full dual-mode verification remains pending until the
-exception-enabled build and CI checks are executed and confirmed.
+Accepted. The default exception-disabled configuration is verified locally.
+The [2026-10-11 Release 3 audit](../verification/release-3.md) confirms successful
+Host CI in both modes for the audited code tree. Documentation changes require
+their own PR checks.
 
 ## Context
 
@@ -44,8 +45,8 @@ This is not a universal AUTOSAR ban on exceptions or a claim about OEM policies.
 ## Implementation path
 
 The CMake option, configuration header, conditional APIs, and separate CI job
-are implemented. The following checklist describes the design and remaining
-verification obligations; it is not a claim that CI has passed.
+are implemented. The following checklist describes the design and ongoing
+verification obligations; execution evidence is linked above.
 
 1. Maintain the CMake option and propagate compiler options through target usage
    requirements, including consumers of public template headers. Select
@@ -84,10 +85,9 @@ configuration-dependent contract. The requirement file records explicit accepted
 Status Deviations for items labelled Implemented before exception-enabled CI was
 confirmed. Those labels and declaration-existence checkmarks are not evidence of
 successful dual-mode execution. The CORE-006 constructor defect is fixed, and its
-regression test passed in the local exception-disabled build. Exception-enabled
-verification remains pending confirmation from CI.
-The option is available now; full verification requires successful CI for the
-current revision.
+regression test passed in the local exception-disabled build. The linked Release 3
+audit now confirms dual-mode CI execution for the audited code tree; subsequent
+changes require their own verification.
 
 With exceptions disabled, throwing constructors cannot provide recoverable
 failure paths. Perform fallible work through explicit result-returning APIs.

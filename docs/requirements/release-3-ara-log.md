@@ -23,6 +23,14 @@ implementation guidance are in [ADR 0007](../adr/0007-release-3-logging-contract
 - Issue #5 collects verification evidence for these clarified contracts in both
   supported exception configurations and the ARM64 target build.
 
+## Verification evidence
+
+The [2026-10-11 Release 3 audit](../verification/release-3.md) records passing
+native tests, confirmed Host CI in both exception configurations, the ARM64
+cross-build, and QEMU execution of the application and modelled logging smoke
+test. Status fields remain the approved baseline for release review; test
+inventories identify declarations and do not replace passing execution evidence.
+
 ## AP-R3-LOG-001 - LogLevel
 
 - Status: Approved

@@ -2629,6 +2629,8 @@ namespace ara::core
       };
       const auto value_rvalue_access = [&value_result]()
       {
+        /* Select the rvalue-qualified storage accessor; no object is moved. */
+        /* NOLINTNEXTLINE(performance-move-const-arg) */
         (void)std::move(StorageOf(value_result)).template get<c_errorIdx>();
       };
       const auto error_access = [&error_result]()
@@ -2641,6 +2643,8 @@ namespace ara::core
       };
       const auto error_rvalue_access = [&error_result]()
       {
+        /* Select the rvalue-qualified storage accessor; no object is moved. */
+        /* NOLINTNEXTLINE(performance-move-const-arg) */
         (void)std::move(StorageOf(error_result)).template get<c_resultIdx>();
       };
 
@@ -2674,6 +2678,8 @@ namespace ara::core
       const auto empty_slot_rvalue = [&storage]()
       {
         SlotsOf(storage)[0].reset();
+        /* Select the rvalue-qualified storage accessor; no object is moved. */
+        /* NOLINTNEXTLINE(performance-move-const-arg) */
         (void)std::move(storage).template get<c_resultIdx>();
       };
       const auto mismatched_const = [&result]()
@@ -2682,6 +2688,8 @@ namespace ara::core
       };
       const auto mismatched_rvalue = [&result]()
       {
+        /* Select the rvalue-qualified storage accessor; no object is moved. */
+        /* NOLINTNEXTLINE(performance-move-const-arg) */
         (void)std::move(StorageOf(result)).template get<c_errorIdx>();
       };
 
@@ -3551,7 +3559,11 @@ namespace ara::core
         return;
       }
       EXPECT_EQ(std::addressof(observed_value), std::addressof(std::get<c_resultIdx>(selected_slot.value())));
-      ASSERT_TRUE(observed_error.has_value());
+      if (!observed_error.has_value())
+      {
+        ADD_FAILURE() << "The domain converter must throw AdaptivePiException";
+        return;
+      }
       EXPECT_EQ(*observed_error, error);
     }
 
@@ -3635,6 +3647,8 @@ namespace ara::core
       /* Act */
       const auto access = [&result]()
       {
+        /* Select Error() &&; this cast does not move the result. */
+        /* NOLINTNEXTLINE(performance-move-const-arg) */
         (void)std::move(result).Error();
       };
 
@@ -3839,6 +3853,8 @@ namespace ara::core
       const auto* expected = &result.Error();
 
       /* Act */
+      /* Select Error() &&; this cast does not move the result. */
+      /* NOLINTNEXTLINE(performance-move-const-arg) */
       auto&& observed = std::move(result).Error();
 
       /* Expect */

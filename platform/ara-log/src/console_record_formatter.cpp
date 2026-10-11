@@ -157,6 +157,7 @@ namespace ara::log::detail
 
   } // namespace
 
+  /* Implemented DD-08 */
   bool RenderConsoleRecord(const RuntimeMetadata& metadata, LogLevel level, std::string_view context,
                            std::string_view message, RecordBuffer& output) noexcept
   {

@@ -9,6 +9,7 @@
 namespace ara::core
 {
   /* Implements AP-R3-CORE-004 */
+  /* Implemented DD-03 */
   /* Domain error enums deliberately use ErrorCode::ValueType so their
      representation matches ErrorCode across every supported target. Future domain values are not constrained to the
      current three small numbers. NOLINTNEXTLINE(performance-enum-size) */

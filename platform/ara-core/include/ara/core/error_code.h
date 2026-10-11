@@ -8,6 +8,7 @@
 namespace ara::core
 {
   /* Implements AP-R3-CORE-003, AP-R3-CORE-004 */
+  /* Implemented DD-02 */
   class ErrorCode final
   {
     public:

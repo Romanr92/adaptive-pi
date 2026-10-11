@@ -30,6 +30,7 @@ namespace ara::log
 
   // final prevents inheritance; the framework controls construction and lifetime.
   /* Implements AP-R3-LOG-002, AP-R3-LOG-003 */
+  /* Implemented DD-01 */
   class Logger final
   {
     public:
@@ -64,6 +65,7 @@ namespace ara::log
 
       /* Implements AP-R3-LOG-010 */
       template <typename... Attrs, typename MsgId, typename... Params>
+      /* Implemented DD-11 */
       void LogWith(const std::tuple<Attrs...>& attributes, const MsgId& message, const Params&... params) const noexcept
       {
         using Message = detail::NormalizedType<MsgId>;
@@ -115,6 +117,7 @@ namespace ara::log
             }
           }
 
+          /* Implemented DD-12 */
           if constexpr (TraceRouting<Message>::kTraceEnabled)
           {
             ext::TraceArti(message, detail::RenderParameter(params)...);

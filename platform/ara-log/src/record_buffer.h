@@ -17,6 +17,7 @@ namespace ara::log::detail
 
     private:
       // Fixed capacity; checked appends reject oversized records.
+      /* Implemented DD-07 */
       static constexpr std::size_t c_record_capacity = 16384;
       static constexpr std::size_t c_record_zero = 0;
 

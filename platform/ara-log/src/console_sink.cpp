@@ -13,6 +13,7 @@ namespace ara::log::detail
       return SinkStatus::kSuccess;
     }
 
+    /* Implemented DD-10 */
     const auto written = std::fwrite(record.data(), sizeof(char), record.size(), stdout);
 
     if (written != record.size())

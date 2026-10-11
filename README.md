@@ -10,7 +10,12 @@ The project deliberately does **not** use proprietary AUTOSAR implementation cod
 
 Coverage and ESBMC reports: https://romanr92.github.io/adaptive-pi/
 
-**Release 2 complete — SDK cross-build, QEMU deployment, and remote debugging** ✅
+**Release 3 complete — `ara::core` and `ara::log`** ✅
+
+**Working on Release 4 — Execution Management and Manifests**
+
+The [Release 3 evidence report](docs/verification/release-3.md) records passing
+native tests, both CI exception configurations, and ARM64 QEMU smoke checks.
 
 The project has a verified development platform for ARM64 target software:
 
@@ -54,6 +59,18 @@ VS Code source-level debugging
   - automatic build, deployment, connection, and cleanup through `F5`.
 - Added per-application unit-test structure and CMake presets for native application and test builds.
 - Documented the Yocto build, SDK, deployment, and debugging workflows.
+
+### Release 3 — `ara::core` and `ara::log` ✅
+
+- Implemented project-owned error domains, error codes, and value/error results,
+  including `Result<void>` and optional exception conversion.
+- Implemented context-based console logging, severity filtering, bounded streams,
+  modelled messages, and compile-time trace routing.
+- Migrated `hello-adaptive` to Result-based initialization and structured logging.
+- Verified 445 native tests without skips, both exception configurations in PR
+  CI, the ARM64 cross-build, and application and logging smoke tests in QEMU.
+- Added API guides, requirement verification evidence, and numbered component
+  design decisions traced by comments in the code.
 
 ## Quick development workflow
 
@@ -146,7 +163,7 @@ maturity of the platform rather than treating quality as a final activity.
 |---|---|
 | Current host workflow | Formatting, clang-tidy, native unit tests, and Host CI |
 | Pre-Release 3 (complete) | A pull-request CI job cross-builds every target-compatible application with the matching Yocto SDK and verifies each output is an AArch64 ELF binary. QEMU runtime execution is deferred. |
-| Release 4 | ESBMC bounded model-checking harnesses for selected pure logic such as Result/ErrorCode invariants and Execution Management lifecycle transitions |
+| Release 4 | ESBMC bounded proofs for manifest validation, lifecycle transitions, restart-policy decisions, and data-model invariants |
 | Release 7 | Cross-process integration tests, fault injection, restart/recovery checks, and an expanded CI gate |
 
 ESBMC will not be used as a blanket check for the whole project. It will verify
@@ -156,20 +173,33 @@ using Z3. Release 4 harness expansion remains tracked by #41. See the
 [ESBMC guide](docs/guides/esbmc.md#pull-request-gate-and-branch-protection) for
 merge enforcement and the documented branch-administration permission limit.
 
+## Current development — Release 4: Execution Management and Manifests
+
+Release 4 will launch and supervise one packaged application through systemd.
+The scope follows the [Release 4 milestone](https://github.com/Romanr92/adaptive-pi/milestone/2)
+issues:
+
+| Issue | Planned work |
+|---|---|
+| [#17](https://github.com/Romanr92/adaptive-pi/issues/17) | Define a versioned manifest and package layout: application identity, executable, arguments, working directory, restart policy, optional environment and service-unit name, with validation rules and examples. |
+| [#18](https://github.com/Romanr92/adaptive-pi/issues/18) | Parse and validate manifests independently of process control; report project-owned errors for unreadable, malformed, unsupported-version, or invalid-path inputs. |
+| [#19](https://github.com/Romanr92/adaptive-pi/issues/19) | Add systemd-backed start, stop, and active-state queries, with project-owned errors and a fake controller for deterministic host tests. |
+| [#20](https://github.com/Romanr92/adaptive-pi/issues/20) | Track initializing, running, terminating, failed, and restarting states; distinguish controlled stops from crashes and apply the manifest restart policy. |
+| [#21](https://github.com/Romanr92/adaptive-pi/issues/21) | Package `platform-test-service` with a manifest and systemd unit, log startup, and provide controlled test-only fault injection and QEMU deployment. |
+| [#22](https://github.com/Romanr92/adaptive-pi/issues/22) | Collect passing host/CI and ARM64 evidence, demonstrate manifest-driven startup followed by an intentional crash and automatic restart in QEMU, and document APIs and limitations. |
+| [#41](https://github.com/Romanr92/adaptive-pi/issues/41) | Add bounded ESBMC proofs for feasible Release 4 logic, including invalid-manifest rejection, permitted lifecycle transitions, and restart-policy safety, with explicit assumptions and results. |
+
+The completion demonstration will show the manager starting `platform-test-service`
+from its manifest, detecting an intentional crash, recording failed/restarting
+transitions, and successfully restarting it. Controlled shutdown must avoid an
+automatic restart.
+
+Manifests and interfaces remain project-owned and clean-room. Release 4 excludes
+AUTOSAR ARXML, package signing and installation, multi-application dependency
+graphs, distributed supervision, and diagnostics integration. Bounded proofs
+cover selected project logic; they do not verify systemd or the Linux kernel.
+
 ## Next releases
-
-### Release 3 — `ara::core` and `ara::log`
-
-- Implement a focused `ara::core` foundation.
-- Implement error handling and result/value types.
-- Implement structured application logging.
-- Add unit tests and documented API requirements.
-
-### Release 4 — Execution Management
-
-- Implement a simplified `ara::exec` lifecycle model.
-- Define application states and deterministic startup/shutdown behavior.
-- Introduce process manifests or equivalent project-owned configuration.
 
 ### Release 5 — Communication Management
 
@@ -205,6 +235,10 @@ merge enforcement and the documented branch-administration permission limit.
 - [SDK cross-build, deployment, and QEMU debugging](docs/guides/sdk-cross-build-and-qemu-deployment.md)
 - [Architecture Decision Records](docs/adr/)
 - [Logger foundation and factory contract](docs/guides/ara-log-foundation.md)
+- [Core API and error-handling guide](docs/guides/ara-core.md)
+- [Release 3 verification evidence](docs/verification/release-3.md)
+- [Core component design decisions](platform/ara-core/doc/design-decisions.md)
+- [Logging component design decisions](platform/ara-log/doc/design-decisions.md)
 - [Exception build policy](docs/adr/0006-exception-build-policy.md)
 - [Per-application unit tests](docs/guides/per-application-unit-tests.md)
 - [Step-by-step ESBMC proof training](docs/guides/esbmc-proof-training.md)

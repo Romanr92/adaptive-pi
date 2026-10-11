@@ -22,6 +22,7 @@ namespace ara::log
   class Logger;
 
   /* Implements AP-R3-LOG-005 */
+  /* Implemented DD-05 */
   class LogStream final
   {
     public:
@@ -102,6 +103,7 @@ namespace ara::log
       void Append(std::string_view value) noexcept;
 
       // LOG-008 establishes this limit; no heap allocation is needed.
+      /* Implemented DD-07 */
       static constexpr std::size_t c_message_capacity = 4096;
       static constexpr std::size_t c_empty_message_size = 0;
 

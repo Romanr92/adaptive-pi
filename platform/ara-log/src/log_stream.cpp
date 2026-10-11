@@ -140,6 +140,7 @@ namespace ara::log
   }
 
   /* Implements AP-R3-LOG-005 */
+  /* Implemented DD-08 */
   LogStream& LogStream::operator<<(double value) noexcept
   {
     if ((logger_ == nullptr) || (!enabled_) || (failed_))
@@ -191,6 +192,7 @@ namespace ara::log
   }
 
   /* Implements AP-R3-LOG-005 */
+  /* Implemented DD-05 */
   void LogStream::Flush() noexcept
   {
     // Submit only active, enabled, valid streams with accumulated bytes.

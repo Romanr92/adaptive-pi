@@ -1,13 +1,14 @@
 #ifndef ADAPTIVE_PI_ARA_LOG_SINK_H_
 #define ADAPTIVE_PI_ARA_LOG_SINK_H_
 
+#include <cstdint>
 #include <string_view>
 
 namespace ara::log::detail
 {
 
   // Explicit status keeps backend failures internal.
-  enum class SinkStatus
+  enum class SinkStatus : std::uint8_t
   {
     kSuccess,
     kWriteFailed

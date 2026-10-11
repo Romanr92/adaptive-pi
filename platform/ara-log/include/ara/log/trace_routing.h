@@ -5,6 +5,7 @@ namespace ara::log
 {
   /* Supports AP-R3-LOG-011 */
   template <typename MsgId>
+  /* Implemented DD-12 */
   struct TraceRouting
   {
       static constexpr bool kLoggerEnabled = true;
