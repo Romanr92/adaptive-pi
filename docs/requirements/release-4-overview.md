@@ -15,6 +15,33 @@ uses existing Release 3 core/log interfaces and exception policy. Requirements
 are project-owned paraphrases; no proprietary implementation or specification
 text is reproduced and no AUTOSAR conformance is claimed.
 
+## Next review session
+
+The next step is a walkthrough of all Release 4 requirements together, starting
+with **AP-R4-MAN-001** in [Manifest and package](release-4-manifests.md). Follow
+this review order, taking each requirement in ascending numeric order within
+its range:
+
+1. **AP-R4-MAN-001–009:** manifest and package contract (#17).
+2. **AP-R4-MAN-010–014:** manifest loading and validation (#18).
+3. **AP-R4-EXEC-001–008:** controller boundary and backend operations (#19).
+4. **AP-R4-EXEC-009–018:** lifecycle states and restart management (#20).
+5. **AP-R4-EXEC-019–021:** target demonstration and deployment (#21).
+6. **AP-R4-VER-001–004:** functional verification and documentation (#22).
+7. **AP-R4-VER-005–006:** bounded proofs (#41).
+8. **AP-R4-VER-007:** final release closure (#22/#41).
+
+For each requirement:
+
+- Explain its intent and distinguish AUTOSAR source behavior from AdaptivePi choices.
+- Check its dependencies and planned verification.
+- Discuss questions and whether additional or revised deviations are needed.
+- Record agreed edits and unresolved questions before moving to the next requirement.
+
+At the end of each session, update this note with the next requirement to review
+and any open questions. Review and approval of the full baseline precede Release 4
+implementation; this walkthrough does not approve requirements automatically.
+
 ## Implementation order
 
 | Order | Requirement file / IDs | Work and owning issues |
