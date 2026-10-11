@@ -59,6 +59,10 @@ Before deriving or editing requirements, read:
 1. `AGENTS.md`, `README.md` and `docs/requirements/README.md`.
 2. The relevant release overview, roadmap, milestone and issue bodies, including
    acceptance criteria, exclusions, dependencies and relevant clarifications.
+   For a release-wide request, inspect the current milestone's complete issue list
+   so newly added issues are not missed. For a feature-scoped request, read its
+   owning issues and related prerequisite/consumer issues. Read issue comments
+   when they clarify or change the requested scope; titles alone are insufficient.
    Also scan the planned later releases and read their relevant issues/contracts
    where they may depend on the foundation being defined now.
    Read linked GitHub context using available authorized tools, such as a
@@ -66,8 +70,12 @@ Before deriving or editing requirements, read:
    an issue or its acceptance criteria.
 3. Existing requirements for the affected area and earlier releases on which
    the work may depend, including their status, verification and deviations.
-4. Relevant ADRs and architecture/component documentation. Inspect code or
-   tests only to understand existing contracts, not to redefine them.
+4. Relevant ADRs, architecture/component documentation, API guides, deployment
+   and target constraints, and release verification documentation. Follow links
+   and source references needed to interpret the requested behavior or its
+   dependencies; "relevant documentation" is not limited to the files listed
+   above. Inspect code or tests only to understand existing contracts, not to
+   redefine them.
 
 Determine the requested release, owning issues and feature boundaries from this
 context and the user's instructions. Record scope conflicts or missing decisions
@@ -116,6 +124,30 @@ this step does not authorize repository publication or external messages.
   requirement drafting, including partial downloads on failure. Do not retain
   these artifacts for later review; download the official sources again if needed.
   Delete only temporary artifacts created by this task, not user-supplied files.
+
+## Decide which requirements are needed from the collected evidence
+
+Before selecting the requirement set, reconcile the user's requested scope with
+README, current release/milestone issues, existing contracts, relevant project
+documentation and the inspected AUTOSAR baseline sources. Do not decide solely
+from the AUTOSAR table of contents, issue titles or the current implementation.
+
+For each applicable behavior or issue acceptance criterion, identify whether it
+is covered by an existing requirement, needs a new atomic requirement now, is
+explicitly deferred/excluded, or requires a user decision. Keep a concise mapping
+in scope/review notes with the supporting issue/document and requirement ID when
+one exists. A new requirement needs a concrete project need and source or
+project-extension rationale; missing specification coverage alone does not make
+it necessary. Conversely, do not omit an in-scope need merely because it lacks a
+direct AUTOSAR normative requirement ID.
+
+Check coverage in both directions: every new requirement serves the agreed scope,
+and every in-scope acceptance criterion has a contract/check or a stated reason
+why it is issue-level work. Record missing or conflicting documentation rather
+than silently choosing a scope. When uncertainty changes which requirements belong
+in the release, use the user-choice workflow below before settling those entries.
+Read only documentation necessary for these decisions; unrelated specifications
+and project guides do not expand the task.
 
 ## Derive behavior with minimal divergence
 
@@ -208,6 +240,44 @@ After the choice, record its rationale and affected dependencies, then draft or
 revise the requirement accordingly. The choice resolves this design/scope question;
 it does not automatically approve the requirement or the release baseline.
 
+## Resolve contradictions with existing decisions
+
+Before settling a new or revised requirement, check it against existing
+requirements, ADRs, documented architecture/scope decisions and explicit decisions
+already made with the user. If it contradicts one, inform the user and ask how to
+resolve it; do not silently override the decision or assume that an AUTOSAR source
+automatically supersedes an approved AdaptivePi contract.
+
+Present the conflict with enough detail to choose:
+
+- Identify the existing decision by file/link, ID where available and status,
+  and explain the behavior it currently requires and why it was chosen when
+  that rationale is documented.
+- Explain the proposed requirement and its AUTOSAR source or project rationale.
+  Show exactly how the two behaviors conflict, preferably with a concrete input,
+  state or usage example; distinguish a true contradiction from an additive
+  extension or a difference in implementation freedom.
+- Explain the consequences for current and later release scope, APIs/data models,
+  existing implementation and verification. State what would need to change and
+  any known uncertainty; do not invent the original decision's rationale.
+- Offer viable alternatives, such as preserving the decision with a justified
+  subset/deviation, revising the proposal to avoid the conflict, explicitly
+  revising/superseding the existing decision, or deferring the affected work.
+  Explain each alternative's AUTOSAR alignment and practical impact.
+
+Ask the user how to proceed and use the question-before-choice workflow above:
+allow questions, answer them, and wait for an explicit resolution before settling
+or applying conflicting requirement/decision edits. Continue unrelated work and
+keep the unresolved conflict in review notes rather than agreed normative text.
+If the user has already explicitly resolved this exact conflict in the current
+work, follow and record that choice instead of asking again.
+
+After resolution, record the choice, rationale and affected references. Update
+existing decision/requirement documents only within the user's explicit resolution,
+preserve stable IDs and prior evidence, and identify any superseded contract or
+verification needing revision. Resolving a conflict does not automatically approve
+new Draft requirements or prove that changed behavior has been implemented.
+
 ## Make atomic requirements in completion order
 
 Each entry must be independently understandable and state a testable contract,
@@ -290,14 +360,17 @@ AUTOSAR deviation.
 
 Before finishing, inspect the complete result for:
 
-- Scope alignment with the user request and owning issue acceptance criteria.
+- Scope alignment with the user request, README, release/milestone contents and
+  owning issue acceptance criteria; verify the need/coverage mapping against the
+  relevant documentation, including newly added issues.
 - Source correctness: edition, actual passage/ID, section/page, maturity and
   normative versus explanatory authority.
 - Dependency existence, completion order and absence of cycles, including
   planned verification and cross-file dependencies.
 - Atomicity, clear terms, boundary conditions, failure outcomes and testability.
 - Duplication or conflicts with existing requirements, ADRs and approved release
-  contracts; record proposed approved-contract changes explicitly for review.
+  contracts; verify contradictions were explained to the user and explicitly
+  resolved before conflicting edits, with pending conflicts kept in review notes.
 - Separation of source behavior, compatible extensions, subsets, deviations and
   exclusions; justification for any behavioral/incompatible deviations.
 - Concrete cross-release implications: known future consumers, foundation
