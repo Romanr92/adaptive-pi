@@ -14,8 +14,7 @@ This directory defines the project requirements baselines.
   added Draft contracts and explicit exclusions; the current baseline contains
   72 entries: MAN-001–015 are In Review and the remaining 57 are Draft.
   Supplemental stages in the overview preserve stable IDs while placing new
-  prerequisites before their consumers. Review started on 2026-10-11; see the
-  [review log](reviews/release-4.md).
+  prerequisites before their consumers. Review started on 2026-10-11.
 
 Release 3 covers a small clean-room educational subset inspired by AUTOSAR
 Adaptive Platform `ara::core` and `ara::log`.

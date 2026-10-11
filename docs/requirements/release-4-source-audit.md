@@ -8,8 +8,7 @@ The original audit assessed 64 Draft requirements. The subsequent additions
 requested by the user brought the baseline to 72 entries, initially Draft; the
 disposition table below identifies their documents. MAN-001–015 are now In Review
 at the user's request; the remaining 57 entries are Draft. Authoring these proposals
-did not agree to them or begin interactive review; the ongoing review is recorded
-in the [review log](reviews/release-4.md).
+did not agree to them or begin interactive review.
 
 ## Draft additions following the audit
 

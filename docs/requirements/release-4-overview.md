@@ -30,7 +30,7 @@ Review started on 2026-10-11. **AP-R4-MAN-001** in
 [Manifest and package](release-4-manifests.md) is In Review, awaiting discussion
 of version and key-validation ambiguities after the JSON5 format selection;
 MAN-001–015 are In Review at the user's request, and no requirement is Agreed.
-See the [review log](reviews/release-4.md). Resume with this entry. Follow
+Resume with this entry. Follow
 the [interactive review skill](../../.agents/skills/review-requirements/SKILL.md)
 and this explicit dependency order, taking each range in ascending numeric order.
 Supplemental stages preserve existing IDs:
