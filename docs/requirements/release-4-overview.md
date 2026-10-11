@@ -7,7 +7,7 @@ This is a **Draft** baseline for issues [#17–#22](https://github.com/Romanr92/
 [#73](https://github.com/Romanr92/adaptive-pi/issues/73), reviewed against the
 local AUTOSAR AP R23-11 documents on 2026-10-11. Creating these files does not
 approve them. No Release 4 production implementation may begin until every
-Release 4 requirement is Approved under AGENTS.md.
+Release 4 requirement is Agreed (or legacy Approved) under AGENTS.md.
 
 Release 4 defines one packaged application, a manually authored manifest, a
 systemd controller boundary, a small manager state machine, bounded automatic
@@ -21,7 +21,8 @@ text is reproduced and no AUTOSAR conformance is claimed.
 
 The next step is a walkthrough of all Release 4 requirements together, starting
 with **AP-R4-MAN-001** in [Manifest and package](release-4-manifests.md). Follow
-this review order, taking each requirement in ascending numeric order within
+the [interactive review skill](../../.agents/skills/review-requirements/SKILL.md)
+and this review order, taking each requirement in ascending numeric order within
 its range:
 
 1. **AP-R4-MAN-001–009:** manifest and package contract (#17).
@@ -42,8 +43,15 @@ For each requirement:
 - Record agreed edits and unresolved questions before moving to the next requirement.
 
 At the end of each session, update this note with the next requirement to review
-and any open questions. Review and approval of the full baseline precede Release 4
-implementation; this walkthrough does not approve requirements automatically.
+and any open questions or pending file audit. Once all requirements in a file are
+reviewed and agreed, perform the review skill's final audit against the baseline
+AUTOSAR PDFs before marking that file complete or moving to the next file. Report
+any hidden deviation or unsupported alignment claim and ask the user for the next
+steps. Pausing a session midway through a file saves progress without triggering
+this final audit.
+Explicit agreement to each requirement in the full
+baseline precedes Release 4 implementation; this walkthrough does not agree to
+requirements automatically.
 
 ## Implementation order
 
@@ -114,7 +122,7 @@ The original ten supplied PDFs were extracted and checked for release identifica
 relevant sections. PDF page numbers below are one-based and match document
 pagination. Full official URLs, sections, pages and applicable source IDs appear
 in individual requirement entries. Source entries marked DRAFT or OBSOLETE in
-AUTOSAR retain their source maturity; AdaptivePi Draft/Approved status is separate.
+AUTOSAR retain their source maturity; AdaptivePi review status is separate.
 Obsolete AUTOSAR entries are not used as normative implementation requirements.
 
 | Reviewed baseline source (R23-11) | Relevant expectations | Release 4 treatment |

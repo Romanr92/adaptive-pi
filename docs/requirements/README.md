@@ -38,14 +38,42 @@ requirement.
 
 ## Status
 
-- `Draft`: proposed and subject to review
-- `Approved`: accepted as the Release implementation baseline
-- `Implemented`: implemented and verified
+New requirements follow this lifecycle:
+
+`Draft → In Review → Agreed → Implemented → Verified`
+
+- `Draft`: proposed and subject to review.
+- `In Review`: currently being discussed with the user.
+- `Agreed`: the user explicitly agreed to this requirement's current wording.
+- `Implemented`: the agreed behavior has been implemented; planned or existing
+  tests alone do not establish successful verification.
+- `Verified`: the planned checks have executed with accepted recorded evidence
+  for the applicable implementation revision and supported configurations.
+
+The [interactive review skill](../../.agents/skills/review-requirements/SKILL.md)
+reviews one requirement at a time. Questions, discussion and agreement to an
+unseen proposed change do not permit Agreed status. Changed contract wording
+requires renewed review and explicit agreement. Record important decisions and
+the exact accepted wording in a separate review log when review begins.
+When all requirements in a requirement file have been reviewed and agreed, audit
+the file's latest contracts against the baseline AUTOSAR PDFs before marking its
+review complete or moving to the next file. A session pause midway through a file
+saves progress without triggering this final audit. Report undeclared/misclassified deviations and unsupported
+alignment/compliance claims, explain the difference, and ask the user how to
+resolve it. The file's review completion remains pending until material audit findings are
+resolved; changed entries require renewed agreement. This audit does not create
+an AUTOSAR conformance claim or implementation-verification evidence.
+
+Legacy `Approved` entries remain accepted baselines. Existing releases used
+`Implemented` to include implementation and verification; retain those statuses,
+their historical meaning and recorded evidence without automatic migration.
+The new lifecycle separates implementation from verification for new work.
 
 No release implementation shall begin until every requirement in that release
-has been approved. Release 4 remains Draft; authoring its baseline does not
-authorize implementation or promote its statuses. Implemented requirements in
-an existing release retain their recorded verification evidence.
+has an agreed baseline (`Agreed` or legacy `Approved`). Later Implemented/Verified
+states retain acceptance for unchanged wording; pending Draft/In Review revisions
+do not satisfy this gate. Release 4 remains Draft; creating this review workflow
+does not agree to its requirements or authorize production implementation.
 
 ## Traceability convention
 

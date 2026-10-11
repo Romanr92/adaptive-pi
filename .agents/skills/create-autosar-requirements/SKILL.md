@@ -383,7 +383,8 @@ Update only relevant requirement indexes, release scope/dependency order and
 verification documentation so they agree with the new set. Do not mark a release
 complete, promote statuses, modify unrelated baselines or publish changes as
 part of creation. Release implementation still waits for all requirements in
-that release to be approved under `AGENTS.md`.
+that release to have an agreed baseline (Agreed or legacy Approved) under
+`AGENTS.md`.
 
 Provide the changed files, requirement ranges, edition used, important extensions
 or deviations, unresolved review questions and the recommended first requirement
