@@ -2,9 +2,10 @@
 
 Issue: [#5](https://github.com/Romanr92/adaptive-pi/issues/5).
 Evidence collected on 2026-10-11 for production/test revision
-`5b4cd822392905ea1d36b9d6a27a578589fcbfe2`. Documentation added during this audit
-requires review and CI on the resulting PR revision. Release 3 remains pending
-closure; no release/tag has been created.
+`5b4cd822392905ea1d36b9d6a27a578589fcbfe2`. Documentation and design-decision comments added during this audit require
+review and CI on the resulting PR revision. Release 3 implementation and runtime
+verification are complete; publication remains pending. No release/tag has been
+created.
 
 ## Observed results
 
@@ -20,7 +21,8 @@ closure; no release/tag has been created.
 | Deployment and QEMU | project start/deploy scripts, both executables run over SSH | Both exited 0 |
 | PR Host CI | [PR #69 run 38098177476](https://github.com/Romanr92/adaptive-pi/actions/runs/38098177476), identical audited file tree | All five jobs passed |
 | Exceptions ON | PR #69 Build and unit test (exceptions enabled) job | Passed in CI |
-| Release completion | README, external plan, tag/release | Pending preceding gates |
+| Milestone documentation | README updated | Complete |
+| Release publication | Final documentation/comment revision requires commit and PR checks | Pending |
 
 The first native run skipped the real C numeric locale test because de_DE.UTF-8
 was unavailable. A temporary locale was generated with localedef; the complete
@@ -38,7 +40,9 @@ as audited merge commit `5b4cd822392905ea1d36b9d6a27a578589fcbfe2`
 passed Formatting, Build and unit test, Build and unit test (exceptions enabled),
 Cross-build QEMU target, and ESBMC proofs. Both proof-mode steps passed; the gate
 integration-test step reused its cached result. This is confirmed CI evidence
-for the audited code tree. The documentation changes still need their PR checks.
+for the audited code tree. The documentation and comment changes still need their PR checks.
+Code annotations use component-local DD IDs; only comments changed in C++ code
+after the audited revision, with behavior preserved.
 
 ## Requirement traceability
 
@@ -183,11 +187,8 @@ Execution Management, and diagnostics remain outside this release.
    above. Run and retain PR checks for this documentation change before merge.
 3. Review the requirement evidence and reconcile status deviations using the
    confirmed dual-mode evidence. Preserve normative text and deliberate deviations.
-4. Identify and update the external project plan, and mark README Release 3
-   complete only after the preceding evidence is accepted.
+4. README records the completed implementation/verification milestone.
 5. Create the release/tag only after every acceptance criterion in #5 is met.
 
-The external plan's location was not present in the repository at audit time;
-the user will provide it.
-This evidence record is not authorization to bypass missing CI or mark the
-release complete prematurely.
+Release publication must still satisfy the final revision checks and issue #5
+acceptance criteria.
