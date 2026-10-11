@@ -16,6 +16,7 @@ namespace ara::log::detail
   constexpr int c_posix_pthread_success = 0;
 
   /* Implements AP-R3-LOG-003 */
+  /* Implemented DD-03 */
   LoggerCreationResult LoggerRegistry::Register(std::string_view context_id, std::string_view description,
                                                 LogLevel threshold) noexcept
   {
@@ -85,6 +86,7 @@ namespace ara::log::detail
   }
 
   /* Implements AP-R3-LOG-003 */
+  /* Implemented DD-03 */
   Logger& LoggerRegistry::Find(std::string_view context_id, std::string_view description, LogLevel threshold) noexcept
   {
     if (pthread_mutex_lock(&mutex_) != c_posix_pthread_success)

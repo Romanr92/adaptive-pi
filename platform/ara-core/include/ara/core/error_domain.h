@@ -11,6 +11,7 @@
 namespace ara::core
 {
   /* Implements: AP-R3-CORE-001, AP-R3-CORE-002*/
+  /* Implemented DD-01 */
   class ErrorDomain final
   {
     public:
@@ -57,6 +58,7 @@ namespace ara::core
       }
 
 #if ADAPTIVE_PI_EXCEPTIONS_ENABLED
+      /* Implemented DD-09 */
       [[noreturn]] void ThrowAsException(const ErrorCode& error) const
       {
         if (converter_ != nullptr)

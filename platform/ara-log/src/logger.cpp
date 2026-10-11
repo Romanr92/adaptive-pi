@@ -47,6 +47,7 @@ namespace ara::log
   }
 
   /* Implements AP-R3-LOG-002 */
+  /* Implemented DD-06 */
   bool Logger::IsEnabled(LogLevel level) const noexcept
   {
     // static_cast explicitly converts the scoped enum for bounded numeric comparison.
@@ -61,8 +62,10 @@ namespace ara::log
 
   /* Implements AP-R3-LOG-005; AP-R3-LOG-002 filtering */
   /* Supports AP-R3-LOG-005, AP-R3-LOG-007, and AP-R3-LOG-008 */
+  /* Implemented DD-09 */
   void Logger::Submit(LogLevel level, std::string_view message) const noexcept
   {
+    /* Implemented DD-06 */
     // Skip empty or filtered records.
     if ((message.empty()) || (!IsEnabled(level)))
     {

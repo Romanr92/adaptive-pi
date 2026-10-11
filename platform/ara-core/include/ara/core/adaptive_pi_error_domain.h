@@ -12,6 +12,7 @@ namespace ara::core
   /* Domain error enums deliberately use ErrorCode::ValueType so their
      representation matches ErrorCode across every supported target. Future domain values are not constrained to the
      current three small numbers. NOLINTNEXTLINE(performance-enum-size) */
+  /* Implemented DD-03 */
   enum class AdaptivePiErrc : ErrorCode::ValueType
   {
     kInvalidArgument = 1,

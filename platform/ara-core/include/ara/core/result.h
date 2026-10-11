@@ -21,6 +21,7 @@ namespace ara::core
   namespace detail
   {
     template <typename T, typename E>
+    /* Implemented DD-04 */
     class ResultStorage final
     {
 
@@ -47,6 +48,7 @@ namespace ara::core
           slots_[previous].reset();
         }
 
+        /* Implemented DD-06 */
         [[nodiscard]] std::size_t index() const noexcept
         {
           const auto& active_slot = slots_[active_];
@@ -61,6 +63,7 @@ namespace ara::core
         }
 
         template <std::size_t Index>
+        /* Implemented DD-06 */
         decltype(auto) get() & noexcept
         {
           auto& active_slot = slots_[active_];
@@ -147,6 +150,7 @@ namespace ara::core
   /* Implements: AP-R3-CORE-005: value or error storage */
   /* Include initial factory/query support for CORE-006/007 */
   template <typename T, typename E>
+  /* Implemented DD-05 */
   class Result final
   {
     public:
@@ -242,6 +246,7 @@ namespace ara::core
 #if ADAPTIVE_PI_EXCEPTIONS_ENABLED
 
       template <typename U = E, std::enable_if_t<std::is_same_v<U, E> && std::is_same_v<U, ErrorCode>, int> = 0>
+      /* Implemented DD-09 */
       T& ValueOrThrow() &
       {
         ThrowIfError();
@@ -270,6 +275,7 @@ namespace ara::core
       Result(Result&&) = default;
 
       /* Deferred until we design safe state replacement */
+      /* Implemented DD-07 */
       Result& operator=(const Result&) = delete;
       Result& operator=(Result&&) = delete;
       /* Deferred until we design safe state replacement */
@@ -323,6 +329,7 @@ namespace ara::core
 
   /* AP-R3-CORE-005: success without a value, or an error */
   template <typename E>
+  /* Implemented DD-08 */
   class Result<void, E> final
   {
     public:
@@ -412,6 +419,7 @@ namespace ara::core
       {
       }
 
+      /* Implemented DD-07 */
       Result& operator=(const Result&) = delete;
       Result& operator=(Result&&) = delete;
 

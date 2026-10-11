@@ -12,6 +12,14 @@ Coverage and ESBMC reports: https://romanr92.github.io/adaptive-pi/
 
 **Release 2 complete — SDK cross-build, QEMU deployment, and remote debugging** ✅
 
+**Release 3 implementation and verification complete — `ara::core` and `ara::log`** ✅
+
+The [Release 3 evidence report](docs/verification/release-3.md) records passing
+native tests, both CI exception configurations, and ARM64 QEMU smoke checks.
+The external project plan records the completed milestone. Release publication
+remains pending commit and PR checks for the final documentation and code
+annotations.
+
 The project has a verified development platform for ARM64 target software:
 
 ```text
@@ -205,6 +213,10 @@ merge enforcement and the documented branch-administration permission limit.
 - [SDK cross-build, deployment, and QEMU debugging](docs/guides/sdk-cross-build-and-qemu-deployment.md)
 - [Architecture Decision Records](docs/adr/)
 - [Logger foundation and factory contract](docs/guides/ara-log-foundation.md)
+- [Core API and error-handling guide](docs/guides/ara-core.md)
+- [Release 3 verification evidence](docs/verification/release-3.md)
+- [Core component design decisions](platform/ara-core/doc/design-decisions.md)
+- [Logging component design decisions](platform/ara-log/doc/design-decisions.md)
 - [Exception build policy](docs/adr/0006-exception-build-policy.md)
 - [Per-application unit tests](docs/guides/per-application-unit-tests.md)
 - [Step-by-step ESBMC proof training](docs/guides/esbmc-proof-training.md)

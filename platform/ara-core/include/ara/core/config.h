@@ -1,6 +1,7 @@
 #ifndef ARA_CORE_CONFIG_H_
 #define ARA_CORE_CONFIG_H_
 
+/* Implemented DD-09 */
 #if defined(__cpp_exceptions) || defined(__EXCEPTIONS)
   #define ADAPTIVE_PI_COMPILER_EXCEPTIONS_ENABLED 1
 #else

@@ -306,7 +306,16 @@ it does not execute the target binary. A successful library build alone does
 not verify application-instantiated template code. Local native execution
 verifies the smoke test's trace counter. The smoke executable also compiled and
 linked locally with the Yocto SDK, and its ELF header reports AArch64. Target
-runtime execution remains unverified; cross-compilation is separate evidence.
+runtime execution passed during the 2026-10-11 Release 3 audit, including the
+two-trace-call check. `hello-adaptive` also emitted its startup and modelled
+greeting records in QEMU. The [evidence report](../verification/release-3.md)
+records the audited revision, commands, output, and remaining CI obligations.
+Cross-compilation and target execution are separate evidence.
+
+The [component design decisions](../../platform/ara-log/doc/design-decisions.md)
+describe registry ownership, bounded record assembly, failure handling, and
+compile-time routing. The [core API guide](ara-core.md) explains the Result and
+ErrorCode interfaces used by logger initialization.
 
 Allocation-failure injection uses a separate test executable with 64-bit Linux
 GCC/Clang ABI symbols and ELF linker wrapping. CMake checks linker support and
