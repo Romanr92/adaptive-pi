@@ -87,6 +87,8 @@ namespace ara::log::detail
 
   /* Implements AP-R3-LOG-003 */
   /* Implemented DD-03 */
+  /* Preserve the context-ID/description order used by the public factory. */
+  // NOLINTNEXTLINE(bugprone-easily-swappable-parameters)
   Logger& LoggerRegistry::Find(std::string_view context_id, std::string_view description, LogLevel threshold) noexcept
   {
     if (pthread_mutex_lock(&mutex_) != c_posix_pthread_success)
