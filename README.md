@@ -164,7 +164,10 @@ maturity of the platform rather than treating quality as a final activity.
 | Current host workflow | Formatting, clang-tidy, native unit tests, and Host CI |
 | Pre-Release 3 (complete) | A pull-request CI job cross-builds every target-compatible application with the matching Yocto SDK and verifies each output is an AArch64 ELF binary. QEMU runtime execution is deferred. |
 | Release 4 | ESBMC bounded proofs for manifest validation, lifecycle transitions, restart-policy decisions, and data-model invariants |
-| Release 7 | Cross-process integration tests, fault injection, restart/recovery checks, and an expanded CI gate |
+| Release 5 | Two-process communication, provider-loss and reconnect integration evidence (#28) |
+| Release 6 | Crash-to-DTC integration, persistence and QEMU evidence (#34) |
+| Release 7 | End-to-end DoIP/UDS tests, crash-record reads and application restart routines (#40) |
+| Additional quality work (tracking pending) | Broader integration and lifecycle recovery checks, and an expanded CI gate; retained roadmap goals without dedicated GitHub issue/milestone coverage |
 
 ESBMC will not be used as a blanket check for the whole project. It will verify
 selected bounded safety properties where model checking is useful and practical.
@@ -175,9 +178,12 @@ merge enforcement and the documented branch-administration permission limit.
 
 ## Current development — Release 4: Execution Management and Manifests
 
-Release 4 will launch and supervise one packaged application through systemd.
+Release 4 will install, launch and supervise one self-contained application package
+through a documented deployment workflow and systemd integration.
 The scope follows the [Release 4 milestone](https://github.com/Romanr92/adaptive-pi/milestone/2)
-issues:
+issues below, extended during requirements review to include documented package
+installation. Issue #17 still lists installation as excluded and needs a scope
+update to match this reviewed direction.
 
 | Issue | Planned work |
 |---|---|
@@ -188,44 +194,85 @@ issues:
 | [#21](https://github.com/Romanr92/adaptive-pi/issues/21) | Package `platform-test-service` with a manifest and systemd unit, log startup, and provide controlled test-only fault injection and QEMU deployment. |
 | [#22](https://github.com/Romanr92/adaptive-pi/issues/22) | Collect passing host/CI and ARM64 evidence, demonstrate manifest-driven startup followed by an intentional crash and automatic restart in QEMU, and document APIs and limitations. |
 | [#41](https://github.com/Romanr92/adaptive-pi/issues/41) | Add bounded ESBMC proofs for feasible Release 4 logic, including invalid-manifest rejection, permitted lifecycle transitions, and restart-policy safety, with explicit assumptions and results. |
+| [#72](https://github.com/Romanr92/adaptive-pi/issues/72) | Minimize the unified development/runtime Yocto image after functional verification, record before/after measurements, and repeat the QEMU scenario before #71. |
+| [#71](https://github.com/Romanr92/adaptive-pi/issues/71) | Exercise the minimized Release 4 image and crash/restart/controlled-stop scenario on a Raspberry Pi, recording hardware and footprint evidence. |
+| [#73](https://github.com/Romanr92/adaptive-pi/issues/73) | Extend logging with configurable bindings, bounded rotating files, journald feasibility, bounded delivery and a minimal lifecycle log; review the [Draft logging requirements](docs/requirements/release-4-logging.md) before implementation. |
 
 The completion demonstration will show the manager starting `platform-test-service`
 from its manifest, detecting an intentional crash, recording failed/restarting
 transitions, and successfully restarting it. Controlled shutdown must avoid an
 automatic restart.
 
+The Raspberry Pi smoke test is an experiment rather than a hard Release 4
+completion gate; hardware-specific limitations may remain open, while any
+platform-independent defects become blocking issues. QEMU remains the primary
+verification target, and formal Raspberry Pi support stays in the later hardware
+release. Image minimization retains one image for development and runtime.
+
 Manifests and interfaces remain project-owned and clean-room. Release 4 excludes
-AUTOSAR ARXML, package signing and installation, multi-application dependency
-graphs, distributed supervision, and diagnostics integration. Bounded proofs
+AUTOSAR ARXML, package signing, update management and full AUTOSAR Update and
+Configuration Management, multi-application dependency graphs, distributed
+supervision, and diagnostics integration. Bounded proofs
 cover selected project logic; they do not verify systemd or the Linux kernel.
 
 ## Next releases
 
-### Release 5 — Communication Management
+### Release 5 — Custom `ara::com`
+
+Scope: [Release 5 milestone](https://github.com/Romanr92/adaptive-pi/milestone/3),
+issues #23–#28 and [#44](https://github.com/Romanr92/adaptive-pi/issues/44).
 
 - Implement a focused `ara::com`-inspired publish/subscribe interface.
 - Add project-owned, clean-room SOME/IP-inspired communication for method request/response, events, and fields, without claiming AUTOSAR SOME/IP conformance.
-- Add service discovery concepts suitable for the demonstrator.
-- Handle service availability, timeouts, service loss, and reconnect after provider restart.
-- Validate communication between separate Linux processes.
+- Define proxy/skeleton ownership, serialization, wire format and compatibility limits.
+- Add local service registration, discovery and availability notifications.
+- Handle timeouts, service loss, and reconnect after provider restart.
+- Validate communication between separate Linux processes with host, integration, ARM64 and QEMU evidence.
 
-### Release 6 — Diagnostics over Ethernet
+### Release 6 — Diagnostic Manager Internals
 
-- Implement a simplified DoIP/UDS diagnostic manager.
-- Use the Raspberry Pi Ethernet interface as a development bench connection.
-- Document the differences between standard Raspberry Pi Ethernet and production Automotive Ethernet technologies such as 100BASE-T1.
+Scope: [Release 6 milestone](https://github.com/Romanr92/adaptive-pi/milestone/4),
+issues #29–#34.
 
-### Release 7 — Integration and quality
+- Run `diagnostic-manager` as an Execution-Managed application with a project-owned `ara::diag`-inspired event boundary.
+- Persist diagnostic trouble codes (DTCs) and freeze-frame records, with retrieval, clear, corruption and storage-failure handling.
+- Include application lifecycle state and crash/restart history from Execution Management.
+- Collect image/application versions, CPU, memory, temperature, network and service health, with explicit unavailable states.
+- Demonstrate an intentional application crash producing a persistent DTC and freeze frame through host integration and QEMU verification.
+- Keep external DoIP/UDS protocols in Release 7.
 
-- Add integration tests across applications and processes.
-- Add fault handling and lifecycle recovery behavior.
-- Extend CI with formatting, static analysis, unit tests, and integration checks where practical.
+### Release 7 — DoIP and UDS over Ethernet
 
-### Release 8 — Raspberry Pi deployment
+Scope: [Release 7 milestone](https://github.com/Romanr92/adaptive-pi/milestone/5),
+issues #35–#40.
+
+- Implement a simplified DoIP/UDS diagnostic server backed by Release 6 Diagnostic Manager data.
+- Use the Raspberry Pi Ethernet interface as a development bench connection, with a laptop command-line client and host/QEMU connectivity checks.
+- Add DoIP discovery, vehicle identification, routing activation and alive checks.
+- Add UDS dispatch, sessions, timing, negative responses, DTC/data reads, and restricted security, write and routine-control demonstrations.
+- Verify that a laptop can read the DTC/freeze frame from an intentional crash and run an application restart routine.
+- Document the differences between standard Raspberry Pi Ethernet and production Automotive Ethernet technologies such as 100BASE-T1. This retained goal needs explicit GitHub issue coverage.
+
+### Release 8 — Raspberry Pi deployment (GitHub tracking pending)
+
+This roadmap release is retained. GitHub currently has no Release 8 milestone or
+dedicated formal hardware-support issues. Release 4 [#71](https://github.com/Romanr92/adaptive-pi/issues/71)
+provides an early smoke experiment and explicitly leaves formal support to a later
+hardware release.
 
 - Add Raspberry Pi Yocto support.
 - Build and deploy the AdaptivePi image to real hardware.
 - Validate Ethernet communication, services, deployment workflow, and measured timing behavior.
+
+### Additional integration and quality goals (GitHub tracking pending)
+
+These goals from the earlier Release 7 roadmap are retained. Releases 5–7 already
+include scoped integration, fault injection and restart demonstrations; broader
+coverage and CI expansion still need explicit issue ownership and release placement.
+
+- Add integration tests across applications and processes.
+- Add fault handling and lifecycle recovery behavior.
+- Extend CI with formatting, static analysis, unit tests, and integration checks where practical.
 
 ## Documentation
 
