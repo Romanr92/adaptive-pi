@@ -6,9 +6,10 @@ This is a scoped completeness assessment, not interactive requirement review,
 user agreement, implementation verification or an AUTOSAR conformance claim.
 The original audit assessed 64 Draft requirements. The subsequent additions
 requested by the user brought the baseline to 72 entries, initially Draft; the
-disposition table below identifies their documents. MAN-001–015 are now In Review
-at the user's request; the remaining 57 entries are Draft. Authoring these proposals
-did not agree to them or begin interactive review.
+disposition table below identifies their documents. Following interactive review,
+MAN-001–002 are Agreed, MAN-003–015 remain In Review, and the remaining 57 entries
+are Draft. Authoring these proposals did not agree to them or begin interactive
+review; the later agreement follows the user's explicit decision on 2026-10-12.
 
 ## Draft additions following the audit
 
@@ -22,8 +23,11 @@ did not agree to them or begin interactive review.
 | F6 | [AP-R4-LOG-023](release-4-logging.md#ap-r4-log-023--local-time-base-notification) | Configured R4 mode attempts a local-time notification on successful registration; console compatibility suppresses it. Registration/filtering/compatibility departures are explicit Draft proposals. |
 
 The overview, logging lifecycle/evidence entries and release verification plan
-now include these contracts. Existing IDs and the later review position
-AP-R4-MAN-001 are preserved. No source finding has been marked user-agreed.
+now include these contracts. Existing IDs are preserved. Interactive review now
+resumes at AP-R4-MAN-003 after agreement to MAN-001–002; none of the added
+contracts for findings F1–F6 has been marked user-agreed. This completeness
+assessment does not replace the final file-level source audit after agreement
+to all manifest requirements.
 
 Before drafting, five relevant official PDFs were downloaded again and their
 title pages/entries rechecked: RS/TPS Manifest, RS/SWS Execution Management and

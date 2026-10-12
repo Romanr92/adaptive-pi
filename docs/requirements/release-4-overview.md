@@ -7,14 +7,19 @@ This is a **Draft** baseline for issues [#17–#22](https://github.com/Romanr92/
 [#73](https://github.com/Romanr92/adaptive-pi/issues/73), reviewed against the
 official AUTOSAR AP R23-11 documents on 2026-10-11. The baseline contains 72
 requirements: MAN-001–015, EXEC-001–027, LOG-001–023 and VER-001–007.
-MAN-001–015 are In Review; the remaining 57 entries are Draft.
+MAN-001–002 are Agreed, MAN-003–015 are In Review, and the remaining 57 entries
+are Draft.
 Creating these files does not approve them. No Release 4 production implementation may begin until every
 Release 4 requirement is Agreed (or legacy Approved) under AGENTS.md.
 
 Release 4 defines one packaged application, a manually authored JSON5 manifest, a
 systemd controller boundary, a small manager state machine, bounded automatic
-restart decisions, and a supervised platform-test-service demonstration. It
-also adds [logging bindings and bounded delivery](release-4-logging.md) under #73,
+restart decisions, and a supervised platform-test-service demonstration. The
+documented deployment workflow installs self-contained application packages and
+registers their systemd units; parsing/loading remains independent of installation
+and process control. This scope change follows the user's requirements review;
+issue #17 still excludes installation and needs a corresponding scope update.
+Release 4 also adds [logging bindings and bounded delivery](release-4-logging.md) under #73,
 and uses existing Release 3 core/log interfaces and exception policy. Requirements
 are project-owned paraphrases; no proprietary implementation or specification
 text is reproduced and no AUTOSAR conformance is claimed.
@@ -26,11 +31,15 @@ implementation evidence. Authoring can continue while review is in progress.
 
 ## Next review session
 
-Review started on 2026-10-11. **AP-R4-MAN-001** in
-[Manifest and package](release-4-manifests.md) is In Review, awaiting discussion
-of version and key-validation ambiguities after the JSON5 format selection;
-MAN-001–015 are In Review at the user's request, and no requirement is Agreed.
-Resume with this entry. Follow
+Review started on 2026-10-11. The user explicitly accepted the current wording of
+**AP-R4-MAN-001** and **AP-R4-MAN-002** on 2026-10-12; both are Agreed. No contract
+wording changed when recording that acceptance. Earlier suggested refinements
+to MAN-001 were not incorporated; any later contract revision requires renewed
+review and agreement. Resume at **AP-R4-MAN-003** in
+[Manifest and package](release-4-manifests.md), covering required and optional
+manifest fields. MAN-003–015 remain In Review, and the other 57 entries remain
+Draft. The manifest file's final source audit remains pending until every entry
+is agreed. Follow
 the [interactive review skill](../../.agents/skills/review-requirements/SKILL.md)
 and this explicit dependency order, taking each range in ascending numeric order.
 Supplemental stages preserve existing IDs:
@@ -161,7 +170,7 @@ Obsolete AUTOSAR entries are not used as normative implementation requirements.
 | [Requirements on Manifest Specification](https://www.autosar.org/fileadmin/standards/R23-11/AP/AUTOSAR_AP_RS_ManifestSpecification.pdf), §3.1.1.2, p. 14, RS_MANI_00006/00007 | Deployment ties an executable to a process; startup configuration can depend on platform states. | MAN package/configuration scope uses the deployment concept; machine/function-group configuration is excluded. |
 | [Specification of Manifest](https://www.autosar.org/fileadmin/standards/R23-11/AP/AUTOSAR_AP_TPS_ManifestSpecification.pdf), §8, pp. 385–393 | Process, startup configuration, process arguments, process-scoped environment, startup/termination timeouts and startup retry metadata. | Manually authored schema/configuration replaces the meta-model. Environment and launch values are retained; crash-budget semantics are a documented project deviation. |
 | [Requirements on Execution Management](https://www.autosar.org/fileadmin/standards/R23-11/AP/AUTOSAR_AP_RS_ExecutionManagement.pdf), §4.2.3–4.2.4, pp. 18–19, RS_EM_00101/00103/00150 | Lifecycle coordination, State Management interaction and execution error handling. | One-application lifecycle/error handling; no Function Groups, StateClient or system-wide error recovery. |
-| [Specification of Execution Management](https://www.autosar.org/fileadmin/standards/R23-11/AP/AUTOSAR_AP_SWS_ExecutionManagement.pdf), §7.2.5–7.4.4.4, pp. 33–51, and §7.7.3.5, p. 105 | Execution manifests, lifecycle, termination, argument/environment passing and implementation-specific working folders. | systemd adapter and project manager; checked argument transport and explicit working directory. Full ara::exec API, deployment tooling and machine startup are excluded. |
+| [Specification of Execution Management](https://www.autosar.org/fileadmin/standards/R23-11/AP/AUTOSAR_AP_SWS_ExecutionManagement.pdf), §7.2.5–7.4.4.4, pp. 33–51, and §7.7.3.5, p. 105 | Execution manifests, lifecycle, termination, argument/environment passing and implementation-specific working folders. | systemd adapter and project manager; checked argument transport and explicit working directory. Documented package installation is included; full ara::exec API, AUTOSAR deployment tooling and machine startup are excluded. |
 | [Requirements of State Management](https://www.autosar.org/fileadmin/standards/R23-11/AP/AUTOSAR_AP_RS_StateManagement.pdf), §3.1–3.2.1, pp. 8–9, RS_SM_00001/00005 | Platform-specific coordination of application sets and internal states. | Reviewed as a boundary: the Release 4 manager is not a State Management functional cluster. |
 | [Specification of State Management](https://www.autosar.org/fileadmin/standards/R23-11/AP/AUTOSAR_AP_SWS_StateManagement.pdf), §7.1.2, p. 27, and §7.11.1, pp. 42–43 | Custom machine behavior and recovery coordination with EM/PHM. | A local crash-restart policy only; no SM state machines, recovery tables, PHM or machine reset. |
 | [Requirements on Operating System Interface](https://www.autosar.org/fileadmin/standards/R23-11/AP/AUTOSAR_AP_RS_OperatingSystemInterface.pdf), §4.2, pp. 9–10, RS_OSI_00100/00105 | PSE51 application interface and EM initial-process startup. | Linux/systemd already exists; no new PSE51 implementation, OS conformance claim or EM-as-PID-1 behavior. |
@@ -194,7 +203,8 @@ manually authored JSON5 format an AUTOSAR processed manifest.
 Release 4 excludes ARXML parsing/generation, full API/ABI compatibility, machine
 and Function Group state management, PHM, deterministic execution/scheduling,
 resource-group configuration, machine reset, trusted-platform/IAM security,
-package signing/installation/updates, multi-application dependency graphs,
+package signing, update management and full AUTOSAR Update and Configuration
+Management, multi-application dependency graphs,
 distributed supervision, persistent diagnostics/health records, DLT and external
 diagnostic integration, hardware-specific validation, and production safety claims.
 

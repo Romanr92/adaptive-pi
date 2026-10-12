@@ -178,9 +178,12 @@ merge enforcement and the documented branch-administration permission limit.
 
 ## Current development — Release 4: Execution Management and Manifests
 
-Release 4 will launch and supervise one packaged application through systemd.
+Release 4 will install, launch and supervise one self-contained application package
+through a documented deployment workflow and systemd integration.
 The scope follows the [Release 4 milestone](https://github.com/Romanr92/adaptive-pi/milestone/2)
-issues:
+issues below, extended during requirements review to include documented package
+installation. Issue #17 still lists installation as excluded and needs a scope
+update to match this reviewed direction.
 
 | Issue | Planned work |
 |---|---|
@@ -207,8 +210,9 @@ verification target, and formal Raspberry Pi support stays in the later hardware
 release. Image minimization retains one image for development and runtime.
 
 Manifests and interfaces remain project-owned and clean-room. Release 4 excludes
-AUTOSAR ARXML, package signing and installation, multi-application dependency
-graphs, distributed supervision, and diagnostics integration. Bounded proofs
+AUTOSAR ARXML, package signing, update management and full AUTOSAR Update and
+Configuration Management, multi-application dependency graphs, distributed
+supervision, and diagnostics integration. Bounded proofs
 cover selected project logic; they do not verify systemd or the Linux kernel.
 
 ## Next releases

@@ -17,25 +17,25 @@ later integration evidence does not block completion of an earlier requirement.
 
 ## AP-R4-MAN-001 — Manifest syntax and version
 
-- Status: In Review
+- Status: Agreed
 - Dependencies: Existing Release 3 core/log contracts only; no Release 4 prerequisite.
 - Owning issue: [#17](https://github.com/Romanr92/adaptive-pi/issues/17)
-- Requirement: The manifest shall be a UTF-8 JSON5 1.0.0 document with an object root and an integer `schema_version` equal to `1`; duplicate keys and unknown keys shall be invalid.
+- Requirement: The manifest shall be a UTF-8 JSON5 1.0.0 document with an object root and a required `schema_version` whose value is a finite number with exact mathematical value `1`, regardless of its valid JSON5 numeric spelling and without string or boolean coercion; duplicate keys and unknown keys shall be invalid.
 - AUTOSAR source: [AUTOSAR AP R23-11 RS_ManifestSpecification, §3.1.1.2, PDF pp. 14, RS_MANI_00006 {DRAFT in AUTOSAR}](https://www.autosar.org/fileadmin/standards/R23-11/AP/AUTOSAR_AP_RS_ManifestSpecification.pdf); [AUTOSAR AP R23-11 SWS_ExecutionManagement, §7.2.7, PDF pp. 34, no requirement ID for this explanatory passage](https://www.autosar.org/fileadmin/standards/R23-11/AP/AUTOSAR_AP_SWS_ExecutionManagement.pdf)
-- Verification: Documentation review and later `AP_R4_MAN_001_SyntaxAndVersion` cases for valid JSON5, including comments, trailing commas, single-quoted strings and unquoted member names; malformed JSON5; duplicates; unknown keys; non-integer and unsupported versions.
+- Verification: Documentation review and later `AP_R4_MAN_001_SyntaxAndVersion` cases for valid JSON5, including comments, trailing commas, single-quoted strings and unquoted member names; malformed JSON5; duplicates; unknown keys; missing or wrong-type versions; equivalent version spellings `1`, `1.0`, `1e0`, `+1` and `0x1`; rejected fractional values including `1.0000000000000001` without rounding to `1`; unsupported numeric versions; rejected strings, booleans, null, NaN and positive/negative infinity.
 - Unit Tests:
-- Deviation: JSON5 1.0.0, strict keys, and schema version 1 are project choices. No ARXML parser or ARXML-to-JSON5 generator is provided.
+- Deviation: JSON5 1.0.0, strict keys, and schema version 1 with value-based numeric validation are project choices. No ARXML parser or ARXML-to-JSON5 generator is provided.
 
 ## AP-R4-MAN-002 — Application package layout
 
-- Status: In Review
+- Status: Agreed
 - Dependencies: `AP-R4-MAN-001`
 - Owning issue: [#17](https://github.com/Romanr92/adaptive-pi/issues/17)
-- Requirement: One application package shall contain `manifest.json5` at its root, its executable under `bin/`, a working directory under `work/`, and any packaged service unit under `systemd/`; package loading shall take an explicit package-root path.
-- AUTOSAR source: [AUTOSAR AP R23-11 RS_ManifestSpecification, §3.1.1.2, PDF pp. 14, RS_MANI_00006 {DRAFT in AUTOSAR}](https://www.autosar.org/fileadmin/standards/R23-11/AP/AUTOSAR_AP_RS_ManifestSpecification.pdf)
-- Verification: Documentation review of the package tree and later `AP_R4_MAN_002_PackageLayout` checks for discovery and missing manifest.
+- Requirement: One self-contained application package shall contain `manifest.json5` at its root, its executable under `bin/`, a working directory under `work/`, and any packaged service unit under `systemd/`. Application-specific runtime libraries, configuration and resources required by the executable shall be bundled within the package root; operating-system runtime dependencies provided by the target image need not be bundled. Package loading shall take an explicit package-root path and shall not depend on a fixed installation prefix.
+- AUTOSAR source: [AUTOSAR AP R23-11 RS_ManifestSpecification, §3.1.1.2, PDF p. 14, RS_MANI_00006 {DRAFT in AUTOSAR; application deployment context, not a directory-layout requirement}](https://www.autosar.org/fileadmin/standards/R23-11/AP/AUTOSAR_AP_RS_ManifestSpecification.pdf); [AUTOSAR AP R23-11 SWS_ExecutionManagement, §7.2.5, PDF p. 33, and §7.7.3.5, PDF p. 105, explanatory passages without requirement IDs: manifest/executable bundling and implementation-specific working folders](https://www.autosar.org/fileadmin/standards/R23-11/AP/AUTOSAR_AP_SWS_ExecutionManagement.pdf). No direct AUTOSAR requirement prescribes this self-contained directory layout or systemd integration; these are AdaptivePi design decisions.
+- Verification: Documentation review of the package tree, application-specific runtime dependency inventory and external systemd unit registration; later `AP_R4_MAN_002_PackageLayout` checks for discovery, missing manifest and loading the same package layout from different package-root paths.
 - Unit Tests:
-- Deviation: This filesystem layout is project-owned; installation/update/signing management is excluded.
+- Deviation: Extension: the self-contained filesystem layout, bundled application-specific runtime assets and explicit package root are project-owned. Package installation and systemd unit registration are supported through the documented deployment workflow in EXEC-021; registered units may reside outside the package. Parsing/loading does not perform installation or process control. Full AUTOSAR Update and Configuration Management, update management and package signing remain excluded.
 
 ## AP-R4-MAN-003 — Required and optional manifest fields
 

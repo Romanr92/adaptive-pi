@@ -12,7 +12,8 @@ This directory defines the project requirements baselines.
   [verification](release-4-verification.md) requirements. The
   [AUTOSAR source completeness audit](release-4-source-audit.md) maps the
   added Draft contracts and explicit exclusions; the current baseline contains
-  72 entries: MAN-001–015 are In Review and the remaining 57 are Draft.
+  72 entries: MAN-001–002 are Agreed, MAN-003–015 are In Review, and the remaining
+  57 are Draft.
   Supplemental stages in the overview preserve stable IDs while placing new
   prerequisites before their consumers. Review started on 2026-10-11.
 
